@@ -1,4 +1,4 @@
-import { SnejFishingGame } from "./game.js?v=0.0.4-hf6";
+import { SnejFishingGame } from "./game.js?v=0.0.4-hf7";
 
 window.addEventListener("DOMContentLoaded", () => {
   const canvas = document.getElementById("game-canvas");

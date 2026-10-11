@@ -5,7 +5,7 @@ import { SnejAudio } from "./audio.js?v=0.0.4";
 import {
   SnejCastSystem, CAST_TOL, SPLASH_BASE, SPLASH_MIN, SPLASH_SCALE,
   STARTLE_R, STARTLE_SEC, WAKE_BOB_AMP, WAKE_BOB_FREQ
-} from "./castSystem.js?v=0.0.4-hf6";
+} from "./castSystem.js?v=0.0.4-hf7";
 import { DEFAULT_FLOAT_DEPTH, SnejFloatRig, rigForRod, limitLineEnd, writeFixedLine } from "./floatRig.js?v=0.0.4-hf6";
 import { SnejAuth, SNEJKOV_ID, SNEJKOV_NAME } from "./auth.js";
 import { resolveLake } from "./lakeValidator.js";
@@ -102,7 +102,7 @@ export class SnejFishingGame {
     this.floatContext = {
       playerOrigin: this.pos,
       surfaceY: (x, z) => this.castMarkerHeight({ x, z }) + Math.sin(this.cast.state.waitTime * WAKE_BOB_FREQ) * WAKE_BOB_AMP,
-      isWaterAt: (point) => this.cast.isWaterAt(point),
+      isWaterAt: (point) => this.cast.isRigWaterAt(point),
       lineObstruction: (a, b, slack) => this.lineObstruction(a, b, slack)
     };
     this.mouse = { dx: 0, dy: 0 };
@@ -239,6 +239,7 @@ export class SnejFishingGame {
       if (this.cast.state.fs === "wait") this.cast.reset();
       this.updateCast(0);
       if (this.cast.onActionDown()) {
+        this.ui.el.toast.classList.add("hidden");
         this.audio.charge();
         this.updateCast(0);
       }
@@ -255,7 +256,7 @@ export class SnejFishingGame {
         this.audio.cast(this.cast.state.castPower);
       } else if (this.cast.state.lastRejection) {
         this.audio.deny();
-        this.ui.showToast("Water required. Cast blocked.");
+        this.ui.showToast(this.toastForCastRejection(this.cast.state.lastRejection));
       }
       this.updateCast(0);
       this.updateCastVisuals();
@@ -1039,6 +1040,15 @@ export class SnejFishingGame {
 
   toastForCast({ castPerfect, charge, targetPower }) {
     return castPerfect ? "Perfect" : charge > targetPower ? "Overcast" : "Undercast";
+  }
+
+  toastForCastRejection(reason) {
+    if (reason === "depth") return "Not enough depth for this rig.";
+    if (reason === "range") return "Charge a longer cast.";
+    if (reason === "dock") return "Dock blocks the cast.";
+    if (reason === "rock") return "Rock blocks the cast.";
+    if (reason === "terrain") return "The cast would land on land.";
+    return "Aim at open water.";
   }
 
   createBobberMesh() {

@@ -103,6 +103,11 @@ assert.equal(SnejFishingGame.prototype.canCast.call({ mode: "paused", ui: {} }),
 assert.equal(SnejFishingGame.prototype.toastForCast({ castPerfect: true }), "Perfect");
 assert.equal(SnejFishingGame.prototype.toastForCast({ charge: 0.8, targetPower: 0.5 }), "Overcast");
 assert.equal(SnejFishingGame.prototype.toastForCast({ charge: 0.2, targetPower: 0.5 }), "Undercast");
+for (const [reason, message] of Object.entries({
+  depth: "Not enough depth for this rig.", range: "Charge a longer cast.",
+  dock: "Dock blocks the cast.", rock: "Rock blocks the cast.",
+  terrain: "The cast would land on land.", water: "Aim at open water."
+})) assert.equal(SnejFishingGame.prototype.toastForCastRejection(reason), message);
 
 const element = () => ({ classList: { toggle() {} }, style: {}, setAttribute() {} });
 const markerState = {

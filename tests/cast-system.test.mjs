@@ -226,6 +226,65 @@ recovery.tick(0, blocked);
 assert.equal(JSON.stringify(recovery.state), frozen);
 for (let i = 0; i < 600 && recovery.state.fs === "flight"; i += 1) recovery.tick(1 / 60, blocked);
 assert.equal(recovery.state.fs, "idle");
+
+// A water aim can be shallower than the actual, longer charged landing.
+const shoreline = new SnejCastSystem({ rodRange: 10, floatDepth: 0.5 });
+const shoreContext = {
+  ...context, pitch: -0.4,
+  terrainHeightAt: (x, z) => z < 8 ? -0.35 : -1.2,
+  terrainDepthAt: (x, z) => z < 8 ? 0.35 : 1.2
+};
+shoreline.tick(0, shoreContext);
+assert.equal(shoreline.state.aimValid, true, "Selected hook depth must not hide a visible water aim.");
+shoreline.onActionDown();
+shoreline.state.charge = 1;
+assert.equal(shoreline.onActionUp(), true, "A deeper actual landing must not be rejected by shallow aim water.");
+for (let frame = 0; frame < 600 && shoreline.state.fs === "flight"; frame += 1) shoreline.tick(1 / 60, shoreContext);
+assert.equal(shoreline.state.fs, "wait");
+shoreline.reset();
+shoreline.tick(0, shoreContext);
+shoreline.onActionDown();
+shoreline.state.charge = 0.5;
+assert.equal(shoreline.onActionUp(), false, "The actual landing must still fit the selected float depth.");
+assert.equal(shoreline.state.lastRejection, "depth");
+
+for (const override of [
+  { pitch: 0.4 },
+  { isWaterAt: () => false },
+  { terrainDepthAt: () => 0.35, terrainHeightAt: () => -0.35 },
+  { dockBlocksSegment: () => true },
+  { lineObstruction: () => "rock" }
+]) {
+  const c = new SnejCastSystem({ rodRange: 10, floatDepth: 0.5 });
+  const invalid = { ...context, ...override };
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    c.tick(0, invalid);
+    c.onActionDown();
+    c.state.charge = 1;
+    assert.equal(c.onActionUp(), false);
+    assert.equal(c.state.fs, "idle");
+    c.tick(0, context);
+    assert.equal(c.onActionDown(), true, "A rejected cast must not block another charge.");
+    assert.equal(c.state.lastRejection, null);
+    assert.equal(c.state.predictedLanding.water, undefined, "Each attempt must discard the previous preview.");
+    c.state.charge = 1;
+    assert.equal(c.onActionUp(), true, "Valid water must work immediately after every kind of rejection.");
+    for (let frame = 0; frame < 600 && c.state.fs === "flight"; frame += 1) c.tick(1 / 60, context);
+    assert.equal(c.state.fs, "wait");
+    c.reset();
+  }
+}
+
+const flatLine = new SnejCastSystem({ rodRange: 10, floatDepth: 0.5 });
+const flatContext = {
+  ...context, rodTip: { x: 0, y: 0.4, z: 5 },
+  terrainHeightAt: () => -0.55, terrainDepthAt: () => 0.55,
+  lineObstruction: (a, b, sag) => sag > 0 ? "land" : null
+};
+flatLine.tick(0, flatContext);
+flatLine.onActionDown();
+flatLine.state.charge = 1;
+assert.equal(flatLine.onActionUp(), true, "A fixed sideways line must not be checked against obsolete vertical sag.");
 assert.equal(new SnejCastSystem().getCastOriginLocal().y, 1.4);
 assert.equal(new SnejCastSystem().castRange, 8);
 console.log("Stage 4 cast physics tests passed.");

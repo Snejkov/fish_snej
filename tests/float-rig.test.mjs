@@ -84,10 +84,12 @@ for (const rod of [4, 5, 6]) {
 const deep = new SnejCastSystem({ rodRange: 10, floatDepth: 1 });
 const shallow = { yaw: 0, pitch: -0.1, pos: { x: 0, y: 0, z: 0 }, terrainHeightAt: () => -0.5, terrainDepthAt: () => 0.5 };
 deep.tick(0, shallow);
-assert.equal(deep.state.aimValid, false, "The configured underwater drop must fit above the bottom.");
+assert.equal(deep.state.aimValid, true, "An open water aim is independent of the selected underwater drop.");
+assert.equal(deep.isRigWaterAt(deep.state.aimPoint), false, "The configured underwater drop must fit at the actual float position.");
 deep.onActionDown();
 deep.state.charge = 1;
 assert.equal(deep.onActionUp(), false);
+assert.equal(deep.state.lastRejection, "depth");
 assert.equal(deep.state.fs, "idle");
 assert.equal(deep.setRodRange(10, 0.5), true);
 assert.equal(deep.castRange, 9.5);

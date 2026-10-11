@@ -57,7 +57,7 @@ const waterMaskWorld = {
   renderedTerrainHeight: SnejFishingGame.prototype.renderedTerrainHeight,
   castSurfacePoint: new THREE.Vector3(),
   terrain: { ...visualWorld.terrain, depthAt: () => 4, obstacles: [] },
-  water: { waveHeight: () => 4 }, lake: { dockLength: 20, dockWidth: 3 }
+  water: { surfaceY: () => 4 }, lake: { dockLength: 20, dockWidth: 3 }
 };
 const waterMask = (x, z) => SnejFishingGame.prototype.isCastWater.call(waterMaskWorld, x, z);
 assert.equal(waterMask(-3, -3), true);
@@ -82,6 +82,7 @@ assert.equal(tones[1].freq, 500);
 assert.equal(tones[2].gain, 0.05);
 
 const game = {
+  castGroundHeight: SnejFishingGame.prototype.castGroundHeight,
   terrain: {
     dockBlocksSegment: (x0, y0, z0, x1, y1, z1) => x0 < 2 && x1 >= 2 && Math.min(y0, y1) < 2,
     heightAt: () => -4,
@@ -104,7 +105,7 @@ assert.equal(SnejFishingGame.prototype.toastForCast({ castPerfect: true }), "Per
 assert.equal(SnejFishingGame.prototype.toastForCast({ charge: 0.8, targetPower: 0.5 }), "Overcast");
 assert.equal(SnejFishingGame.prototype.toastForCast({ charge: 0.2, targetPower: 0.5 }), "Undercast");
 for (const [reason, message] of Object.entries({
-  depth: "Not enough depth for this rig.", range: "Charge a longer cast.",
+  range: "Charge a longer cast.",
   dock: "Dock blocks the cast.", rock: "Rock blocks the cast.",
   terrain: "The cast would land on land.", water: "Aim at open water.",
   reach: "Water is out of reach. Move closer."

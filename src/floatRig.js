@@ -61,10 +61,14 @@ export class SnejFloatRig {
     this.previous = point();
     this.hook = point();
     this.anchored = false;
+    this.actualDepth = 0;
+    this.bottomSlack = 0;
   }
 
   reset() {
     this.anchored = false;
+    this.actualDepth = 0;
+    this.bottomSlack = 0;
   }
 
   follow(dt, tip, bobber, rig, ctx) {
@@ -111,7 +115,11 @@ export class SnejFloatRig {
     copy(this.lastTip, tip);
     this.anchored = true;
     copy(this.hook, bobber);
-    this.hook.y -= rig.floatDepth;
+    const bed = ctx.bedY?.(bobber.x, bobber.z);
+    // Bottom contact leaves reserved lower-line slack instead of changing the cast budget.
+    this.actualDepth = Number.isFinite(bed) ? Math.min(rig.floatDepth, Math.max(0, bobber.y - bed - 0.02)) : rig.floatDepth;
+    this.bottomSlack = rig.floatDepth - this.actualDepth;
+    this.hook.y -= this.actualDepth;
     return true;
   }
 }

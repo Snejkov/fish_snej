@@ -20,8 +20,7 @@ const CAST_TIP_FALLBACK = { x: 0, y: 1.4, z: 0 };
 const FLIGHT_STEP = 0.055;
 const FLIGHT_DRAG = 0.0055;
 const FLIGHT_TIME_SCALE = 0.65;
-const PREDICTION_INTERVAL = 0.08;
-const WATER_DEPTH_MIN = 0.25;
+const CAST_DISTANCE_MIN = 1;
 const RETRIEVE_SPEED = 9;
 const RETRIEVE_DISTANCE = 0.8;
 
@@ -105,11 +104,11 @@ export class SnejCastSystem {
       lastRejection: null,
       targetPower: 0, minCastDist: 0, aimPoint: point(), aimDist: 0, aimYaw: null,
       aimCapped: false, aimOutOfReach: false, castObstruction: null, retrieving: false,
-      predictedLanding: point(), waitTime: 0
+      predictedLanding: point(), waitTime: 0,
+      targetLanding: point(), targetValid: false, releaseBlock: null
     });
     this._ctx = null;
     this._flightAccum = 0;
-    this._predictionTime = PREDICTION_INTERVAL;
     return this.state;
   }
 
@@ -126,16 +125,14 @@ export class SnejCastSystem {
   onActionUp() {
     const state = this.state;
     if (state.fs !== "charge") return false;
+    this.updateAim();
     const err = Math.abs(state.charge - state.targetPower);
     state.castPerfect = err <= CAST_TOL + Number.EPSILON;
     state.castAcc = clamp01(1 - Math.max(0, err - CAST_TOL) / (CAST_MISS - CAST_TOL));
     state.castPower = state.charge;
     state.requestedDist = state.charge * this.castRange;
-    // Validate the exact release, not the throttled preview or the ideal aim alone.
-    const landing = this.predictLanding(state.castPower, state.predictedLanding);
-    const reason = !state.aimValid ? state.aimOutOfReach ? "reach" : "water"
-      : state.requestedDist < state.minCastDist ? "range"
-        : landing.obstruction || (!landing.water ? "water" : !this.isRigWaterAt(landing) ? "depth" : null);
+    // The meter and release use the same current trajectory and validation.
+    const reason = this.releaseReason(state.castPower, state.predictedLanding);
     if (reason) {
       this.cancelCharge();
       state.lastRejection = reason;
@@ -184,15 +181,19 @@ export class SnejCastSystem {
     const surface = ctx.waterSurfaceY?.(p.x, p.z) ?? 0;
     const ground = ctx.terrainHeightAt?.(p.x, p.z) ?? -1;
     const depth = ctx.terrainDepthAt?.(p.x, p.z) ?? surface - ground;
-    return depth > WATER_DEPTH_MIN && ground < surface && (ctx.isWaterAt?.(p.x, p.z) ?? true);
+    return depth > 0 && ground < surface && (ctx.isWaterAt?.(p.x, p.z) ?? true);
   }
 
   isRigWaterAt(p) {
-    if (!this.isWaterAt(p)) return false;
-    const ctx = this._ctx || {};
-    const surface = ctx.waterSurfaceY?.(p.x, p.z) ?? 0;
-    const depth = ctx.terrainDepthAt?.(p.x, p.z) ?? surface - (ctx.terrainHeightAt?.(p.x, p.z) ?? -1);
-    return depth >= this.rig.floatDepth + 0.02;
+    return this.isWaterAt(p);
+  }
+
+  releaseReason(power, landing) {
+    this.predictLanding(power, landing);
+    const state = this.state;
+    if (!state.aimValid) return state.aimOutOfReach ? "reach" : "water";
+    if (power * this.castRange < state.minCastDist - 1e-8) return "range";
+    return landing.obstruction || (!landing.water ? "water" : null);
   }
 
   getCastOriginLocal() {
@@ -238,7 +239,7 @@ export class SnejCastSystem {
     const yaw = finite(ctx.yaw), pitch = finite(ctx.pitch);
     const surface = ctx.waterSurfaceY?.(pos.x, pos.z) ?? 0;
     const originOffset = Math.hypot(origin.x - finite(pos.x), origin.z - finite(pos.z));
-    state.minCastDist = originOffset + waterRange(CAST_SPEED_MIN, elevFor(pitch), Math.max(0, origin.y - surface));
+    state.minCastDist = Math.max(CAST_DISTANCE_MIN, originOffset + waterRange(CAST_SPEED_MIN, elevFor(pitch), Math.max(0, origin.y - surface)));
     const aimMax = this.castRange;
     const ray = ctx.aimRay;
     const eye = ray?.origin || { x: finite(pos.x), y: finite(pos.y) + 1.62, z: finite(pos.z) };
@@ -294,11 +295,8 @@ export class SnejCastSystem {
     if (end.y > surface) return null;
     end.y = surface;
     const depth = ctx.terrainDepthAt?.(end.x, end.z) ?? water - ground;
-    if (depth <= WATER_DEPTH_MIN) {
-      return depth > 0 && (ctx.isWaterAt?.(end.x, end.z) ?? ground < water) ? "depth" : "terrain";
-    }
+    if (depth <= 0) return "terrain";
     if (!this.isWaterAt(end)) return "terrain";
-    if (!this.isRigWaterAt(end)) return "depth";
     // The fixed rig bows sideways; obsolete vertical sag can falsely intersect the lake bed.
     const lineHit = ctx.lineObstruction?.(ctx.rodTip || origin, end, 0);
     return lineHit ? (lineHit === "land" ? "terrain" : lineHit) : "water";
@@ -337,14 +335,10 @@ export class SnejCastSystem {
       state.charge = phase <= 1 ? phase : 2 - phase;
       state.chargeDir = phase < 1 ? 1 : -1;
       state.requestedDist = state.charge * this.castRange;
-      this._predictionTime += dt;
-      if (this._predictionTime >= PREDICTION_INTERVAL) {
-        this._predictionTime %= PREDICTION_INTERVAL;
-        this.predictLanding(state.charge, state.predictedLanding);
-        state.castObstruction = state.predictedLanding.obstruction;
-      }
-      state.canRelease = state.aimValid && state.requestedDist >= state.minCastDist
-        && state.predictedLanding.water && this.isRigWaterAt(state.predictedLanding) && !state.castObstruction;
+      state.releaseBlock = this.releaseReason(state.charge, state.predictedLanding);
+      state.targetValid = !this.releaseReason(state.targetPower, state.targetLanding);
+      state.castObstruction = state.predictedLanding.obstruction;
+      state.canRelease = !state.releaseBlock;
     } else if (state.fs === "flight" && state.retrieving && dt > 0) {
       const origin = this._ctx?.rodTip || this.getCastOriginLocal();
       const d = distance(state.bobber, origin);

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>SnejFishing -- Lakeside</title>
     <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=">
-    <link rel="stylesheet" href="./styles.css?v=0.0.4-hf7">
+    <link rel="stylesheet" href="./styles.css?v=0.0.5a-hf3">
     <link rel="stylesheet" href="./styles/build.css?v=0.0.3-hf2.12">
     <link rel="stylesheet" href="./styles/profile.css?v=0.0.5a-hf1">
     <link rel="stylesheet" href="./styles/multiplayer.css?v=0.0.3-hf2.12">
@@ -13,7 +13,7 @@
       {
         "imports": {
           "three": "./vendor/three.module.min.js",
-          "./src/game.js?v=0.0.4-hf7": "./src/game.js?v=0.0.5a-hf2",
+          "./src/game.js?v=0.0.4-hf7": "./src/game.js?v=0.0.5a-hf3",
           "./src/rods.js?v=0.0.4-hf2": "./src/rods.js?v=0.0.5a"
         }
       }
@@ -109,7 +109,7 @@
             <summary>Settings</summary>
             <div id="title-settings" class="settings-grid"></div>
           </details>
-          <p class="footer">SnejFishing v0.0.05a-hf2 Stage 5A (c) 2026</p>
+          <p class="footer">SnejFishing v0.0.05a-hf3 Stage 5A (c) 2026</p>
         </div>
       </section>
 
@@ -298,8 +298,9 @@
           <div id="bait-line">Bait: Earthworm x10</div>
         </div>
         <div id="fps" class="hud-box">0 FPS</div>
-        <div id="cast-meter" class="hud-box cast-meter hidden" role="meter" aria-label="Cast distance" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div id="cast-meter" class="hud-box cast-meter hidden" role="meter" aria-label="Cast distance" aria-describedby="cast-meter-status" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
           <div class="cast-meter-distance">0.0 / 7.5 m</div>
+          <div class="cast-meter-status" id="cast-meter-status"></div>
           <div class="cast-meter-track">
             <div class="cast-meter-tol"></div>
             <div class="cast-meter-fill"></div>
@@ -316,6 +317,6 @@
       </div>
       <div id="toast" class="toast hidden" role="status"></div>
     </div>
-    <script type="module" src="./src/main.js?v=0.0.5a-hf2"></script>
+    <script type="module" src="./src/main.js?v=0.0.5a-hf3"></script>
   </body>
 </html>

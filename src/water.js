@@ -18,7 +18,7 @@ export class SnejWater {
   }
 
   surfaceY(x, z) {
-    // Cast physics uses the flat water datum; visual surface relief remains static.
+    // Geometry, shoreline queries, and cast physics share this static surface.
     return 0;
   }
 
@@ -53,7 +53,7 @@ export class SnejWater {
           w += wave(p.xz, 0.0518, 1.85, 0.10, normalize(vec2(0.16, -0.98)));
           w += wave(p.xz, 0.0791, 2.10, 0.07, normalize(vec2(-0.76, -0.65)));
           w += wave(p.xz, 0.1120, 2.40, 0.05, normalize(vec2(0.99, -0.10)));
-          p.y += w;
+          p.y = 0.0;
           vWave = w;
           vec4 world = modelMatrix * vec4(p, 1.0);
           vWorld = world.xyz;
@@ -86,19 +86,8 @@ export class SnejWater {
     return mesh;
   }
 
-  waveHeight(x, z, t = this.time, wind = this.wind) {
-    const waves = [
-      [0.82, 0.57, 2.03, 1.3, 0.32],
-      [-0.48, 0.88, 3.71, 1.55, 0.18],
-      [0.16, -0.98, 5.18, 1.85, 0.1],
-      [-0.76, -0.65, 7.91, 2.1, 0.07],
-      [0.99, -0.1, 11.2, 2.4, 0.05]
-    ];
-    let y = 0;
-    for (const w of waves) {
-      y += Math.sin((x * w[0] + z * w[1]) * w[2] * 0.01 + t * w[3]) * w[4] * wind;
-    }
-    return y;
+  waveHeight(x, z) {
+    return this.surfaceY(x, z);
   }
 
   addSplash(x, y, z, count = 5, size = 0.5) {

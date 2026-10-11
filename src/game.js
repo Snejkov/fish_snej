@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { SnejAngler } from "./angler.js?v=0.0.5a-hf2";
+import { SnejAngler } from "./angler.js?v=0.0.5a-hf3";
 import { RODS, rodForLength } from "./rods.js?v=0.0.5a";
 import { SnejInventory } from "./gear/inventory.js";
 import { SnejCatchLog } from "./game/catchLog.js";
@@ -8,11 +8,11 @@ import { SnejAudio } from "./audio.js?v=0.0.4";
 import {
   SnejCastSystem, CAST_TOL, SPLASH_BASE, SPLASH_MIN, SPLASH_SCALE,
   STARTLE_R, STARTLE_SEC, WAKE_BOB_AMP, WAKE_BOB_FREQ
-} from "./castSystem.js?v=0.0.5a-hf1";
-import { DEFAULT_FLOAT_DEPTH, SnejFloatRig, limitLineEnd, writeFixedLine } from "./floatRig.js?v=0.0.4-hf6";
+} from "./castSystem.js?v=0.0.5a-hf3";
+import { DEFAULT_FLOAT_DEPTH, SnejFloatRig, limitLineEnd, writeFixedLine } from "./floatRig.js?v=0.0.5a-hf3";
 import { SnejAuth, SNEJKOV_ID, SNEJKOV_NAME } from "./auth.js";
 import { resolveLake } from "./lakeValidator.js";
-import { SNEJ_FIXED_SEED, WORLD_SIZE } from "./lake.js";
+import { SNEJ_FIXED_SEED, WORLD_SIZE, WATER_REGION } from "./lake.js";
 import { SnejMultiplayerClient } from "./multiplayer/client.js";
 import { makePresence } from "./multiplayer/presence.js";
 import { SnejRemotePlayerRoom } from "./multiplayer/room.js";
@@ -22,7 +22,7 @@ import { SPAWNS, SPAWN_INITIAL_NAME, SPAWN_NAMES } from "./spawns.js";
 import { SnejTerrain } from "./terrain.js";
 import { SnejTextureManager } from "./textureManager.js";
 import { SnejUI } from "./ui.js?v=0.0.5a-hf1";
-import { SnejWater } from "./water.js?v=0.0.4";
+import { SnejWater } from "./water.js?v=0.0.5a-hf3";
 import { clamp, clamp01, damp, lerp, moveDelta, resolveWalkableStart } from "./util.js?v=0.0.3-hf2.12";
 
 const SAVE_KEY = "snejfishing-save-v1";
@@ -86,13 +86,14 @@ export class SnejFishingGame {
     this.castMeterTarget = this.castMeter.querySelector(".cast-meter-target");
     this.castMeterTol = this.castMeter.querySelector(".cast-meter-tol");
     this.castMeterDistance = this.castMeter.querySelector(".cast-meter-distance");
+    this.castMeterStatus = this.castMeter.querySelector(".cast-meter-status");
     this.rodReadout = document.getElementById("rod-line");
     this.floatDepthInput = document.getElementById("float-depth");
     this.floatDepthReadout = document.getElementById("float-depth-line");
     this.castContext = {
       waterSurfaceY: (x, z) => this.water.surfaceY(x, z),
-      terrainHeightAt: (x, z) => this.terrain.heightAt(x, z),
-      terrainDepthAt: (x, z) => this.terrain.depthAt(x, z),
+      terrainHeightAt: (x, z) => this.castGroundHeight(x, z),
+      terrainDepthAt: (x, z) => this.water.surfaceY(x, z) - this.castGroundHeight(x, z),
       isWaterAt: (x, z) => this.isCastWater(x, z),
       dockBlocksSegment: (a, b) => this.terrain.dockBlocksSegment(a.x, a.y, a.z, b.x, b.y, b.z),
       lineObstruction: (a, b, slack) => this.lineObstruction(a, b, slack),
@@ -102,7 +103,8 @@ export class SnejFishingGame {
     };
     this.floatContext = {
       playerOrigin: this.pos,
-      surfaceY: (x, z) => this.castMarkerHeight({ x, z }) + Math.sin(this.cast.state.waitTime * WAKE_BOB_FREQ) * WAKE_BOB_AMP,
+      surfaceY: (x, z) => this.water.surfaceY(x, z),
+      bedY: (x, z) => this.castGroundHeight(x, z),
       isWaterAt: (point) => this.cast.isRigWaterAt(point),
       lineObstruction: (a, b, slack) => this.lineObstruction(a, b, slack)
     };
@@ -937,7 +939,10 @@ export class SnejFishingGame {
         direction: this.camera.getWorldDirection(this.castAimDirection)
       };
     }
-    Object.assign(this.castContext, { yaw: this.yaw, pitch: this.pitch, pos: this.pos, rodTip: this.angler.getRodTip(this.castTip) });
+    const previewing = this.cast.state.fs === "idle" || this.cast.state.fs === "charge";
+    const rodTip = previewing && this.castCamera && this.angler.getCastHoldTip
+      ? this.angler.getCastHoldTip(this.castCamera, this.castTip) : this.angler.getRodTip(this.castTip);
+    Object.assign(this.castContext, { yaw: this.yaw, pitch: this.pitch, pos: this.pos, rodTip });
     const previous = this.cast.state.fs;
     const wasRetrieving = this.cast.state.retrieving;
     const state = this.cast.tick(dt, this.castContext);
@@ -951,6 +956,14 @@ export class SnejFishingGame {
       this.castMeterFill.classList.toggle("blocked", !state.canRelease);
       this.castMeterDistance.textContent = `${state.requestedDist.toFixed(1)} / ${this.cast.castRange} m`;
       this.castMeterTarget.style.left = `${state.targetPower * 100}%`;
+      this.castMeterTol.classList.toggle("invalid", !state.targetValid);
+      if (this.castMeterStatus) {
+        const depth = Math.max(0, this.water.surfaceY(state.predictedLanding.x, state.predictedLanding.z)
+          - this.castGroundHeight(state.predictedLanding.x, state.predictedLanding.z));
+        const status = state.releaseBlock ? this.toastForCastRejection(state.releaseBlock)
+          : `Ready / Water ${depth.toFixed(2)} m${depth < this.settings.floatDepth ? " / Bottom contact" : ""}`;
+        if (this.castMeterStatus.textContent !== status) this.castMeterStatus.textContent = status;
+      }
       const lower = Math.max(0, state.targetPower - CAST_TOL);
       const upper = Math.min(1, state.targetPower + CAST_TOL);
       this.castMeterTol.style.left = `${lower * 100}%`;
@@ -1025,11 +1038,7 @@ export class SnejFishingGame {
   }
 
   castMarkerHeight(point) {
-    const ground = this.terrain.heightAt(point.x, point.z);
-    // Existing water is static but has visible relief. Keep markers and float above it.
-    let height = Math.max(ground, this.water.surfaceY(point.x, point.z));
-    height = Math.max(height, this.renderedTerrainHeight(point));
-    if (this.terrain.depthAt(point.x, point.z) > 0) height = Math.max(height, this.water.waveHeight(point.x, point.z, 0));
+    let height = Math.max(this.renderedTerrainHeight(point), this.water.surfaceY(point.x, point.z));
     const dock = this.terrain.dockLocal(point.x, point.z);
     if (dock.along >= 0 && dock.along <= this.lake.dockLength && Math.abs(dock.side) <= this.lake.dockWidth * 0.5) {
       height = Math.max(height, this.lake.dockY + 0.14);
@@ -1052,10 +1061,14 @@ export class SnejFishingGame {
       : y11 * (fx + fz - 1) + y10 * (1 - fz) + y01 * (1 - fx);
   }
 
+  castGroundHeight(x, z) {
+    return this.terrain.groundMesh ? this.renderedTerrainHeight({ x, z }) : this.terrain.heightAt(x, z);
+  }
+
   isCastWater(x, z) {
-    if (this.terrain.depthAt(x, z) <= 0) return false;
+    if (Math.abs(x) > WATER_REGION / 2 || Math.abs(z) > WATER_REGION / 2) return false;
     const point = this.castSurfacePoint.set(x, 0, z);
-    const surface = this.water.waveHeight(x, z, 0);
+    const surface = this.water.surfaceY(x, z);
     if (this.renderedTerrainHeight(point) >= surface) return false;
     const dock = this.terrain.dockLocal(x, z);
     if (dock.along >= -0.5 && dock.along <= this.lake.dockLength + 0.5
@@ -1071,6 +1084,7 @@ export class SnejFishingGame {
     this.depthLine.visible = visible && state.fs === "wait" && this.cast.rig.floatDepth > 0;
     if (!visible) return;
     this.castMesh.position.set(state.bobber.x, state.bobber.y, state.bobber.z);
+    if (state.fs === "wait") this.castMesh.position.y += Math.sin(state.waitTime * WAKE_BOB_FREQ) * WAKE_BOB_AMP;
     const tip = this.angler.getRodTip(this.castTip);
     const end = this.castMesh.position;
     const points = this.castLine.geometry.attributes.position;
@@ -1081,7 +1095,7 @@ export class SnejFishingGame {
     if (this.depthLine.visible) {
       const lower = this.depthLine.geometry.attributes.position;
       lower.setXYZ(0, end.x, end.y, end.z);
-      lower.setXYZ(1, end.x, end.y - this.cast.rig.floatDepth, end.z);
+      lower.setXYZ(1, this.floatRig.hook.x, this.floatRig.hook.y, this.floatRig.hook.z);
       lower.needsUpdate = true;
     }
   }
@@ -1095,13 +1109,13 @@ export class SnejFishingGame {
       const x = lerp(tip.x, end.x, t), z = lerp(tip.z, end.z, t);
       const y = lerp(tip.y, end.y, t) - 6.75 * t * t * (1 - t) * slack;
       if (this.terrain.dockBlocksSegment(x0, y0, z0, x, y, z)) return "dock";
-      if (y < this.terrain.heightAt(x, z)) return "land";
+      if (y < this.castGroundHeight(x, z)) return "land";
       for (const obstacle of this.terrain.obstacles) {
         const dx = x - x0, dz = z - z0;
         const denominator = dx * dx + dz * dz;
         const near = denominator > 0 ? clamp(((obstacle.x - x0) * dx + (obstacle.z - z0) * dz) / denominator, 0, 1) : 0;
         const px = lerp(x0, x, near), pz = lerp(z0, z, near), py = lerp(y0, y, near);
-        if (Math.hypot(px - obstacle.x, pz - obstacle.z) <= obstacle.r && py <= obstacle.top && py >= this.terrain.heightAt(px, pz)) {
+        if (Math.hypot(px - obstacle.x, pz - obstacle.z) <= obstacle.r && py <= obstacle.top && py >= this.castGroundHeight(px, pz)) {
           return obstacle.kind === "rock" ? "rock" : "land";
         }
       }
@@ -1116,7 +1130,6 @@ export class SnejFishingGame {
 
   toastForCastRejection(reason) {
     if (reason === "reach") return "Water is out of reach. Move closer.";
-    if (reason === "depth") return "Not enough depth for this rig.";
     if (reason === "range") return "Charge a longer cast.";
     if (reason === "dock") return "Dock blocks the cast.";
     if (reason === "rock") return "Rock blocks the cast.";

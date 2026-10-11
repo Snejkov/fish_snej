@@ -489,6 +489,8 @@ legend {
 .rod-field { margin: 12px 0; }
 .cast-meter-target { width: 2px; background: #ffffff; transform: translateX(-1px); }
 .cast-meter-tol { background: rgba(125, 255, 154, 0.35); z-index: 1; }
+.cast-meter-tol.invalid { background: rgba(255, 90, 74, 0.25); }
+.cast-meter-status { font-size: 12px; line-height: 16px; min-height: 16px; margin-bottom: 5px; }
 .cast-meter-target { z-index: 2; }
 
 .toast {

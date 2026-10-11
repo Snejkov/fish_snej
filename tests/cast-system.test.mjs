@@ -57,9 +57,9 @@ assert.equal(charge.state.fs, "idle");
 
 for (const [power, acc, perfect] of [[0.5, 1, true], [0.56, 1, true], [0.6, 5 / 6, false], [0.8, 0, false]]) {
   const c = make();
+  const accuracyContext = { ...context, aimRay: { origin: { x: 0, y: 3, z: 0 }, direction: { x: 0, y: -3, z: 15 } } };
   c.onActionDown();
-  c.tick(0, context);
-  c.state.targetPower = 0.5;
+  c.tick(0, accuracyContext);
   c.state.charge = power;
   c.onActionUp();
   assert.ok(Math.abs(c.state.castAcc - acc) < 1e-12);
@@ -172,7 +172,6 @@ for (const yaw of [0, Math.PI / 2, Math.PI]) {
 for (const override of [
   { pitch: 0.4 },
   { isWaterAt: () => false },
-  { terrainDepthAt: () => 0.1 },
   { lineObstruction: () => "rock" },
   { terrainHeightAt: () => 1, terrainDepthAt: () => 0 },
   // The aim is water, but an undercast ends on land.
@@ -245,13 +244,15 @@ shoreline.reset();
 shoreline.tick(0, shoreContext);
 shoreline.onActionDown();
 shoreline.state.charge = 0.5;
-assert.equal(shoreline.onActionUp(), false, "The actual landing must still fit the selected float depth.");
-assert.equal(shoreline.state.lastRejection, "depth");
+assert.equal(shoreline.onActionUp(), true, "A shallow actual landing accepts the float; the hook can rest on the bed.");
+assert.equal(shoreline.state.lastRejection, null);
+for (let frame = 0; frame < 600 && shoreline.state.fs === "flight"; frame += 1) shoreline.tick(1 / 60, shoreContext);
+assert.equal(shoreline.state.fs, "wait");
 
 for (const override of [
   { pitch: 0.4 },
   { isWaterAt: () => false },
-  { terrainDepthAt: () => 0.35, terrainHeightAt: () => -0.35 },
+  { terrainDepthAt: () => 0, terrainHeightAt: () => 0 },
   { dockBlocksSegment: () => true },
   { lineObstruction: () => "rock" }
 ]) {

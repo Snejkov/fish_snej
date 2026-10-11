@@ -30,6 +30,9 @@ export class SnejAngler {
     this.carryMoveWeight = 0;
     this.castHoldWeight = 0;
     this.castDirection = new THREE.Vector3();
+    this.castPreviewPoint = new THREE.Vector3();
+    this.castPreviewRotation = new THREE.Quaternion();
+    this.castPreviewHand = new THREE.Quaternion();
     this.carryGripInverse = new THREE.Quaternion();
     this.carryRotation = new THREE.Quaternion();
     this.carryParentRotation = new THREE.Quaternion();
@@ -297,6 +300,31 @@ export class SnejAngler {
     const tip = this.carry?.tip || this.bones.RightHandTip;
     if (tip) return tip.getWorldPosition(out);
     return out.set(0.45, 1.3, 0).applyMatrix4(this.group.matrixWorld);
+  }
+
+  getCastHoldTip(camera, out = new THREE.Vector3()) {
+    // Predict the settled release grip without posing, cloning, or moving the live bones.
+    camera.updateWorldMatrix(true, false);
+    this.group.getWorldDirection(this.castDirection);
+    this.castDirection.y = 0;
+    this.castDirection.normalize();
+    const q = this.castPreviewRotation, p = this.castPreviewPoint;
+    camera.getWorldQuaternion(q);
+    const width = THREE.MathUtils.clamp(camera.aspect, 0.25, 1);
+    out.set(0.25 * width - 0.11, -0.36, -0.05).applyMatrix4(camera.matrixWorld);
+    out.add(p.copy(this.bones.RightUpperArm.position).applyQuaternion(q));
+    q.multiply(this.viewPose.upperArm);
+    out.add(p.copy(this.bones.RightForeArm.position).applyQuaternion(q));
+    q.multiply(this.viewPose.forearm);
+    out.add(p.copy(this.bones.RightHand.position).applyQuaternion(q));
+    this.castPreviewHand.copy(this.viewPose.hand).slerp(this.viewPose.uprightHand, this.carryMoveWeight);
+    q.multiply(this.castPreviewHand).multiply(this.carry.rightSocket.quaternion).multiply(this.carry.rod.quaternion);
+    p.copy(this.up).applyQuaternion(q);
+    this.castPreviewHand.setFromUnitVectors(p, this.castDirection).multiply(q).multiply(this.carryGripInverse);
+    this.carry.rod.updateMatrix();
+    this.carry.rightSocket.updateMatrix();
+    p.copy(this.carry.tip.position).applyMatrix4(this.carry.rod.matrix).applyMatrix4(this.carry.rightSocket.matrix);
+    return out.add(p.applyQuaternion(this.castPreviewHand));
   }
 
   getCastOrigin(out = new THREE.Vector3()) {

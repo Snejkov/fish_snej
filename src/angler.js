@@ -28,6 +28,8 @@ export class SnejAngler {
     this.heading = 0;
     this.firstPersonWeight = 0;
     this.carryMoveWeight = 0;
+    this.castHoldWeight = 0;
+    this.castDirection = new THREE.Vector3();
     this.carryGripInverse = new THREE.Quaternion();
     this.carryRotation = new THREE.Quaternion();
     this.carryParentRotation = new THREE.Quaternion();
@@ -205,6 +207,10 @@ export class SnejAngler {
     this.carryMoveWeight += ((moving ? 1 : 0) - this.carryMoveWeight) * carryBlend;
     if (this.carryMoveWeight < 0.0001) this.carryMoveWeight = 0;
     else if (this.carryMoveWeight > 0.9999) this.carryMoveWeight = 1;
+    const castHeld = (info.castState === "flight" || info.castState === "wait") && !info.castRetrieving;
+    this.castHoldWeight += ((castHeld ? 1 : 0) - this.castHoldWeight) * blend;
+    if (this.castHoldWeight < 0.0001) this.castHoldWeight = 0;
+    else if (this.castHoldWeight > 0.9999) this.castHoldWeight = 1;
     const cadence = moving ? speed / GAITS[state].stride : 0;
     for (const [name, action] of Object.entries(this.actions)) {
       this.weights[name] += ((name === state ? 1 : 0) - this.weights[name]) * blend;
@@ -235,19 +241,33 @@ export class SnejAngler {
     this.carryPose.hand.copy(this.bones.RightHand.quaternion);
     if (this.carryMoveWeight > 0) this.applyUprightCarry();
     if (this.firstPersonWeight > 0) this.applyViewPose(info.camera);
+    if (this.castHoldWeight > 0) this.applyHorizontalCarry();
     this.updatePreview();
     this.skeleton.update();
     this.group.visible = true;
   }
 
   applyUprightCarry() {
+    this.applyRodDirection(this.up, this.carryMoveWeight);
+  }
+
+  applyHorizontalCarry() {
+    // Keep the existing wrist and rod level in world space, including pitched first-person views.
+    this.rig.getWorldDirection(this.castDirection);
+    this.castDirection.y = 0;
+    if (this.castDirection.lengthSq() < 1e-8) this.castDirection.set(0, 0, 1);
+    else this.castDirection.normalize();
+    this.applyRodDirection(this.castDirection, this.castHoldWeight);
+  }
+
+  applyRodDirection(direction, weight) {
     this.group.updateWorldMatrix(true, true);
     this.carry.rod.getWorldQuaternion(this.carryRotation);
     this.carryDirection.copy(this.up).applyQuaternion(this.carryRotation);
-    this.viewHandRotation.setFromUnitVectors(this.carryDirection, this.up).multiply(this.carryRotation);
+    this.viewHandRotation.setFromUnitVectors(this.carryDirection, direction).multiply(this.carryRotation);
     this.bones.RightForeArm.getWorldQuaternion(this.carryParentRotation).invert();
     this.viewHandRotation.premultiply(this.carryParentRotation).multiply(this.carryGripInverse);
-    this.bones.RightHand.quaternion.slerp(this.viewHandRotation, this.carryMoveWeight);
+    this.bones.RightHand.quaternion.slerp(this.viewHandRotation, weight);
   }
 
   applyViewPose(camera) {

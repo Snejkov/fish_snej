@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { SnejAngler } from "./angler.js?v=0.0.4-hf1";
+import { SnejAngler } from "./angler.js?v=0.0.4-hf3";
 import { RODS, rodForLength } from "./rods.js?v=0.0.4-hf2";
 import { SnejAudio } from "./audio.js?v=0.0.4";
 import {
@@ -766,6 +766,8 @@ export class SnejFishingGame {
         directionX: travelX,
         directionZ: travelZ,
         depth: this.terrain.depthAt(this.pos.x, this.pos.z),
+        castState: this.cast.state.fs,
+        castRetrieving: this.cast.state.retrieving,
         cameraMode: this.cameraMode,
         viewBlend: this.viewBlend,
         camera: this.camera

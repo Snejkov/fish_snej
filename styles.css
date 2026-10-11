@@ -459,6 +459,33 @@ legend {
   white-space: nowrap;
 }
 
+.cast-meter {
+  position: fixed;
+  left: 50%;
+  bottom: 110px;
+  transform: translateX(-50%);
+  width: min(280px, calc(100% - 32px));
+  padding: 8px 10px;
+  border-radius: 4px;
+}
+
+.cast-meter-track {
+  position: relative;
+  height: 12px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.cast-meter-fill,
+.cast-meter-target,
+.cast-meter-tol { position: absolute; top: 0; bottom: 0; }
+.cast-meter-fill { left: 0; width: 0; background: #5ed0ff; }
+.cast-meter-fill.on-target { background: #7dff9a; }
+.cast-meter-target { width: 2px; background: #ffffff; transform: translateX(-1px); }
+.cast-meter-tol { background: rgba(125, 255, 154, 0.35); z-index: 1; }
+.cast-meter-target { z-index: 2; }
+
 .toast {
   position: fixed;
   left: 50%;

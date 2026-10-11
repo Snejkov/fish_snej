@@ -1,6 +1,6 @@
-# SnejFishing v0.0.03 Hotfix 2.15
+# SnejFishing v0.0.04 Stage 4
 
-Stage 3 Hotfix 2.15 is a browser-only Three.js lakeside sandbox. It includes an animated humanoid skeleton preview carrying a tackle box and rod, a first-person raised right-arm pose using the same hand-attached rod, a browser-local profile launcher, a four-waterbody selection menu, the deterministic validated Snej Lake, five defined spawn points, static opaque water, screen-relative walking and one-meter wading, fixed-distance first-person and third-person cameras, local identity and rank permissions, developer Build Mode, synthesized Web Audio, and an optional raw WebSocket multiplayer scaffold.
+Stage 4 is a browser-only Three.js lakeside sandbox with local rod casting: charge, aim, release, ballistic flight, landing feedback, and a floating bobber. It preserves the animated 24-bone angler, hand-attached carry props, profile launcher, waterbody selection, validated Snej Lake, safe spawns, static opaque water, corrected movement, one-meter wading, first-person and third-person cameras, developer Build Mode, synthesized audio, and optional raw WebSocket multiplayer scaffold.
 
 ## Run
 
@@ -17,6 +17,7 @@ Open `http://localhost:8000/`. The game needs no Node runtime, package install, 
 - `W/A/S/D`: move and strafe.
 - `Shift`: sprint.
 - Mouse: look after clicking the canvas.
+- Hold left mouse: charge a cast; release to throw. A new hold after water landing clears the previous bobber and starts another cast.
 - `V`: switch between first-person and third-person view.
 - `B`: open or close Build Mode in third-person view when the derived rank is developer.
 - `P`: open or close the profile drawer.
@@ -35,7 +36,7 @@ The local character is a visible 24-bone humanoid rig with hips, spine, chest, n
 
 Future models need skin weights and a compatible bind pose, or a bone mapping and retargeting step. Attach the compatible skinned model to the rig and bind it to the provided skeleton with an explicit bind matrix matching its neutral pose; do not recalculate bone inverses from the live animated pose. Hide `visuals` when the model is ready. Arbitrary unrigged models will not animate simply by being placed over the preview. The model loader and asset-specific mapping can be added with the actual uploaded models.
 
-`src/carryProps.js` builds a closed tackle box with a handle in the anatomical left hand and a rod with grip, reel, and line guides in the right hand. `angler.carry` exposes the two hand sockets and the replaceable prop groups. The carry poses keep the left arm low and the right elbow bent, with restrained gait-driven sway. Pressing `V` blends the same shoulder, elbow, and wrist into a camera-aligned raised pose using the existing camera transition. Actual walking, running, or wading raises the rod vertically; stopping smoothly lowers it to the original angled pose. First-person carry stays vertical relative to the view while looking around; third-person carry stays world-vertical. The same wrist rotates without changing the grip. The arm, grip, and lower shaft stay framed on desktop and portrait screens; the upright tip naturally extends above the screen. Pausing freezes the transition, and blocked movement returns to the resting pose. No arm, rod, socket, or skeleton is cloned or reparented, and bind matrices remain unchanged. These are visual carry props only, not a casting or fishing system; no extra inventory or fishing UI is added.
+`src/carryProps.js` builds a closed tackle box with a handle in the anatomical left hand and a rod with grip, reel, and line guides in the right hand. `angler.carry` exposes the two hand sockets and the replaceable prop groups. The carry poses keep the left arm low and the right elbow bent, with restrained gait-driven sway. Pressing `V` blends the same shoulder, elbow, and wrist into a camera-aligned raised pose using the existing camera transition. Actual walking, running, or wading raises the rod vertically; stopping smoothly lowers it to the original angled pose. First-person carry stays vertical relative to the view while looking around; third-person carry stays world-vertical. The same wrist rotates without changing the grip. The arm, grip, and lower shaft stay framed on desktop and portrait screens; the upright tip naturally extends above the screen. Pausing freezes the transition, and blocked movement returns to the resting pose. No arm, rod, socket, or skeleton is cloned or reparented, and bind matrices remain unchanged. Stage 4 adds casting without modifying these poses or adding inventory UI.
 
 Development checks (Node 24, test tooling only):
 
@@ -43,11 +44,29 @@ Development checks (Node 24, test tooling only):
 node tests/character-rig.test.mjs
 node tests/first-person.test.mjs
 node tests/carry-stance.test.mjs
+node tests/cast-system.test.mjs
+node tests/cast-integration.test.mjs
 node tests/movement.test.mjs
 node tests/spawn-boundary.test.mjs
 ```
 
-The rig tests cover bone hierarchy, stable bind matrices and limb lengths, locomotion blending, blocked idle, pause, camera visibility, deformation of a weighted test vertex, hand attachment stability, anatomical prop sides, rod length and orientation, tackle box ground clearance, first-person framing across camera angles and aspect ratios, interrupted view transitions, stable object identities, upright moving carry, smooth lowering, frame-rate independence, and restoration of the resting pose. The view pass draws the same arm meshes after the world with normal depth between their parts, so nearby terrain cannot cut through the arm or rod. The app itself still runs without Node.
+The rig tests cover bone hierarchy, stable bind matrices and limb lengths, locomotion blending, blocked idle, pause, camera visibility, deformation of a weighted test vertex, hand attachment stability, anatomical prop sides, rod length and orientation, tackle box ground clearance, first-person framing across camera angles and aspect ratios, interrupted view transitions, stable object identities, upright moving carry, smooth lowering, frame-rate independence, and restoration of the resting pose. Cast tests cover the canonical physics function, constants, charge timing, accuracy, prediction/flight agreement at 30/60/144 Hz, 50 finite trajectories, dock/rock/land obstruction, recovery, pause, real rod-tip attachment, stable world-space origin, audio, UI gates, and rendered shoreline heights. The view pass draws the same arm meshes after the world with normal depth between their parts, so nearby terrain cannot cut through the arm or rod. The app itself still runs without Node.
+
+## Stage 4 Casting
+
+`src/castSystem.js` exports `SnejCastSystem`, the cast constants, and the reference range helpers. It has no Three.js, DOM, or audio dependency. Its states are `idle`, `charge`, `flight`, and `wait`. The default rod range is 30 meters; maximum line length is range plus 16 plus 8 meters. Cast state is never saved or sent to multiplayer.
+
+Charge is a triangular wave at 1.05 per second, preserving time across endpoints: about 0.952 seconds up and 1.905 seconds per cycle. The HUD shows charge, required power, and the clipped +/-0.06 tolerance band. Aim follows the look ray intersecting the flat water datum, clamped to minimum throw distance and rod range. Looking above the horizon caps the aim at maximum range.
+
+The reference `flightRange` and `castTopSpeed` formulas are retained. Prediction and flight use gravity 9.8, drag 0.0055, and the same fixed 0.055-second integration steps. Visible flight interpolates between steps. Predictions are refreshed at approximately 12 Hz. The aim ring is cyan, turning green near ideal power; the predicted ring is yellow in deeper water, orange in shallow water, and red for obstruction.
+
+Accuracy remains continuous: power errors up to 0.06 are perfect, falling linearly to zero at 0.30. Perfect releases use the solved target power. Accuracy and power scale splash particles, ripples, and synthesized landing audio. Ground, dock, and rock hits trigger denial feedback and automatically recover the bobber at 9 meters per second. A successful water landing remains in `wait`, with only a 0.012-meter visual bob at frequency 1.6. Another left-mouse hold replaces the waiting bobber; it does not implement reeling or the later fishing loop.
+
+The virtual release origin is 0.55 meters forward at shoulder height 1.25, transformed by the actual character group and local facing. It never samples the animated wrist. The rendered line instead uses the existing physical `carry.tip`, not the brief's wrist proxy. This adapts the brief to the current rig without changing the pose system. Physics uses `surfaceY = 0`; visual markers, splashes, and the waiting float respect existing static water relief and the rendered terrain triangles so they are not buried.
+
+Build Mode owns its existing pointer listeners; casting uses separate left-mouse listeners and is available to all ranks outside blocking UI. Pause, profile, Build Mode, and loss of window focus cancel charge. Pause and blocking drawers freeze flight and automatic recovery. The mouse wheel, movement, view switch, ranks, textures, and schema version 4 are unchanged.
+
+`castLead` is always zero. Swing animation and timed release are deferred to Stage 4.5. Bait, fish, bites, hook/fight/catch systems, casting multiplayer sync, and reel sounds are deferred to Stage 5+. Setting `window.__snejDebug = true` logs the future startle radius/duration formula on water landing without creating any fish system.
 
 ## Registration And Ranks
 
@@ -93,4 +112,4 @@ The optional Cloudflare Worker in `worker/` relays raw WebSocket messages, reser
 - `vendor/`: local Three.js module.
 - `worker/`: optional WebSocket relay.
 
-Fishing interaction, casting, fish, and fishing UI remain intentionally deferred. The carried rod is a visual prop only.
+Fish, bait, bite, fight, and catch systems remain intentionally deferred. Stage 4 provides local casting only.

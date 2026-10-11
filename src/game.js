@@ -1,6 +1,10 @@
 import * as THREE from "three";
-import { SnejAngler } from "./angler.js?v=0.0.3-hf2.15";
-import { SnejAudio } from "./audio.js";
+import { SnejAngler } from "./angler.js?v=0.0.4";
+import { SnejAudio } from "./audio.js?v=0.0.4";
+import {
+  SnejCastSystem, CAST_TOL, SPLASH_BASE, SPLASH_MIN, SPLASH_SCALE,
+  STARTLE_R, STARTLE_SEC, WAKE_BOB_AMP, WAKE_BOB_FREQ
+} from "./castSystem.js?v=0.0.4";
 import { SnejAuth, SNEJKOV_ID, SNEJKOV_NAME } from "./auth.js";
 import { resolveLake } from "./lakeValidator.js";
 import { SNEJ_FIXED_SEED, WORLD_SIZE } from "./lake.js";
@@ -13,7 +17,7 @@ import { SPAWNS, SPAWN_INITIAL_NAME, SPAWN_NAMES } from "./spawns.js";
 import { SnejTerrain } from "./terrain.js";
 import { SnejTextureManager } from "./textureManager.js";
 import { SnejUI } from "./ui.js?v=0.0.3-hf2.12";
-import { SnejWater } from "./water.js?v=0.0.3-hf2.12";
+import { SnejWater } from "./water.js?v=0.0.4";
 import { clamp, clamp01, damp, lerp, moveDelta, resolveWalkableStart } from "./util.js?v=0.0.3-hf2.12";
 
 const SAVE_KEY = "snejfishing-save-v1";
@@ -59,6 +63,27 @@ export class SnejFishingGame {
     this.viewBlend = 1;
     this.viewTransition = null;
     this.keys = new Set();
+    this.castOrigin = new THREE.Vector3();
+    this.castTip = new THREE.Vector3();
+    this.castSurfacePoint = new THREE.Vector3();
+    this.cast = new SnejCastSystem({ rodRange: 30, getCastOrigin: () => this.angler.getCastOrigin(this.castOrigin) });
+    this.castMesh = null;
+    this.castLine = null;
+    this.aimMarker = null;
+    this.landingMarker = null;
+    this.castMeter = document.getElementById("cast-meter");
+    this.castMeterFill = this.castMeter.querySelector(".cast-meter-fill");
+    this.castMeterTarget = this.castMeter.querySelector(".cast-meter-target");
+    this.castMeterTol = this.castMeter.querySelector(".cast-meter-tol");
+    this.castContext = {
+      waterSurfaceY: (x, z) => this.water.surfaceY(x, z),
+      terrainHeightAt: (x, z) => this.terrain.heightAt(x, z),
+      terrainDepthAt: (x, z) => this.terrain.depthAt(x, z),
+      dockBlocksSegment: (a, b) => this.terrain.dockBlocksSegment(a.x, a.y, a.z, b.x, b.y, b.z),
+      lineObstruction: (a, b, slack) => this.lineObstruction(a, b, slack),
+      aimBlockedByDome: () => null,
+      rodReel: 0
+    };
     this.mouse = { dx: 0, dy: 0 };
     this.time = 0;
     this.stepTimer = 0;
@@ -180,6 +205,35 @@ export class SnejFishingGame {
       if (this.mode === "playing" && this.ui.buildOpen) this.placementSystem.handlePointerMove(event);
     });
     window.addEventListener("pointerup", () => this.placementSystem.handlePointerUp());
+    this.canvas.addEventListener("mousedown", (event) => {
+      if (event.button !== 0 || !this.canCast()) return;
+      this.audio.resume();
+      // Waiting is a visual stub: starting another cast clears the previous float.
+      if (this.cast.state.fs === "wait") this.cast.reset();
+      this.updateCast(0);
+      if (this.cast.onActionDown()) {
+        this.audio.charge();
+        this.updateCast(0);
+      }
+    });
+    window.addEventListener("mouseup", (event) => {
+      if (event.button !== 0 || this.cast.state.fs !== "charge") return;
+      if (!this.canCast()) {
+        this.cast.cancelCharge();
+        this.updateCast(0);
+        return;
+      }
+      this.updateCast(0);
+      if (this.cast.onActionUp()) {
+        this.audio.cast(this.cast.state.castPower);
+        this.updateCast(0);
+        this.updateCastVisuals();
+      }
+    });
+    window.addEventListener("blur", () => {
+      this.cast.cancelCharge();
+      this.castMeter.classList.add("hidden");
+    });
     this.canvas.addEventListener("click", () => {
       if (this.mode !== "playing" || this.ui.buildOpen || this.ui.profileOpen) return;
       this.audio.resume();
@@ -211,12 +265,25 @@ export class SnejFishingGame {
     this.water = new SnejWater(this.settings, this.lake);
     this.sky = new SnejSky(this.scene);
     this.angler = new SnejAngler();
+    this.cast.reset();
+    if (!this.castMesh) {
+      this.castMesh = this.createBobberMesh();
+      this.castLine = this.createCastLineMesh();
+      this.aimMarker = this.createMarker(0.5, 0.66, 0x9ff0ff, 0.85);
+      this.landingMarker = this.createMarker(0.86, 1.12, 0xffe98a, 0.92);
+    }
+    this.castMesh.visible = false;
+    this.castLine.visible = false;
+    this.aimMarker.visible = false;
+    this.landingMarker.visible = false;
+    this.castMeter.classList.add("hidden");
     this.scene.add(
       this.terrain.group,
       this.water.group,
       this.angler.group,
       this.placementSystem.group,
-      this.remoteRoom.group
+      this.remoteRoom.group,
+      this.castMesh, this.castLine, this.aimMarker, this.landingMarker
     );
     this.scene.traverse((object) => { if (object.isLight) object.layers.enable(1); });
     this.configureShadows();
@@ -381,6 +448,8 @@ export class SnejFishingGame {
   }
 
   quitToTitle() {
+    this.cast.reset();
+    this.castMeter.classList.add("hidden");
     if (this.ui.buildOpen) this.ui.discardBuild();
     if (this.ui.profileOpen) this.ui.closeProfile();
     this.disconnectMultiplayer();
@@ -391,6 +460,8 @@ export class SnejFishingGame {
   }
 
   pause() {
+    this.cast.cancelCharge();
+    this.castMeter.classList.add("hidden");
     this.mode = "paused";
     this.keys.clear();
     this.ui.showPause(true);
@@ -651,6 +722,7 @@ export class SnejFishingGame {
       this.moveAmt = 0;
       this.moveSpeed = 0;
     }
+    this.updateCast(this.canCast() ? sceneDt : 0);
     this.updateCamera(sceneDt);
     if (this.sky) this.sky.update(sceneDt, this.state.clock, this.camera, this.pos);
     if (this.terrain) {
@@ -682,6 +754,7 @@ export class SnejFishingGame {
         camera: this.camera
       });
     }
+    this.updateCastVisuals();
     this.remoteRoom.update(dt);
     this.updateMultiplayer(dt);
     this.ui.updateHUD(this, dt);
@@ -690,6 +763,188 @@ export class SnejFishingGame {
       this.lastSave = 0;
       this.save();
     }
+  }
+
+  canCast() {
+    return this.mode === "playing" && !this.ui.buildOpen && !this.ui.profileOpen && !this.ui.modalOpen;
+  }
+
+  updateCast(dt) {
+    const enabled = this.canCast();
+    if (!enabled) this.cast.cancelCharge();
+    this.angler.group.position.copy(this.pos);
+    this.angler.group.rotation.y = this.yaw;
+    Object.assign(this.castContext, { yaw: this.yaw, pitch: this.pitch, pos: this.pos, rodTip: this.angler.getRodTip(this.castTip) });
+    const previous = this.cast.state.fs;
+    const wasRetrieving = this.cast.state.retrieving;
+    const state = this.cast.tick(dt, this.castContext);
+    const charging = enabled && state.fs === "charge";
+    const onTarget = charging && Math.abs(state.charge - state.targetPower) <= CAST_TOL;
+    this.castMeter.classList.toggle("hidden", !charging);
+    if (charging) {
+      this.castMeterFill.style.width = `${(state.charge * 100).toFixed(1)}%`;
+      this.castMeterFill.classList.toggle("on-target", onTarget);
+      this.castMeterTarget.style.left = `${state.targetPower * 100}%`;
+      const lower = Math.max(0, state.targetPower - CAST_TOL);
+      const upper = Math.min(1, state.targetPower + CAST_TOL);
+      this.castMeterTol.style.left = `${lower * 100}%`;
+      this.castMeterTol.style.width = `${(upper - lower) * 100}%`;
+      this.castMeter.setAttribute("aria-valuenow", (state.charge * 100).toFixed(0));
+    }
+    this.aimMarker.visible = enabled && (state.fs === "idle" || charging);
+    if (this.aimMarker.visible) {
+      const aim = state.aimPoint;
+      this.aimMarker.material.color.setHex(onTarget ? 0x9dffb4 : 0x9ff0ff);
+      this.aimMarker.scale.setScalar(onTarget ? 1.1 : 1);
+      this.placeCastMarker(this.aimMarker, aim, 0.05);
+    }
+    this.landingMarker.visible = charging;
+    if (charging) {
+      const predicted = state.predictedLanding;
+      this.landingMarker.material.color.setHex(state.castObstruction ? 0xff5a4a
+        : this.terrain.depthAt(predicted.x, predicted.z) > 0.4 ? 0xfff0b0 : 0xff8a6a);
+      this.landingMarker.scale.setScalar(1 + (1 - state.charge) * 0.5);
+      this.placeCastMarker(this.landingMarker, predicted, 0.06);
+    }
+    if (previous === "flight" && state.fs === "wait") {
+      const soft = 1 - state.castAcc * SPLASH_SCALE;
+      const { x, z } = state.bobber;
+      const surface = this.castMarkerHeight(state.bobber);
+      this.audio.splash((0.55 + state.castPower * 0.5) * soft);
+      const firstEffect = this.water.particles.children.length;
+      this.water.addSplash(x, surface, z, Math.max(SPLASH_MIN, Math.round(SPLASH_BASE * soft)), (0.9 + state.castPower * 0.5) * soft);
+      this.water.addRipple(x, z, (1 + state.castPower * 0.7) * soft, 1.9);
+      this.water.addRipple(x, z, 0.6 * soft, 1.3);
+      for (let i = firstEffect; i < this.water.particles.children.length; i += 1) {
+        const effect = this.water.particles.children[i];
+        if (!effect.userData.vel) effect.position.y = surface + 0.035;
+      }
+      this.ui.showToast(this.toastForCast(state));
+      if (window.__snejDebug) console.debug("Cast startle preview", {
+        radius: lerp(STARTLE_R[0], STARTLE_R[1] + state.castPower * 2, 1 - state.castAcc),
+        seconds: lerp(STARTLE_SEC[0], STARTLE_SEC[1], 1 - state.castAcc)
+      });
+    }
+    if (state.retrieving && !wasRetrieving) {
+      this.audio.deny();
+      this.ui.showToast(state.castObstruction === "dock" ? "The cast hit the dock."
+        : state.castObstruction === "rock" ? "The cast hit a rock." : "The cast landed on land.");
+    }
+  }
+
+  placeCastMarker(marker, point, offset) {
+    const cached = marker.userData;
+    const scale = marker.scale.x;
+    if (cached.x === point.x && cached.z === point.z && cached.scale === scale) return;
+    Object.assign(cached, { x: point.x, z: point.z, scale });
+    marker.position.set(point.x, this.castMarkerHeight(point) + offset, point.z);
+    const positions = marker.geometry.attributes.position;
+    const sample = this.castSurfacePoint;
+    for (let i = 0; i < positions.count; i += 1) {
+      sample.set(point.x + positions.getX(i) * scale, 0, point.z + positions.getZ(i) * scale);
+      positions.setY(i, (this.castMarkerHeight(sample) + offset - marker.position.y) / scale);
+    }
+    positions.needsUpdate = true;
+    marker.geometry.computeBoundingSphere();
+  }
+
+  castMarkerHeight(point) {
+    const ground = this.terrain.heightAt(point.x, point.z);
+    // Existing water is static but has visible relief. Keep markers and float above it.
+    let height = Math.max(ground, this.water.surfaceY(point.x, point.z));
+    const geometry = this.terrain.groundMesh.geometry;
+    const { width, height: size, widthSegments: nx, heightSegments: nz } = geometry.parameters;
+    const gx = clamp((point.x / width + 0.5) * nx, 0, nx);
+    const gz = clamp((point.z / size + 0.5) * nz, 0, nz);
+    const ix = Math.min(Math.floor(gx), nx - 1), iz = Math.min(Math.floor(gz), nz - 1);
+    const fx = gx - ix, fz = gz - iz, a = iz * (nx + 1) + ix;
+    const positions = geometry.attributes.position;
+    const y00 = positions.getY(a), y10 = positions.getY(a + 1);
+    const y01 = positions.getY(a + nx + 1), y11 = positions.getY(a + nx + 2);
+    // Match the rendered grid triangles at the coarse shoreline, not just the analytic height.
+    const rendered = fx + fz <= 1 ? y00 * (1 - fx - fz) + y10 * fx + y01 * fz
+      : y11 * (fx + fz - 1) + y10 * (1 - fz) + y01 * (1 - fx);
+    height = Math.max(height, rendered);
+    if (this.terrain.depthAt(point.x, point.z) > 0) height = Math.max(height, this.water.waveHeight(point.x, point.z, 0));
+    const dock = this.terrain.dockLocal(point.x, point.z);
+    if (dock.along >= 0 && dock.along <= this.lake.dockLength && Math.abs(dock.side) <= this.lake.dockWidth * 0.5) {
+      height = Math.max(height, this.lake.dockY + 0.14);
+    }
+    return height;
+  }
+
+  updateCastVisuals() {
+    const state = this.cast.state;
+    const visible = this.mode !== "title" && (state.fs === "flight" || state.fs === "wait");
+    this.castMesh.visible = visible;
+    this.castLine.visible = visible;
+    if (!visible) return;
+    this.castMesh.position.set(state.bobber.x, state.bobber.y, state.bobber.z);
+    if (state.fs === "wait") this.castMesh.position.y = this.castMarkerHeight(state.bobber)
+      + Math.sin(state.waitTime * WAKE_BOB_FREQ) * WAKE_BOB_AMP;
+    const tip = this.angler.getRodTip(this.castTip);
+    const end = this.castMesh.position;
+    const points = this.castLine.geometry.attributes.position;
+    const sag = Math.min(tip.distanceTo(end) * 0.16, 1.2);
+    for (let i = 0; i < points.count; i += 1) {
+      const t = i / (points.count - 1);
+      points.setXYZ(i, lerp(tip.x, end.x, t), lerp(tip.y, end.y, t) - 6.75 * t * t * (1 - t) * sag, lerp(tip.z, end.z, t));
+    }
+    points.needsUpdate = true;
+  }
+
+  lineObstruction(tip, end, slack = 0) {
+    const length = Math.hypot(end.x - tip.x, end.y - tip.y, end.z - tip.z);
+    const steps = Math.max(1, Math.ceil(length / 0.5));
+    let x0 = tip.x, y0 = tip.y, z0 = tip.z;
+    for (let i = 1; i <= steps; i += 1) {
+      const t = i / steps;
+      const x = lerp(tip.x, end.x, t), z = lerp(tip.z, end.z, t);
+      const y = lerp(tip.y, end.y, t) - 6.75 * t * t * (1 - t) * slack;
+      if (this.terrain.dockBlocksSegment(x0, y0, z0, x, y, z)) return "dock";
+      if (y < this.terrain.heightAt(x, z)) return "land";
+      for (const obstacle of this.terrain.obstacles) {
+        const dx = x - x0, dz = z - z0;
+        const denominator = dx * dx + dz * dz;
+        const near = denominator > 0 ? clamp(((obstacle.x - x0) * dx + (obstacle.z - z0) * dz) / denominator, 0, 1) : 0;
+        const px = lerp(x0, x, near), pz = lerp(z0, z, near), py = lerp(y0, y, near);
+        if (Math.hypot(px - obstacle.x, pz - obstacle.z) <= obstacle.r && py <= obstacle.top && py >= this.terrain.heightAt(px, pz)) {
+          return obstacle.kind === "rock" ? "rock" : "land";
+        }
+      }
+      x0 = x; y0 = y; z0 = z;
+    }
+    return null;
+  }
+
+  toastForCast({ castPerfect, charge, targetPower }) {
+    return castPerfect ? "Perfect" : charge > targetPower ? "Overcast" : "Undercast";
+  }
+
+  createBobberMesh() {
+    const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.08, 12, 8),
+      new THREE.MeshStandardMaterial({ color: 0xff5555, roughness: 0.6 }));
+    mesh.name = "SnejBobber";
+    return mesh;
+  }
+
+  createCastLineMesh() {
+    const geometry = new THREE.BufferGeometry().setFromPoints(Array.from({ length: 12 }, () => new THREE.Vector3()));
+    geometry.attributes.position.setUsage(THREE.DynamicDrawUsage);
+    const line = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color: 0xeeeeee, transparent: true, opacity: 0.6 }));
+    line.name = "SnejCastLine";
+    line.frustumCulled = false;
+    return line;
+  }
+
+  createMarker(inner, outer, color, opacity) {
+    const geometry = new THREE.RingGeometry(inner, outer, 36).rotateX(-Math.PI / 2);
+    const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
+      color, transparent: true, opacity, depthWrite: false, fog: false, side: THREE.DoubleSide
+    }));
+    mesh.visible = false;
+    mesh.renderOrder = 6;
+    return mesh;
   }
 
   updateMultiplayer(dt) {

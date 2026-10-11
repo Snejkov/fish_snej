@@ -142,6 +142,18 @@ export class SnejAudio {
     this.tone({ freq: 220, slideTo: 140, dur: 0.16, type: "square", gain: 0.06 });
   }
 
+  charge() {
+    this.tone({ freq: 320, dur: 0.18, type: "triangle", gain: 0.04 });
+  }
+
+  cast(power) {
+    this.tone({ freq: 380 + clamp(power, 0, 1) * 240, slideTo: 180, dur: 0.28, type: "sawtooth", gain: 0.05 });
+  }
+
+  splash(volume = 0.5) {
+    this.tone({ freq: 600, slideTo: 220, dur: 0.22, type: "sine", gain: Math.min(0.08, 0.02 + volume * 0.06) });
+  }
+
   click() {
     this.tone({ freq: 620, dur: 0.05, type: "square", gain: 0.05 });
   }

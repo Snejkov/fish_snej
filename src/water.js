@@ -17,6 +17,11 @@ export class SnejWater {
     this.group.add(this.particles);
   }
 
+  surfaceY(x, z) {
+    // Cast physics uses the flat water datum; visual surface relief remains static.
+    return 0;
+  }
+
   buildMesh() {
     const q = this.settings.quality;
     const segs = q === "low" ? 150 : q === "high" ? 300 : 230;

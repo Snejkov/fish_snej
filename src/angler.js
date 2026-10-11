@@ -271,6 +271,20 @@ export class SnejAngler {
     this.bones.RightHand.quaternion.slerp(this.viewHandRotation, weight);
   }
 
+  getRodTip(out = new THREE.Vector3()) {
+    this.group.updateWorldMatrix(true, true);
+    const tip = this.carry?.tip || this.bones.RightHandTip;
+    if (tip) return tip.getWorldPosition(out);
+    return out.set(0.45, 1.3, 0).applyMatrix4(this.group.matrixWorld);
+  }
+
+  getCastOrigin(out = new THREE.Vector3()) {
+    this.group.updateWorldMatrix(true, false);
+    // Heading is local to group, not world yaw; ignore live arm and camera poses.
+    return out.set(Math.sin(this.heading) * 0.55, 1.25, Math.cos(this.heading) * 0.55)
+      .applyMatrix4(this.group.matrixWorld);
+  }
+
   updatePreview() {
     this.group.updateWorldMatrix(true, true);
     this.inverseWorld.copy(this.rig.matrixWorld).invert();

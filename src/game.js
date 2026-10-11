@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { SnejAngler } from "./angler.js?v=0.0.5a-hf3";
+import { SnejAngler } from "./angler.js?v=0.0.5a-hf5";
 import { RODS, rodForLength } from "./rods.js?v=0.0.5a";
 import { SnejInventory } from "./gear/inventory.js";
 import { SnejCatchLog } from "./game/catchLog.js";
@@ -304,6 +304,8 @@ export class SnejFishingGame {
   }
 
   buildWorld() {
+    this.angler?.model?.dispose();
+    this.angler?.skeleton?.dispose();
     this.scene.clear();
     this.scene.fog = new THREE.Fog(0x8fb4cc, 90, 620);
     this.seed = SNEJ_FIXED_SEED;

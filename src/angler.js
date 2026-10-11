@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { createCarryProps } from "./carryProps.js?v=0.0.4-hf1";
+import { createCharacterModel } from "./characterModel.js?v=0.0.5a-hf5";
 
 const TAU = Math.PI * 2;
 const HIP_HEIGHT = 0.91;
@@ -90,6 +91,9 @@ export class SnejAngler {
     this.skeleton = new THREE.Skeleton(Object.values(this.bones));
     this.skeleton.calculateInverses();
     this.buildPreview();
+    this.model = createCharacterModel(this.skeleton);
+    this.rig.add(this.model.group);
+    this.visuals.visible = false;
     this.carry = createCarryProps(this.bones);
     this.carryPose = {
       shoulderPosition: this.bones.RightShoulder.position.clone(),
@@ -111,7 +115,7 @@ export class SnejAngler {
       hand: forearm.clone().invert().multiply(hand),
       uprightHand: forearm.clone().invert().multiply(this.carryGripInverse)
     };
-    const viewObjects = [this.segments, this.joints];
+    const viewObjects = [this.segments, this.joints, ...this.model.meshes];
     this.carry.rod.traverse((object) => { if (object.isMesh || object.isLine) viewObjects.push(object); });
     this.viewRenderStates = viewObjects.map((object) => ({ object, layers: object.layers.mask, shadow: object.castShadow }));
     this.armOnly = null;
@@ -349,6 +353,7 @@ export class SnejAngler {
     }
     this.headCage.visible = !armOnly;
     this.chestCage.visible = !armOnly;
+    for (const mesh of this.model.meshes) mesh.visible = !armOnly || mesh.userData.firstPerson;
     this.carry.tackleBox.visible = !armOnly;
     for (let index = 0; index < this.links.length; index += 1) {
       const { parent, bone } = this.links[index];

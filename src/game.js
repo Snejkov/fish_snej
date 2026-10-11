@@ -1022,6 +1022,12 @@ export class SnejFishingGame {
 
   updateMove(dt) {
     if (!this.terrain) return;
+    if (this.cast.state.fs === "flight" || this.cast.state.fs === "wait") {
+      this.moveAmt = 0;
+      this.moveSpeed = 0;
+      this.stepTimer = 0;
+      return;
+    }
     let mx = 0;
     let mz = 0;
     if (this.keys.has("KeyW")) mz += 1;

@@ -1,4 +1,4 @@
-# SnejFishing v0.0.04-hf3 Stage 4
+# SnejFishing v0.0.04-hf4 Stage 4
 
 Stage 4 is a browser-only Three.js lakeside sandbox with local rod casting: charge, aim, release, ballistic flight, landing feedback, and a floating bobber. It preserves the animated 24-bone angler, hand-attached carry props, profile launcher, waterbody selection, validated Snej Lake, safe spawns, static opaque water, corrected movement, one-meter wading, first-person and third-person cameras, developer Build Mode, synthesized audio, and optional raw WebSocket multiplayer scaffold.
 
@@ -26,7 +26,7 @@ Open `http://localhost:8000/`. The game needs no Node runtime, package install, 
 
 The third-person camera distance is always `4.6`. The mouse wheel is not captured by the game and works normally in scrollable UI.
 
-Movement follows the rendered camera at every yaw: `A` always moves toward screen-left, `D` always moves toward screen-right, and diagonal input is normalized. Releasing movement keys eases the character animation back to idle.
+Movement follows the rendered camera at every yaw: `A` always moves toward screen-left, `D` always moves toward screen-right, and diagonal input is normalized. Releasing movement keys eases the character animation back to idle. A released cast locks walking, strafing, and sprinting during flight, water wait, and automatic recovery. Look and view switching remain available. Clearing the cast restores movement; idle and charge do not lock it.
 
 ## Character Rig
 
@@ -46,11 +46,12 @@ node tests/first-person.test.mjs
 node tests/carry-stance.test.mjs
 node tests/cast-system.test.mjs
 node tests/cast-integration.test.mjs
+node tests/cast-movement.test.mjs
 node tests/movement.test.mjs
 node tests/spawn-boundary.test.mjs
 ```
 
-The nine test files cover bone hierarchy, stable bind matrices and limb lengths, locomotion blending, blocked idle, pause, camera visibility, deformation of a weighted test vertex, hand attachment stability, anatomical prop sides, rod length and orientation, tackle box ground clearance, first-person framing across camera angles and aspect ratios, interrupted view transitions, stable object identities, upright moving carry, smooth lowering, frame-rate independence, and restoration of the resting pose. Cast tests cover the canonical physics function, constants, slower charge and flight timing, accuracy, prediction/flight agreement at 30/60/144 Hz, 50 finite scenarios, 36 distance checks across all three ranges and four charge fractions, strict maximum distance, water-only release, sky/land/dock/rock rejection, exact release revalidation, recovery after a late obstruction, pause, real rod-tip attachment, stable world-space origin, audio, UI gates, rendered shoreline masking, and non-stretching rod selection. Horizontal-hold tests cover all rod lengths, gaits, camera blends, yaw and pitch angles, desktop/mobile framing, pause, smooth restoration, stable model identities and bind matrices, unchanged release origins, and frame-rate-independent transitions. The view pass draws the same arm meshes after the world with normal depth between their parts, so nearby terrain cannot cut through the arm or rod. The app itself still runs without Node.
+The ten test files cover bone hierarchy, stable bind matrices and limb lengths, locomotion blending, blocked idle, pause, camera visibility, deformation of a weighted test vertex, hand attachment stability, anatomical prop sides, rod length and orientation, tackle box ground clearance, first-person framing across camera angles and aspect ratios, interrupted view transitions, stable object identities, upright moving carry, smooth lowering, frame-rate independence, and restoration of the resting pose. Cast tests cover the canonical physics function, constants, slower charge and flight timing, accuracy, prediction/flight agreement at 30/60/144 Hz, 50 finite scenarios, 36 distance checks across all three ranges and four charge fractions, strict maximum distance, water-only release, sky/land/dock/rock rejection, exact release revalidation, recovery after a late obstruction, pause, real rod-tip attachment, stable world-space origin, audio, UI gates, rendered shoreline masking, and non-stretching rod selection. Horizontal-hold tests cover all rod lengths, gaits, camera blends, yaw and pitch angles, desktop/mobile framing, pause, smooth restoration, stable model identities and bind matrices, unchanged release origins, and frame-rate-independent transitions. Cast-movement tests cover immediate position locking, suppressed footsteps and splashes, walking and sprint inputs, recovery, camera look, and movement restoration at 30/60/144 Hz. The view pass draws the same arm meshes after the world with normal depth between their parts, so nearby terrain cannot cut through the arm or rod. The app itself still runs without Node.
 
 ## Stage 4 Casting
 
@@ -68,7 +69,7 @@ After release, the same wrist smoothly levels the rod parallel to the world wate
 
 The virtual release origin is 0.55 meters forward at shoulder height 1.25, transformed by the actual character group and local facing. It never samples the animated wrist. The rendered line instead uses the existing physical `carry.tip`, not the brief's wrist proxy. This adapts the brief to the current rig without changing the pose system. Physics uses `surfaceY = 0`; visual markers, splashes, and the waiting float respect existing static water relief and the rendered terrain triangles so they are not buried.
 
-Build Mode owns its existing pointer listeners; casting uses separate left-mouse listeners and is available to all ranks outside blocking UI. Pause, profile, Build Mode, and loss of window focus cancel charge. Pause and blocking drawers freeze flight and automatic recovery. The mouse wheel, movement, view switch, ranks, textures, and schema version 4 are unchanged.
+Build Mode owns its existing pointer listeners; casting uses separate left-mouse listeners and is available to all ranks outside blocking UI. Pause, profile, Build Mode, and loss of window focus cancel charge. Pause and blocking drawers freeze flight and automatic recovery. Flight, water wait, and recovery lock character movement without stopping casting or camera look. The mouse wheel, view switch, ranks, textures, and schema version 4 are unchanged.
 
 `castLead` is always zero. Swing animation and timed release are deferred to Stage 4.5. Bait, fish, bites, hook/fight/catch systems, casting multiplayer sync, and reel sounds are deferred to Stage 5+. Setting `window.__snejDebug = true` logs the future startle radius/duration formula on water landing without creating any fish system.
 

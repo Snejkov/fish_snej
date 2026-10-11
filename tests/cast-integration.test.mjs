@@ -181,7 +181,7 @@ assert.equal(depthGame.cast.state.fs, "idle");
 assert.equal(depthGame.cast.castRange, 9.25);
 assert.equal(depthGame.floatDepthInput.value, "0.75");
 assert.equal(depthGame.saved.floatDepth, 0.75);
-assert.equal(depthGame.rodReadout.textContent, "Rod 5 m / Cast 9.25 m");
+assert.equal(depthGame.rodReadout.textContent, "Rod 5 m / Range 10 m");
 assert.equal(depthGame.floatDepthReadout.textContent, "Depth 0.75 m / Line 5 m");
 depthGame.settings.floatDepth = 4.5;
 depthGame.applyRod({ length: 4, range: 8 });

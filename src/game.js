@@ -1,6 +1,9 @@
 import * as THREE from "three";
 import { SnejAngler } from "./angler.js?v=0.0.4-hf3";
-import { RODS, rodForLength } from "./rods.js?v=0.0.4-hf2";
+import { RODS, rodForLength } from "./rods.js?v=0.0.5a";
+import { SnejInventory } from "./gear/inventory.js";
+import { SnejCatchLog } from "./game/catchLog.js";
+import { SnejStats } from "./game/stats.js";
 import { SnejAudio } from "./audio.js?v=0.0.4";
 import {
   SnejCastSystem, CAST_TOL, SPLASH_BASE, SPLASH_MIN, SPLASH_SCALE,
@@ -18,12 +21,12 @@ import { SnejSky } from "./sky.js";
 import { SPAWNS, SPAWN_INITIAL_NAME, SPAWN_NAMES } from "./spawns.js";
 import { SnejTerrain } from "./terrain.js";
 import { SnejTextureManager } from "./textureManager.js";
-import { SnejUI } from "./ui.js?v=0.0.3-hf2.12";
+import { SnejUI } from "./ui.js?v=0.0.5a";
 import { SnejWater } from "./water.js?v=0.0.4";
 import { clamp, clamp01, damp, lerp, moveDelta, resolveWalkableStart } from "./util.js?v=0.0.3-hf2.12";
 
 const SAVE_KEY = "snejfishing-save-v1";
-const SAVE_VERSION = 4;
+const SAVE_VERSION = 5;
 const IDENTITY_SAVE_VERSION = 3;
 const HOURS_PER_SEC = 1 / 60;
 const EYE_H = 1.62;
@@ -119,6 +122,12 @@ export class SnejFishingGame {
     this.mpEnabled = new URLSearchParams(location.search).get("mp") === "1";
 
     const initialSave = this.loadSave();
+    this.inventory = new SnejInventory(initialSave?.player?.inventory);
+    this.catchLog = new SnejCatchLog(initialSave?.player?.catchLog);
+    this.stats = new SnejStats(initialSave?.player?.stats);
+    this.stats.stampSeen();
+    this.uiRefreshInventory = () => this.ui?.refreshInventory();
+    this.uiRefreshProfile = () => this.ui?.refreshProfile();
     if (initialSave) {
       this.settings = { ...DEFAULT_SETTINGS, ...initialSave.settings, randomLake: false };
       this.identity = initialSave.player.identity || null;
@@ -135,6 +144,7 @@ export class SnejFishingGame {
       this.hasProgress = Boolean(initialSave.player.lastPosition);
       if (this.identity) this.refreshDerivedRank();
     }
+    this.settings.rodLength = this.inventory.equippedRod().length;
 
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(70, 1, 0.05, 1800);
@@ -194,13 +204,17 @@ export class SnejFishingGame {
     window.addEventListener("keydown", (event) => {
       const tag = event.target?.tagName;
       if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") return;
-      if (event.code === "Tab") event.preventDefault();
+      if (event.code === "Tab" && !this.ui.inventoryOpen && !this.ui.profileOpen && !this.ui.modalOpen) event.preventDefault();
       if (event.code === "KeyP" && !event.repeat && this.identity) {
         this.ui.toggleProfile();
         return;
       }
+      if (event.code === "KeyI" && !event.repeat && this.identity) {
+        this.ui.toggleInventory();
+        return;
+      }
       if (event.code === "KeyU" && !event.repeat) this.ui.toggleHUD();
-      if (event.code === "KeyV" && !event.repeat && this.mode === "playing" && !this.ui.buildOpen && !this.ui.profileOpen) {
+      if (event.code === "KeyV" && !event.repeat && this.mode === "playing" && !this.ui.buildOpen && !this.ui.profileOpen && !this.ui.inventoryOpen && !this.ui.modalOpen) {
         this.toggleView();
         return;
       }
@@ -210,17 +224,19 @@ export class SnejFishingGame {
       }
       if (event.code === "Escape") {
         if (this.ui.modalOpen) this.ui.closeNameModal();
+        else if (this.ui.inventoryOpen) this.ui.closeInventory();
         else if (this.ui.buildOpen) this.ui.discardBuild();
         else if (this.ui.profileOpen) this.ui.closeProfile();
         else if (this.mode === "playing") this.pause();
         else if (this.mode === "paused") this.resume();
         return;
       }
+      if (this.ui.inventoryOpen || this.ui.profileOpen || this.ui.modalOpen) return;
       this.keys.add(event.code);
     });
     window.addEventListener("keyup", (event) => this.keys.delete(event.code));
     window.addEventListener("mousemove", (event) => {
-      if (document.pointerLockElement === this.canvas && this.mode === "playing" && !this.ui.buildOpen && !this.ui.profileOpen) {
+      if (document.pointerLockElement === this.canvas && this.mode === "playing" && !this.ui.buildOpen && !this.ui.profileOpen && !this.ui.inventoryOpen && !this.ui.modalOpen) {
         this.mouse.dx += event.movementX;
         this.mouse.dy += event.movementY;
       }
@@ -266,7 +282,7 @@ export class SnejFishingGame {
       this.castMeter.classList.add("hidden");
     });
     this.canvas.addEventListener("click", () => {
-      if (this.mode !== "playing" || this.ui.buildOpen || this.ui.profileOpen) return;
+      if (!this.canCast()) return;
       this.audio.resume();
       this.canvas.requestPointerLock();
     });
@@ -297,7 +313,7 @@ export class SnejFishingGame {
     this.sky = new SnejSky(this.scene);
     this.angler = new SnejAngler();
     this.cast.reset();
-    this.applyRod(rodForLength(this.settings.rodLength));
+    this.applyRod(this.inventory.equippedRod());
     if (!this.castMesh) {
       this.castMesh = this.createBobberMesh();
       this.castLine = this.createCastLineMesh();
@@ -348,6 +364,11 @@ export class SnejFishingGame {
         ? this.auth.createSnejkovIdentity(this.nextLocalId)
         : this.auth.createIdentity(validation.name, this.nextLocalId);
       this.nextLocalId = this.identity.nextLocalId;
+      this.inventory = new SnejInventory();
+      this.catchLog = new SnejCatchLog();
+      this.stats = new SnejStats();
+      this.stats.stampSeen();
+      this.applyRod(this.inventory.equippedRod());
       this.playerName = this.identity.name;
       this.refreshDerivedRank();
       this.save();
@@ -398,6 +419,9 @@ export class SnejFishingGame {
     this.disconnectMultiplayer();
     this.identity = null;
     this.currentRank = "player";
+    this.inventory = new SnejInventory();
+    this.catchLog = new SnejCatchLog();
+    this.stats = new SnejStats();
     this.save();
     location.reload();
   }
@@ -489,6 +513,7 @@ export class SnejFishingGame {
     this.castMeter.classList.add("hidden");
     if (this.ui.buildOpen) this.ui.discardBuild();
     if (this.ui.profileOpen) this.ui.closeProfile();
+    if (this.ui.inventoryOpen) this.ui.closeInventory();
     this.disconnectMultiplayer();
     this.mode = "title";
     this.ui.showPause(false);
@@ -497,6 +522,7 @@ export class SnejFishingGame {
   }
 
   pause() {
+    if (this.ui.inventoryOpen) this.ui.closeInventory();
     this.cast.cancelCharge();
     this.castMeter.classList.add("hidden");
     this.ui.el.toast.classList.add("hidden");
@@ -544,7 +570,7 @@ export class SnejFishingGame {
   }
 
   toggleBuildMode() {
-    if (this.cameraMode !== "third-person" || this.ui.profileOpen) return;
+    if (this.cameraMode !== "third-person" || this.ui.modalOpen) return;
     if (!this.auth.can(this.currentRank, "buildMode")) {
       this.ui.showToast("Build Mode locked. Requires developer rank. Ask the project maintainer to grant you access.");
       return;
@@ -580,7 +606,7 @@ export class SnejFishingGame {
       && Number(sourcePosition.x) === 0
       && Number(sourcePosition.y) === 1
       && Number(sourcePosition.z) === 0;
-    const useInitialSpawn = usesLegacyDefault || (!sourcePosition && sourceVersion < SAVE_VERSION);
+    const useInitialSpawn = usesLegacyDefault || (!sourcePosition && sourceVersion < 4);
     const positionSource = useInitialSpawn ? SPAWNS[SPAWN_INITIAL_NAME] : sourcePosition;
     const legacyView = data.player?.view || {};
     const mode = legacyView.mode === "first-person" ? "first-person" : "third-person";
@@ -595,11 +621,23 @@ export class SnejFishingGame {
           : Number.isFinite(legacyView.pitch) ? legacyView.pitch : -0.08
       }
       : null;
+    const settings = { ...DEFAULT_SETTINGS, ...(data.settings || {}), randomLake: false };
+    const inventory = new SnejInventory(data.player?.inventory);
+    if (sourceVersion < 5 && !data.player?.inventory) {
+      const rod = rodForLength(settings.rodLength);
+      inventory.state.owned[rod.id] = 1;
+      inventory.state.equipped.rod = rod.id;
+      inventory.state.owned[inventory.state.equipped.bait] = 4;
+    }
+    settings.rodLength = inventory.equippedRod().length;
     return {
       version: SAVE_VERSION,
-      settings: { ...DEFAULT_SETTINGS, ...(data.settings || {}), randomLake: false },
+      settings,
       player: {
         name: identity?.name || playerName,
+        inventory: inventory.serialize(),
+        catchLog: new SnejCatchLog(data.player?.catchLog).serialize(),
+        stats: new SnejStats(data.player?.stats).serialize(),
         ...(identity ? { identity } : {}),
         nextLocalId,
         lastPosition,
@@ -635,6 +673,8 @@ export class SnejFishingGame {
 
   save() {
     if (this.identity) this.nextLocalId = Math.max(this.nextLocalId, this.identity.nextLocalId);
+    this.settings.rodLength = this.inventory.equippedRod().length;
+    this.stats.stampSeen();
     const data = {
       version: SAVE_VERSION,
       settings: {
@@ -650,6 +690,9 @@ export class SnejFishingGame {
       },
       player: {
         name: this.identity?.name || this.playerName,
+        inventory: this.inventory.serialize(),
+        catchLog: this.catchLog.serialize(),
+        stats: this.stats.serialize(),
         ...(this.identity ? {
           identity: {
             name: this.identity.name,
@@ -754,8 +797,11 @@ export class SnejFishingGame {
     this.time += sceneDt;
     const previousX = this.pos.x;
     const previousZ = this.pos.z;
-    if (this.mode === "playing") this.state.clock = (this.state.clock + dt * HOURS_PER_SEC) % 24;
-    if (this.mode === "playing" && !this.ui.buildOpen && !this.ui.profileOpen) {
+    if (this.mode === "playing") {
+      this.state.clock = (this.state.clock + dt * HOURS_PER_SEC) % 24;
+      this.stats.tickPlaytime(dt);
+    }
+    if (this.mode === "playing" && !this.ui.buildOpen && !this.ui.profileOpen && !this.ui.inventoryOpen && !this.ui.modalOpen) {
       this.updateLook();
       this.updateMove(dt);
     } else {
@@ -809,7 +855,7 @@ export class SnejFishingGame {
   }
 
   canCast() {
-    return this.mode === "playing" && !this.ui.buildOpen && !this.ui.profileOpen && !this.ui.modalOpen;
+    return this.mode === "playing" && !this.ui.buildOpen && !this.ui.profileOpen && !this.ui.inventoryOpen && !this.ui.modalOpen;
   }
 
   applyRod(rod) {
@@ -822,21 +868,38 @@ export class SnejFishingGame {
     for (const [index, item] of RODS.entries()) {
       const rig = rigForRod(item.length, this.settings.floatDepth);
       this.rodSelect.options[index].textContent = `${item.length} m / Cast ${Number(rig.castRange.toFixed(2))} m`;
+      this.rodSelect.options[index].disabled = this.inventory ? !this.inventory.owns(item.id) : false;
     }
     this.floatDepthInput.max = String(this.cast.rig.maxDepth);
     this.floatDepthInput.value = String(this.settings.floatDepth);
-    this.rodReadout.textContent = `Rod ${rod.length} m / Cast ${Number(this.cast.castRange.toFixed(2))} m`;
+    this.rodReadout.textContent = `Rod ${rod.length} m / Range ${rod.range} m`;
     this.floatDepthReadout.textContent = `Depth ${Number(this.settings.floatDepth.toFixed(2))} m / Line ${rod.length} m`;
   }
 
   selectRod(length) {
     const rod = RODS.find((item) => item.length === length);
     if (!rod || this.cast.state.fs === "charge" || this.cast.state.fs === "flight") return false;
+    if (this.inventory && !this.inventory.equip(rod.id).ok) return false;
     this.applyRod(rod);
     this.updateCast(0);
     this.updateCastVisuals();
     this.save();
     return true;
+  }
+
+  equipGear(itemId) {
+    if (this.cast.state.fs === "charge" || this.cast.state.fs === "flight") {
+      return { ok: false, message: "Equipment is locked during the cast." };
+    }
+    const result = this.inventory.equip(itemId);
+    if (!result.ok) return result;
+    this.applyRod(this.inventory.equippedRod());
+    this.updateCast(0);
+    this.updateCastVisuals();
+    this.ui.refreshInventory();
+    this.ui.refreshProfile();
+    this.save();
+    return result;
   }
 
   selectFloatDepth(depth) {
@@ -868,6 +931,10 @@ export class SnejFishingGame {
   }
 
   updateCast(dt) {
+    if (this.inventory && this.cast.state.fs === "idle" && this.settings.rodLength !== this.inventory.equippedRod().length) {
+      this.applyRod(this.inventory.equippedRod());
+      this.ui.refreshRodLine();
+    }
     const enabled = this.canCast();
     if (!enabled) this.cast.cancelCharge();
     this.angler.group.position.copy(this.pos);
@@ -911,6 +978,10 @@ export class SnejFishingGame {
       this.placeCastMarker(this.landingMarker, predicted, 0.06);
     }
     if (previous === "flight" && state.fs === "wait") {
+      this.stats.recordCast(true);
+      const consumed = this.inventory.consumeBait();
+      this.ui.refreshInventory();
+      this.ui.refreshProfile();
       const soft = 1 - state.castAcc * SPLASH_SCALE;
       const { x, z } = state.bobber;
       const surface = this.castMarkerHeight(state.bobber);
@@ -923,13 +994,17 @@ export class SnejFishingGame {
         const effect = this.water.particles.children[i];
         if (!effect.userData.vel) effect.position.y = surface + 0.035;
       }
-      this.ui.showToast(this.toastForCast(state));
+      this.ui.showToast(consumed ? this.toastForCast(state) : "Out of bait. Reel in and re-equip.");
+      this.save();
       if (window.__snejDebug) console.debug("Cast startle preview", {
         radius: lerp(STARTLE_R[0], STARTLE_R[1] + state.castPower * 2, 1 - state.castAcc),
         seconds: lerp(STARTLE_SEC[0], STARTLE_SEC[1], 1 - state.castAcc)
       });
     }
     if (state.retrieving && !wasRetrieving) {
+      this.stats.recordCast(false);
+      this.ui.refreshProfile();
+      this.save();
       this.audio.deny();
       this.ui.showToast(state.castObstruction === "dock" ? "The cast hit the dock."
         : state.castObstruction === "rock" ? "The cast hit a rock." : "The cast landed on land.");

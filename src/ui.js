@@ -1,9 +1,23 @@
+import { CATALOG } from "./gear/catalog.js";
+
+const textElement = (tag, className, text) => {
+  const element = document.createElement(tag);
+  element.className = className;
+  element.textContent = text;
+  return element;
+};
+export const formatPlaytime = (seconds) => `${Math.floor(seconds / 3600)}h ${Math.floor(seconds % 3600 / 60)}m`;
+
 export class SnejUI {
   constructor(game) {
     this.game = game;
     this.hudVisible = true;
     this.buildOpen = false;
     this.profileOpen = false;
+    this.inventoryOpen = false;
+    this.profileTab = "profile";
+    this.currentInventoryCategory = "rod";
+    this.inventoryFocus = null;
     this.modalOpen = false;
     this.fpsTimer = 0;
     this.frames = 0;
@@ -31,6 +45,20 @@ export class SnejUI {
       profilePanel: document.getElementById("profile-panel"),
       profileName: document.getElementById("profile-name"),
       profileId: document.getElementById("profile-id"),
+      profileCoins: document.getElementById("profile-coins"),
+      profileTabs: document.getElementById("profile-tabs"),
+      profileTabButtons: document.querySelectorAll("#profile-tabs [data-tab]"),
+      profileContentProfile: document.getElementById("profile-tab-profile"),
+      profileContentLog: document.getElementById("profile-tab-log"),
+      profileContentStats: document.getElementById("profile-tab-stats"),
+      profileLogList: document.getElementById("profile-log-list"),
+      profileStatsList: document.getElementById("profile-stats-list"),
+      inventoryPanel: document.getElementById("inventory-panel"),
+      inventoryCoins: document.getElementById("inventory-coins"),
+      inventoryGrid: document.getElementById("inventory-grid"),
+      inventoryCategory: document.getElementById("inventory-category"),
+      rodLine: document.getElementById("rod-line"),
+      baitLine: document.getElementById("bait-line"),
       identityModal: document.getElementById("identity-modal"),
       identityName: document.getElementById("identity-name"),
       identityValidation: document.getElementById("identity-validation"),
@@ -87,6 +115,43 @@ export class SnejUI {
     document.getElementById("profile-close").addEventListener("click", () => this.closeProfile());
     document.getElementById("change-name").addEventListener("click", () => this.openNameModal());
     document.getElementById("sign-out").addEventListener("click", () => this.game.signOut());
+    for (const button of this.el.profileTabButtons) {
+      button.addEventListener("click", () => this.openProfileTab(button.dataset.tab));
+    }
+    document.getElementById("inventory-close").addEventListener("click", () => this.closeInventory());
+    for (const button of this.el.inventoryCategory.querySelectorAll("[data-category]")) {
+      button.addEventListener("click", () => {
+        this.currentInventoryCategory = button.dataset.category;
+        this.refreshInventory();
+      });
+    }
+    this.bindTabKeys(this.el.profileTabs);
+    this.bindTabKeys(this.el.inventoryCategory);
+    this.el.inventoryGrid.addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-item]");
+      if (!button || button.disabled) return;
+      const result = button.dataset.action === "buy"
+        ? this.game.inventory.buy(button.dataset.item) : this.game.equipGear(button.dataset.item);
+      if (result.ok) {
+        this.refreshInventory();
+        this.refreshProfile();
+        this.game.save();
+      }
+      this.showToast(result.message);
+      const replacement = [...this.el.inventoryGrid.querySelectorAll("button[data-item]")]
+        .find((next) => next.dataset.item === button.dataset.item && !next.disabled);
+      (replacement || this.el.inventoryCategory.querySelector('[aria-selected="true"]')).focus();
+    });
+    this.el.inventoryPanel.addEventListener("keydown", (event) => {
+      if (event.key !== "Tab") return;
+      const controls = [...this.el.inventoryPanel.querySelectorAll('button:not(:disabled), [tabindex="0"]')]
+        .filter((element) => element.tabIndex >= 0 && element.getClientRects().length);
+      const next = event.shiftKey ? controls.at(-1) : controls[0];
+      if (document.activeElement === (event.shiftKey ? controls[0] : controls.at(-1))) {
+        event.preventDefault();
+        next?.focus();
+      }
+    });
     this.el.identityName.addEventListener("input", () => this.validateNameField(
       this.el.identityName,
       this.el.identityValidation,
@@ -217,7 +282,7 @@ export class SnejUI {
 
   showPause(show) {
     this.el.pause.classList.toggle("hidden", !show);
-    this.el.hint.classList.toggle("hidden", show || this.buildOpen || this.profileOpen || this.game.mode === "title");
+    this.el.hint.classList.toggle("hidden", show || this.buildOpen || this.profileOpen || this.inventoryOpen || this.game.mode === "title");
     if (show) this.showMenuSettings(false);
   }
 
@@ -229,28 +294,34 @@ export class SnejUI {
   toggleHUD() {
     if (this.game.mode !== "playing") return;
     this.hudVisible = !this.hudVisible;
-    this.el.hud.classList.toggle("hidden", !this.hudVisible || this.profileOpen || this.buildOpen);
+    this.el.hud.classList.toggle("hidden", !this.hudVisible || this.profileOpen || this.buildOpen || this.inventoryOpen);
   }
 
   toggleProfile() {
-    if (!this.game.identity) return;
+    if (!this.game.identity || this.modalOpen) return;
     if (this.profileOpen) this.closeProfile();
     else this.openProfile();
   }
 
-  openProfile() {
-    if (this.buildOpen) this.discardBuild();
+  async openProfile() {
+    if (this.inventoryOpen) this.closeInventory();
+    if (this.buildOpen) await this.discardBuild();
     this.profileOpen = true;
+    document.body.classList.add("profile-open");
     this.game.keys.clear();
+    this.game.cast.cancelCharge();
+    this.game.castMeter.classList.add("hidden");
     this.updateProfile();
     this.el.profilePanel.classList.remove("hidden");
     this.el.hud.classList.add("hidden");
     this.el.hint.classList.add("hidden");
+    this.el.profileTabButtons[0].focus();
     if (document.pointerLockElement) document.exitPointerLock();
   }
 
   closeProfile() {
     this.profileOpen = false;
+    document.body.classList.remove("profile-open");
     this.el.profilePanel.classList.add("hidden");
     if (this.game.mode === "playing") {
       this.el.hud.classList.toggle("hidden", !this.hudVisible);
@@ -272,6 +343,8 @@ export class SnejUI {
     this.el.buildChip.textContent = allowed ? "[B] Build" : "[B] Build (locked)";
     this.el.buildChip.classList.toggle("allowed", allowed);
     this.el.buildChip.classList.toggle("locked", !allowed);
+    this.openProfileTab(this.profileTab);
+    this.refreshProfile();
   }
 
   openNameModal() {
@@ -285,6 +358,8 @@ export class SnejUI {
   closeNameModal() {
     this.modalOpen = false;
     this.el.identityModal.classList.add("hidden");
+    if (this.profileOpen) document.getElementById("change-name").focus();
+    else this.game.canvas.focus();
   }
 
   saveName() {
@@ -304,7 +379,9 @@ export class SnejUI {
   }
 
   async openBuild() {
-    if (this.game.mode !== "playing") return;
+    if (this.game.mode !== "playing" || this.modalOpen) return;
+    if (this.inventoryOpen) this.closeInventory();
+    if (this.profileOpen) this.closeProfile();
     this.buildOpen = true;
     this.game.keys.clear();
     this.game.placementSystem.beginSession();
@@ -520,5 +597,166 @@ export class SnejUI {
     this.el.depth.textContent = depth < 0.1 ? "On land" : `Depth ${depth.toFixed(1)} m`;
     this.el.camera.textContent = game.cameraMode === "first-person" ? "First Person" : "Third Person";
     this.el.fps.textContent = `${this.fps} FPS`;
+  }
+
+  bindTabKeys(root) {
+    root.addEventListener("keydown", (event) => {
+      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+      const buttons = [...root.querySelectorAll('[role="tab"]')];
+      const index = buttons.indexOf(document.activeElement);
+      if (index < 0) return;
+      event.preventDefault();
+      const next = event.key === "Home" ? 0 : event.key === "End" ? buttons.length - 1
+        : (index + (event.key === "ArrowRight" ? 1 : -1) + buttons.length) % buttons.length;
+      buttons[next].click();
+      buttons[next].focus();
+    });
+  }
+
+  async toggleInventory() {
+    if (!this.game.identity || this.modalOpen || this.game.mode !== "playing") return;
+    if (this.inventoryOpen) return this.closeInventory();
+    if (this.profileOpen) this.closeProfile();
+    if (this.buildOpen) await this.discardBuild();
+    this.inventoryFocus = document.activeElement;
+    this.inventoryOpen = true;
+    this.currentInventoryCategory = "rod";
+    this.game.keys.clear();
+    this.game.mouse.dx = this.game.mouse.dy = 0;
+    this.game.cast.cancelCharge();
+    this.game.castMeter.classList.add("hidden");
+    this.el.toast.classList.add("hidden");
+    document.body.classList.add("inventory-open");
+    this.el.inventoryPanel.classList.remove("hidden");
+    this.el.hud.classList.add("hidden");
+    this.el.hint.classList.add("hidden");
+    this.refreshInventory();
+    this.el.inventoryCategory.querySelector('[aria-selected="true"]').focus();
+    if (document.pointerLockElement) document.exitPointerLock();
+  }
+
+  closeInventory() {
+    this.inventoryOpen = false;
+    document.body.classList.remove("inventory-open");
+    this.el.inventoryPanel.classList.add("hidden");
+    if (this.game.mode === "playing") {
+      this.el.hud.classList.toggle("hidden", !this.hudVisible);
+      this.el.hint.classList.remove("hidden");
+    }
+    (this.inventoryFocus?.isConnected && this.inventoryFocus.getClientRects().length
+      ? this.inventoryFocus : this.game.canvas).focus();
+  }
+
+  refreshRodLine() {
+    const inv = this.game.inventory;
+    if (!inv) return;
+    const rod = inv.equippedRod();
+    this.el.rodLine.textContent = `Rod ${rod.length} m / Range ${rod.range} m`;
+    const bait = inv.equippedBait();
+    this.el.baitLine.textContent = bait && inv.countOf(bait.id) > 0
+      ? `Bait: ${bait.name} x${inv.countOf(bait.id)}` : "No bait";
+    for (const [index, item] of CATALOG.rod.entries()) this.game.rodSelect.options[index].disabled = !inv.owns(item.id);
+  }
+
+  refreshInventory() {
+    const inv = this.game.inventory;
+    if (!inv) return;
+    this.refreshRodLine();
+    this.el.inventoryCoins.textContent = String(inv.coins());
+    if (!this.inventoryOpen) return;
+    const kind = this.currentInventoryCategory;
+    for (const button of this.el.inventoryCategory.querySelectorAll("[data-category]")) {
+      const active = button.dataset.category === kind;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-selected", String(active));
+      button.tabIndex = active ? 0 : -1;
+    }
+    this.el.inventoryGrid.setAttribute("aria-labelledby", `inventory-category-${kind}`);
+    this.el.inventoryGrid.replaceChildren();
+    for (const item of CATALOG[kind]) {
+      const owned = inv.owns(item.id), equipped = inv.state.equipped[kind] === item.id;
+      const locked = item.unlocked === false;
+      const badge = equipped ? "Equipped" : owned ? "Owned" : locked ? "Locked" : "Buy";
+      const card = textElement("article", `inventory-card${equipped ? " equipped" : ""}${locked ? " locked" : ""}`, "");
+      card.setAttribute("role", "listitem");
+      card.dataset.item = item.id;
+      const heading = textElement("div", "row", "");
+      heading.append(textElement("h3", "name", item.name), textElement("span", `badge ${badge.toLowerCase()}`, badge));
+      const detail = textElement("div", "row", "");
+      detail.append(textElement("span", "price", owned && !item.stackable ? "Owned" : `${item.price} coins`));
+      if (item.stackable) detail.append(textElement("span", "count", `x${inv.countOf(item.id)}`));
+      const actions = textElement("div", "inventory-actions", "");
+      const addAction = (action, label, disabled) => {
+        const button = textElement("button", action === "equip" ? "secondary" : "", label);
+        button.type = "button";
+        button.dataset.action = action;
+        button.dataset.item = item.id;
+        button.disabled = disabled;
+        button.setAttribute("aria-label", `${label} ${item.name}`);
+        actions.append(button);
+      };
+      if (owned || equipped) addAction("equip", equipped ? "Equipped" : item.kind === "lure" ? "Owned" : "Equip",
+        equipped || locked || !owned || item.kind === "lure" || this.game.cast.state.fs === "flight");
+      if (!owned || item.stackable) addAction("buy", `Buy ${item.price}`, locked || inv.coins() < item.price);
+      card.append(heading, textElement("p", "desc", item.description.slice(0, 80)), detail, actions);
+      this.el.inventoryGrid.append(card);
+    }
+  }
+
+  openProfileTab(name) {
+    if (!["profile", "log", "stats"].includes(name)) name = "profile";
+    this.profileTab = name;
+    for (const button of this.el.profileTabButtons) {
+      const active = button.dataset.tab === name;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-selected", String(active));
+      button.tabIndex = active ? 0 : -1;
+    }
+    this.el.profileContentProfile.classList.toggle("hidden", name !== "profile");
+    this.el.profileContentLog.classList.toggle("hidden", name !== "log");
+    this.el.profileContentStats.classList.toggle("hidden", name !== "stats");
+    if (name === "log") this.refreshProfileLog();
+    if (name === "stats") this.refreshProfileStats();
+  }
+
+  refreshProfile() {
+    if (!this.game.inventory || !this.game.stats) return;
+    this.el.profileCoins.textContent = String(this.game.inventory.coins());
+    this.refreshProfileLog();
+    this.refreshProfileStats();
+    this.refreshRodLine();
+  }
+
+  refreshProfileLog() {
+    this.el.profileLogList.replaceChildren();
+    const entries = this.game.catchLog?.entries || [];
+    if (!entries.length) this.el.profileLogList.append(textElement("p", "empty", "No catches yet."));
+    for (const entry of entries) {
+      const row = textElement("div", "entry", "");
+      row.append(textElement("strong", "", entry.species),
+        textElement("span", "", `${entry.length.toFixed(1)} cm / ${entry.weight.toFixed(2)} kg`),
+        textElement("small", "meta", entry.location || "Unknown location"));
+      this.el.profileLogList.append(row);
+    }
+  }
+
+  refreshProfileStats() {
+    const stats = this.game.stats?.state;
+    if (!stats) return;
+    const seen = new Date(stats.lastSeenAt);
+    const rows = [
+      ["Casts", stats.castCount], ["Successful casts", stats.successfulCasts], ["Fish caught", stats.fishCaught],
+      ["Best length", `${stats.bestLengthCm} cm`], ["Total weight", `${stats.totalWeightKg.toFixed(2)} kg`],
+      ["Unique species", stats.uniqueSpecies], ["Playtime", formatPlaytime(stats.playtimeSec)],
+      ["Last seen", stats.lastSeenAt > 0 && Number.isFinite(seen.getTime()) ? seen.toISOString() : "Never"]
+    ];
+    const body = document.createElement("tbody");
+    for (const [label, value] of rows) {
+      const row = document.createElement("tr"), key = textElement("th", "", label);
+      key.scope = "row";
+      row.append(key, textElement("td", "", String(value)));
+      body.append(row);
+    }
+    this.el.profileStatsList.replaceChildren(body);
   }
 }

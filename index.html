@@ -7,19 +7,21 @@
     <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=">
     <link rel="stylesheet" href="./styles.css?v=0.0.4-hf7">
     <link rel="stylesheet" href="./styles/build.css?v=0.0.3-hf2.12">
-    <link rel="stylesheet" href="./styles/profile.css?v=0.0.3-hf2.12">
+    <link rel="stylesheet" href="./styles/profile.css?v=0.0.5a">
     <link rel="stylesheet" href="./styles/multiplayer.css?v=0.0.3-hf2.12">
     <script type="importmap">
       {
         "imports": {
-          "three": "./vendor/three.module.min.js"
+          "three": "./vendor/three.module.min.js",
+          "./src/game.js?v=0.0.4-hf7": "./src/game.js?v=0.0.5a",
+          "./src/rods.js?v=0.0.4-hf2": "./src/rods.js?v=0.0.5a"
         }
       }
     </script>
   </head>
   <body>
     <div id="app">
-      <canvas id="game-canvas"></canvas>
+      <canvas id="game-canvas" tabindex="0"></canvas>
 
       <section id="registration-screen" class="screen hidden">
         <div class="panel registration-panel">
@@ -107,7 +109,7 @@
             <summary>Settings</summary>
             <div id="title-settings" class="settings-grid"></div>
           </details>
-          <p class="footer">SnejFishing v0.0.04-hf7 Stage 4 (c) 2026</p>
+          <p class="footer">SnejFishing v0.0.05a Stage 5A (c) 2026</p>
         </div>
       </section>
 
@@ -150,20 +152,46 @@
           </div>
           <button id="profile-close" class="icon-button secondary" title="Close profile" aria-label="Close profile">X</button>
         </div>
-        <div class="identity-block">
-          <strong id="profile-name">Player</strong>
-          <span id="profile-id" class="profile-id">#1</span>
+        <nav id="profile-tabs" class="profile-tabs" role="tablist" aria-label="Profile tabs">
+          <button id="profile-tab-button-profile" class="tab-button active" data-tab="profile" role="tab" aria-selected="true" aria-controls="profile-tab-profile">Profile</button>
+          <button id="profile-tab-button-log" class="tab-button" data-tab="log" role="tab" aria-selected="false" tabindex="-1" aria-controls="profile-tab-log">Catch log</button>
+          <button id="profile-tab-button-stats" class="tab-button" data-tab="stats" role="tab" aria-selected="false" tabindex="-1" aria-controls="profile-tab-stats">Statistics</button>
+        </nav>
+        <div id="profile-content" class="profile-content">
+          <section id="profile-tab-profile" role="tabpanel" aria-labelledby="profile-tab-button-profile">
+            <div class="identity-block">
+              <strong id="profile-name">Player</strong>
+              <span id="profile-id" class="profile-id">#1</span>
+            </div>
+            <div class="profile-row"><span>Coins</span><strong id="profile-coins">100</strong></div>
+            <div class="profile-actions">
+              <button id="change-name" class="secondary">Change Name</button>
+              <button id="sign-out" class="secondary">Sign Out</button>
+            </div>
+          </section>
+          <section id="profile-tab-log" class="hidden" role="tabpanel" aria-labelledby="profile-tab-button-log">
+            <div id="profile-log-list" class="profile-log-list"><p class="empty">No catches yet.</p></div>
+          </section>
+          <section id="profile-tab-stats" class="hidden" role="tabpanel" aria-labelledby="profile-tab-button-stats">
+            <table id="profile-stats-list" class="profile-stats-list" aria-label="Player statistics"><tbody></tbody></table>
+          </section>
         </div>
-        <h3>Session Stats</h3>
-        <div class="stat-grid">
-          <div><strong>0</strong><span>Sessions</span></div>
-          <div><strong>0</strong><span>Distance</span></div>
-          <div><strong>0</strong><span>Build Saves</span></div>
-        </div>
-        <div class="profile-actions">
-          <button id="change-name" class="secondary">Change Name</button>
-          <button id="sign-out" class="secondary">Sign Out</button>
-        </div>
+      </aside>
+
+      <aside id="inventory-panel" class="inventory-panel hidden" role="dialog" aria-modal="true" aria-labelledby="inventory-title">
+        <header class="inventory-header">
+          <h2 id="inventory-title">Inventory</h2>
+          <span class="inventory-coins-label">Coins: <strong id="inventory-coins">100</strong></span>
+          <button id="inventory-close" class="icon-button secondary" title="Close inventory" aria-label="Close inventory">X</button>
+        </header>
+        <nav id="inventory-category" class="inventory-category" role="tablist" aria-label="Gear categories">
+          <button id="inventory-category-rod" class="tab-button active" data-category="rod" role="tab" aria-selected="true" aria-controls="inventory-grid">Rods</button>
+          <button id="inventory-category-bait" class="tab-button" data-category="bait" role="tab" aria-selected="false" tabindex="-1" aria-controls="inventory-grid">Baits</button>
+          <button id="inventory-category-lure" class="tab-button" data-category="lure" role="tab" aria-selected="false" tabindex="-1" aria-controls="inventory-grid">Lures</button>
+          <button id="inventory-category-line" class="tab-button" data-category="line" role="tab" aria-selected="false" tabindex="-1" aria-controls="inventory-grid">Lines</button>
+          <button id="inventory-category-hook" class="tab-button" data-category="hook" role="tab" aria-selected="false" tabindex="-1" aria-controls="inventory-grid">Hooks</button>
+        </nav>
+        <div id="inventory-grid" class="inventory-grid" role="list" aria-labelledby="inventory-category-rod"></div>
       </aside>
 
       <aside id="build-panel" class="build-panel hidden" aria-label="Build mode">
@@ -237,6 +265,7 @@
           <div id="camera-line">Third Person</div>
           <div id="rod-line">Rod 4 m / Cast 7.5 m</div>
           <div id="float-depth-line">Depth 0.5 m / Line 4 m</div>
+          <div id="bait-line">Bait: Earthworm x10</div>
         </div>
         <div id="fps" class="hud-box">0 FPS</div>
         <div id="cast-meter" class="hud-box cast-meter hidden" role="meter" aria-label="Cast distance" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
@@ -257,6 +286,6 @@
       </div>
       <div id="toast" class="toast hidden" role="status"></div>
     </div>
-    <script type="module" src="./src/main.js?v=0.0.4-hf7"></script>
+    <script type="module" src="./src/main.js?v=0.0.5a"></script>
   </body>
 </html>

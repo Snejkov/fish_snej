@@ -115,7 +115,8 @@ const element = () => ({ classList: { toggle(name, enabled) { this[name] = enabl
 const markerState = {
   fs: "idle", retrieving: false, aimValid: true, canRelease: true,
   charge: 0.5, targetPower: 0.5, requestedDist: 4, minCastDist: 1, targetValid: true,
-  aimPoint: { x: 0, y: 0, z: 4 }, predictedLanding: { x: 0, y: 0, z: 4, water: true }
+  aimPoint: { x: 0, y: 0, z: 4 }, targetLanding: { x: 0.2, y: 0, z: 5, water: true },
+  predictedLanding: { x: 0, y: 0, z: 4, water: true }
 };
 const placements = [];
 const markerGame = {
@@ -124,11 +125,11 @@ const markerGame = {
   cast: { state: markerState, castRange: 8, tick: () => markerState, cancelCharge() {}, isWaterAt: () => true },
   rodSelect: {}, floatDepthInput: {}, castMeter: element(), castMeterFill: element(), castMeterDistance: element(),
   castMeterTarget: element(), castMeterTol: element(),
-  aimMarker: new THREE.Mesh(new THREE.RingGeometry(), new THREE.MeshBasicMaterial()),
-  landingMarker: new THREE.Mesh(new THREE.RingGeometry(), new THREE.MeshBasicMaterial()),
-  terrain: { depthAt: () => 1 }, placeCastMarker: (marker) => placements.push(marker)
+  aimMarker: new THREE.Mesh(new THREE.RingGeometry(), new THREE.MeshBasicMaterial({ color: 0x9ff0ff })),
+  terrain: { depthAt: () => 1 }, placeCastMarker: (marker, point) => placements.push({ marker, point })
 };
-function checkMarkers(fs, aimValid, predictedWater, currentWater, enabled, aimVisible, landingVisible) {
+const markerId = markerGame.aimMarker.uuid;
+function checkMarkers(fs, aimValid, predictedWater, currentWater, enabled, aimVisible) {
   Object.assign(markerState, { fs, aimValid });
   markerState.predictedLanding.water = predictedWater;
   markerGame.mode = enabled ? "playing" : "paused";
@@ -136,39 +137,45 @@ function checkMarkers(fs, aimValid, predictedWater, currentWater, enabled, aimVi
   placements.length = 0;
   const before = markerGame.pos.toArray();
   SnejFishingGame.prototype.updateCast.call(markerGame, 0);
-  assert.equal(markerGame.aimMarker.visible, aimVisible, "Aim rings must be hidden off water or behind blocking UI.");
-  assert.equal(markerGame.landingMarker.visible, landingVisible, "Landing rings must only preview actual water landings.");
-  assert.equal(placements.includes(markerGame.aimMarker), aimVisible);
-  assert.equal(placements.includes(markerGame.landingMarker), landingVisible);
+  assert.equal(markerGame.aimMarker.visible, aimVisible, "The single ring must be hidden off water or behind blocking UI.");
+  assert.equal(placements.length, aimVisible ? 1 : 0, "A cast preview can place only one ring.");
+  if (aimVisible) {
+    assert.equal(placements[0].marker, markerGame.aimMarker);
+    assert.equal(placements[0].point, fs === "charge" ? markerState.predictedLanding : markerState.targetLanding);
+  }
+  assert.equal(markerGame.aimMarker.material.color.getHex(), 0x9ff0ff, "Perfect, blocked, and shallow previews must keep the same color.");
+  assert.deepEqual(markerGame.aimMarker.scale.toArray(), [1, 1, 1]);
+  assert.equal(markerGame.aimMarker.uuid, markerId);
   assert.deepEqual(markerGame.pos.toArray(), before, "Marker visibility must not move the player.");
 }
 for (const fs of ["idle", "charge"]) {
-  checkMarkers(fs, true, true, true, true, true, fs === "charge");
-  checkMarkers(fs, false, true, true, true, false, false);
-  checkMarkers(fs, false, false, false, true, false, false);
-  checkMarkers(fs, true, false, false, true, true, false);
-  checkMarkers(fs, true, true, false, true, true, false);
-  checkMarkers(fs, true, true, true, false, false, false);
+  checkMarkers(fs, true, true, true, true, true);
+  checkMarkers(fs, false, true, true, true, false);
+  checkMarkers(fs, false, false, false, true, false);
+  checkMarkers(fs, true, false, false, true, false);
+  checkMarkers(fs, true, true, false, true, false);
+  checkMarkers(fs, true, true, true, false, false);
 }
-for (const fs of ["flight", "wait"]) checkMarkers(fs, true, true, true, true, false, false);
+for (const fs of ["flight", "wait"]) checkMarkers(fs, true, true, true, true, false);
 markerState.canRelease = false;
-checkMarkers("charge", true, true, true, true, true, true);
-assert.equal(markerGame.landingMarker.material.color.getHex(), 0xff5a4a, "An obstructed water cast must retain red landing feedback.");
+checkMarkers("charge", true, true, true, true, true);
 assert.equal(markerGame.castMeterTol.classList.invalid, true, "An invalid release inside the tolerance band must not appear green.");
 markerState.targetPower = 0.125;
 markerState.charge = 0.12;
-checkMarkers("charge", true, true, true, true, true, true);
+checkMarkers("charge", true, true, true, true, true);
 assert.equal(markerGame.castMeterTol.style.left, "12.5%", "The tolerance band cannot include throws below the one-meter minimum.");
 assert.ok(Math.abs(parseFloat(markerGame.castMeterTol.style.width) - 6) < 1e-8);
 markerState.canRelease = true;
-checkMarkers("charge", true, true, true, true, true, true);
+checkMarkers("charge", true, true, true, true, true);
 assert.equal(markerGame.castMeterTol.classList.invalid, false);
-checkMarkers("charge", false, false, false, true, false, false);
-checkMarkers("idle", true, true, true, true, true, false);
-for (const marker of [markerGame.aimMarker, markerGame.landingMarker]) {
-  marker.geometry.dispose();
-  marker.material.dispose();
+checkMarkers("charge", false, false, false, true, false);
+checkMarkers("idle", true, true, true, true, true);
+for (const depth of [0.01, 0.4, 4]) {
+  markerGame.terrain.depthAt = () => depth;
+  checkMarkers("charge", true, true, true, true, true);
 }
+markerGame.aimMarker.geometry.dispose();
+markerGame.aimMarker.material.dispose();
 const depthGame = {
   settings: { rodLength: 5, floatDepth: 0.5 }, angler: rig,
   cast: new SnejCastSystem({ rodRange: 10, floatDepth: 0.5 }), floatRig: new SnejFloatRig(),

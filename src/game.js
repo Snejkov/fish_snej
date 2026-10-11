@@ -9,7 +9,7 @@ import { SnejAudio } from "./audio.js?v=0.0.4";
 import {
   SnejCastSystem, CAST_TOL, SPLASH_BASE, SPLASH_MIN, SPLASH_SCALE,
   STARTLE_R, STARTLE_SEC, WAKE_BOB_AMP, WAKE_BOB_FREQ
-} from "./castSystem.js?v=0.0.5a-hf4";
+} from "./castSystem.js?v=0.0.5a-hf7";
 import { DEFAULT_FLOAT_DEPTH, FLOAT_RETRIEVE_FRACTION, SnejFloatRig, limitLineEnd, writeFixedLine } from "./floatRig.js?v=0.0.5a-hf4";
 import { SnejAuth, SNEJKOV_ID, SNEJKOV_NAME } from "./auth.js";
 import { resolveLake } from "./lakeValidator.js";
@@ -83,7 +83,6 @@ export class SnejFishingGame {
     this.castLine = null;
     this.depthLine = null;
     this.aimMarker = null;
-    this.landingMarker = null;
     this.castMeter = document.getElementById("cast-meter");
     this.castMeterFill = this.castMeter.querySelector(".cast-meter-fill");
     this.castMeterTarget = this.castMeter.querySelector(".cast-meter-target");
@@ -331,13 +330,12 @@ export class SnejFishingGame {
       this.depthLine.geometry.attributes.position.setUsage(THREE.DynamicDrawUsage);
       this.depthLine.frustumCulled = false;
       this.aimMarker = this.createMarker(0.5, 0.66, 0x9ff0ff, 0.85);
-      this.landingMarker = this.createMarker(0.86, 1.12, 0xffe98a, 0.92);
+      this.aimMarker.name = "SnejCastMarker";
     }
     this.castMesh.visible = false;
     this.castLine.visible = false;
     this.depthLine.visible = false;
     this.aimMarker.visible = false;
-    this.landingMarker.visible = false;
     this.castMeter.classList.add("hidden");
     this.scene.add(
       this.terrain.group,
@@ -345,7 +343,7 @@ export class SnejFishingGame {
       this.angler.group,
       this.placementSystem.group,
       this.remoteRoom.group,
-      this.castMesh, this.castLine, this.depthLine, this.aimMarker, this.landingMarker
+      this.castMesh, this.castLine, this.depthLine, this.aimMarker
     );
     this.scene.traverse((object) => { if (object.isLight) object.layers.enable(1); });
     this.configureShadows();
@@ -996,21 +994,11 @@ export class SnejFishingGame {
       this.castMeter.setAttribute("aria-valuenow", (state.charge * 100).toFixed(0));
       this.castMeter.setAttribute("aria-valuetext", `${state.requestedDist.toFixed(1)} of ${this.cast.castRange} meters`);
     }
-    this.aimMarker.visible = enabled && state.aimValid && (state.fs === "idle" || charging);
+    const markerPoint = charging ? state.predictedLanding : state.targetLanding;
+    this.aimMarker.visible = enabled && state.aimValid && (state.fs === "idle" || charging)
+      && this.cast.isWaterAt(markerPoint);
     if (this.aimMarker.visible) {
-      const aim = state.aimPoint;
-      this.aimMarker.material.color.setHex(onTarget ? 0x9dffb4 : 0x9ff0ff);
-      this.aimMarker.scale.setScalar(onTarget ? 1.1 : 1);
-      this.placeCastMarker(this.aimMarker, aim, 0.05);
-    }
-    this.landingMarker.visible = charging && state.aimValid && state.predictedLanding.water
-      && this.cast.isWaterAt(state.predictedLanding);
-    if (this.landingMarker.visible) {
-      const predicted = state.predictedLanding;
-      this.landingMarker.material.color.setHex(!state.canRelease ? 0xff5a4a
-        : this.terrain.depthAt(predicted.x, predicted.z) > 0.4 ? 0xfff0b0 : 0xff8a6a);
-      this.landingMarker.scale.setScalar(1 + (1 - state.charge) * 0.5);
-      this.placeCastMarker(this.landingMarker, predicted, 0.06);
+      this.placeCastMarker(this.aimMarker, markerPoint, 0.05);
     }
     if (previous === "flight" && state.fs === "wait") {
       this.stats.recordCast(true);
@@ -1181,7 +1169,7 @@ export class SnejFishingGame {
   createMarker(inner, outer, color, opacity) {
     const geometry = new THREE.RingGeometry(inner, outer, 36).rotateX(-Math.PI / 2);
     const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
-      color, transparent: true, opacity, depthWrite: false, fog: false, side: THREE.DoubleSide
+      color, transparent: true, opacity, depthWrite: false, fog: false, toneMapped: false, side: THREE.DoubleSide
     }));
     mesh.visible = false;
     mesh.renderOrder = 6;

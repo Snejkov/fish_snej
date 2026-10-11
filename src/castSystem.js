@@ -340,7 +340,10 @@ export class SnejCastSystem {
     if (ctx) this._ctx = ctx;
     dt = Math.max(0, finite(dt));
     if (state.fs === "idle" || state.fs === "charge") this.updateAim();
-    if (state.fs === "charge") {
+    if (state.fs === "idle") {
+      // The initial marker forecasts a real throw too, including an offset release grip.
+      state.targetValid = state.aimValid && !this.releaseReason(state.targetPower, state.targetLanding);
+    } else if (state.fs === "charge") {
       const phase = ((state.chargeDir > 0 ? state.charge : 2 - state.charge) + CHARGE_RATE * dt) % 2;
       state.charge = phase <= 1 ? phase : 2 - phase;
       state.chargeDir = phase < 1 ? 1 : -1;

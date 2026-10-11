@@ -111,10 +111,10 @@ for (const [reason, message] of Object.entries({
   reach: "Water is out of reach. Move closer."
 })) assert.equal(SnejFishingGame.prototype.toastForCastRejection(reason), message);
 
-const element = () => ({ classList: { toggle() {} }, style: {}, setAttribute() {} });
+const element = () => ({ classList: { toggle(name, enabled) { this[name] = enabled; } }, style: {}, setAttribute() {} });
 const markerState = {
   fs: "idle", retrieving: false, aimValid: true, canRelease: true,
-  charge: 0.5, targetPower: 0.5, requestedDist: 4,
+  charge: 0.5, targetPower: 0.5, requestedDist: 4, minCastDist: 1, targetValid: true,
   aimPoint: { x: 0, y: 0, z: 4 }, predictedLanding: { x: 0, y: 0, z: 4, water: true }
 };
 const placements = [];
@@ -154,6 +154,15 @@ for (const fs of ["flight", "wait"]) checkMarkers(fs, true, true, true, true, fa
 markerState.canRelease = false;
 checkMarkers("charge", true, true, true, true, true, true);
 assert.equal(markerGame.landingMarker.material.color.getHex(), 0xff5a4a, "An obstructed water cast must retain red landing feedback.");
+assert.equal(markerGame.castMeterTol.classList.invalid, true, "An invalid release inside the tolerance band must not appear green.");
+markerState.targetPower = 0.125;
+markerState.charge = 0.12;
+checkMarkers("charge", true, true, true, true, true, true);
+assert.equal(markerGame.castMeterTol.style.left, "12.5%", "The tolerance band cannot include throws below the one-meter minimum.");
+assert.ok(Math.abs(parseFloat(markerGame.castMeterTol.style.width) - 6) < 1e-8);
+markerState.canRelease = true;
+checkMarkers("charge", true, true, true, true, true, true);
+assert.equal(markerGame.castMeterTol.classList.invalid, false);
 checkMarkers("charge", false, false, false, true, false, false);
 checkMarkers("idle", true, true, true, true, true, false);
 for (const marker of [markerGame.aimMarker, markerGame.landingMarker]) {

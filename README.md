@@ -1,4 +1,4 @@
-# SnejFishing v0.0.05a-hf3 Stage 5A
+# SnejFishing v0.0.05a-hf3.1 Stage 5A
 
 Stage 5A is a browser-only Three.js lakeside sandbox with local rod casting, per-profile inventory, gear purchases, equipment slots, and profile statistics. It preserves the animated 24-bone angler, hand-attached carry props, profile launcher, waterbody selection, validated Snej Lake, safe spawns, static opaque water, corrected movement, one-meter wading, first-person and third-person cameras, developer Build Mode, synthesized audio, and optional raw WebSocket multiplayer scaffold. There are no fish, bites, fights, catch rewards, or lure swimming in this stage.
 

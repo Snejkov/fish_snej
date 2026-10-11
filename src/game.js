@@ -956,7 +956,8 @@ export class SnejFishingGame {
       this.castMeterFill.classList.toggle("blocked", !state.canRelease);
       this.castMeterDistance.textContent = `${state.requestedDist.toFixed(1)} / ${this.cast.castRange} m`;
       this.castMeterTarget.style.left = `${state.targetPower * 100}%`;
-      this.castMeterTol.classList.toggle("invalid", !state.targetValid);
+      const withinTolerance = Math.abs(state.charge - state.targetPower) <= CAST_TOL;
+      this.castMeterTol.classList.toggle("invalid", !state.targetValid || (withinTolerance && !state.canRelease));
       if (this.castMeterStatus) {
         const depth = Math.max(0, this.water.surfaceY(state.predictedLanding.x, state.predictedLanding.z)
           - this.castGroundHeight(state.predictedLanding.x, state.predictedLanding.z));
@@ -964,10 +965,10 @@ export class SnejFishingGame {
           : `Ready / Water ${depth.toFixed(2)} m${depth < this.settings.floatDepth ? " / Bottom contact" : ""}`;
         if (this.castMeterStatus.textContent !== status) this.castMeterStatus.textContent = status;
       }
-      const lower = Math.max(0, state.targetPower - CAST_TOL);
+      const lower = Math.max(0, state.minCastDist / this.cast.castRange, state.targetPower - CAST_TOL);
       const upper = Math.min(1, state.targetPower + CAST_TOL);
-      this.castMeterTol.style.left = `${lower * 100}%`;
-      this.castMeterTol.style.width = `${(upper - lower) * 100}%`;
+      this.castMeterTol.style.left = `${Math.min(lower, upper) * 100}%`;
+      this.castMeterTol.style.width = `${Math.max(0, upper - lower) * 100}%`;
       this.castMeter.setAttribute("aria-valuenow", (state.charge * 100).toFixed(0));
       this.castMeter.setAttribute("aria-valuetext", `${state.requestedDist.toFixed(1)} of ${this.cast.castRange} meters`);
     }

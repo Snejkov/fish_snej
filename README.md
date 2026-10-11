@@ -1,6 +1,6 @@
-# SnejFishing v0.0.03 Hotfix 2.13
+# SnejFishing v0.0.03 Hotfix 2.14
 
-Stage 3 Hotfix 2.13 is a browser-only Three.js lakeside sandbox. It includes an animated humanoid skeleton preview carrying a tackle box and rod, a browser-local profile launcher, a four-waterbody selection menu, the deterministic validated Snej Lake, five defined spawn points, static opaque water, screen-relative walking and one-meter wading, fixed-distance first-person and third-person cameras, local identity and rank permissions, developer Build Mode, synthesized Web Audio, and an optional raw WebSocket multiplayer scaffold.
+Stage 3 Hotfix 2.14 is a browser-only Three.js lakeside sandbox. It includes an animated humanoid skeleton preview carrying a tackle box and rod, a first-person raised right-arm pose using the same hand-attached rod, a browser-local profile launcher, a four-waterbody selection menu, the deterministic validated Snej Lake, five defined spawn points, static opaque water, screen-relative walking and one-meter wading, fixed-distance first-person and third-person cameras, local identity and rank permissions, developer Build Mode, synthesized Web Audio, and an optional raw WebSocket multiplayer scaffold.
 
 ## Run
 
@@ -31,21 +31,22 @@ Movement follows the rendered camera at every yaw: `A` always moves toward scree
 
 The local character is a visible 24-bone humanoid rig with hips, spine, chest, neck, head, shoulders, elbows, wrists, knees, ankles, and toes. Cyan marks the left limbs, coral marks the right limbs, and pale links mark the torso. There is no opaque body model yet.
 
-`src/angler.js` exposes `group` (world placement), `rig` (local facing and bone hierarchy), `bones` (named `THREE.Bone` references), `skeleton` (the `THREE.Skeleton` with neutral T-pose bind matrices), and `visuals` (the removable skeleton preview). Standard `THREE.AnimationMixer` clips blend idle, walking, running, and wading. Cadence follows actual horizontal travel, so pressing into a blocked surface stops the gait. The preview turns toward travel, freezes in pause, and is hidden in first-person view.
+`src/angler.js` exposes `group` (world placement), `rig` (local facing and bone hierarchy), `bones` (named `THREE.Bone` references), `skeleton` (the `THREE.Skeleton` with neutral T-pose bind matrices), and `visuals` (the removable skeleton preview). Standard `THREE.AnimationMixer` clips blend idle, walking, running, and wading. Cadence follows actual horizontal travel, so pressing into a blocked surface stops the gait. The preview turns toward travel and freezes in pause. First-person view keeps the existing right arm visible while hiding the torso, head, other limbs, and tackle box.
 
 Future models need skin weights and a compatible bind pose, or a bone mapping and retargeting step. Attach the compatible skinned model to the rig and bind it to the provided skeleton with an explicit bind matrix matching its neutral pose; do not recalculate bone inverses from the live animated pose. Hide `visuals` when the model is ready. Arbitrary unrigged models will not animate simply by being placed over the preview. The model loader and asset-specific mapping can be added with the actual uploaded models.
 
-`src/carryProps.js` builds a closed tackle box with a handle in the anatomical left hand and a rod with grip, reel, and line guides in the right hand. `angler.carry` exposes the two hand sockets and the replaceable prop groups. The carry poses keep the left arm low and the right elbow bent, with restrained gait-driven sway. Props remain attached to the hands through turns and animation blends, freeze on pause, and are hidden with the skeleton in first-person view. These are visual carry props only, not a casting or fishing system; no extra inventory or fishing UI is added.
+`src/carryProps.js` builds a closed tackle box with a handle in the anatomical left hand and a rod with grip, reel, and line guides in the right hand. `angler.carry` exposes the two hand sockets and the replaceable prop groups. The carry poses keep the left arm low and the right elbow bent, with restrained gait-driven sway. Pressing `V` blends the same shoulder, elbow, and wrist into a camera-aligned raised pose using the existing camera transition. The arm and rod stay framed on desktop and portrait screens, follow camera look, and return to the original carry pose in third-person view. No arm, rod, socket, or skeleton is cloned or reparented, and bind matrices remain unchanged. These are visual carry props only, not a casting or fishing system; no extra inventory or fishing UI is added.
 
 Development checks (Node 24, test tooling only):
 
 ```sh
 node tests/character-rig.test.mjs
+node tests/first-person.test.mjs
 node tests/movement.test.mjs
 node tests/spawn-boundary.test.mjs
 ```
 
-The rig test covers bone hierarchy, stable bind matrices and limb lengths, locomotion blending, blocked idle, pause, camera visibility, deformation of a weighted test vertex, hand attachment stability, anatomical prop sides, rod length and orientation, and tackle box ground clearance. The app itself still runs without Node.
+The rig tests cover bone hierarchy, stable bind matrices and limb lengths, locomotion blending, blocked idle, pause, camera visibility, deformation of a weighted test vertex, hand attachment stability, anatomical prop sides, rod length and orientation, tackle box ground clearance, first-person framing across camera angles and aspect ratios, interrupted view transitions, stable object identities, and restoration of the third-person pose. The view pass draws the same arm meshes after the world with normal depth between their parts, so nearby terrain cannot cut through the arm or rod. The app itself still runs without Node.
 
 ## Registration And Ranks
 

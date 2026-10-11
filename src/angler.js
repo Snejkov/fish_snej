@@ -3,6 +3,7 @@ import { createCarryProps } from "./carryProps.js?v=0.0.3-hf2.13";
 
 const TAU = Math.PI * 2;
 const HIP_HEIGHT = 0.91;
+const FIRST_PERSON_BONES = new Set(["RightForeArm", "RightHand", "RightHandTip"]);
 const GAITS = {
   idle: { swing: 0, knee: 0, arm: 0, bob: 0, lean: 0, stride: 1 },
   walk: { swing: 0.48, knee: 0.82, arm: 0.38, bob: 0.018, lean: 0.035, stride: 3.0 },
@@ -25,6 +26,12 @@ export class SnejAngler {
     this.weights = { idle: 1, walk: 0, run: 0, wade: 0 };
     this.locomotionState = "idle";
     this.heading = 0;
+    this.firstPersonWeight = 0;
+    this.viewOrigin = new THREE.Vector3();
+    this.viewParentInverse = new THREE.Matrix4();
+    this.viewRotation = new THREE.Quaternion();
+    this.viewCameraRotation = new THREE.Quaternion();
+    this.viewIdentity = new THREE.Quaternion();
     this.inverseWorld = new THREE.Matrix4();
     this.linkMatrix = new THREE.Matrix4();
     this.chestOffset = new THREE.Matrix4().makeTranslation(0, -0.03, 0);
@@ -73,6 +80,28 @@ export class SnejAngler {
     this.skeleton.calculateInverses();
     this.buildPreview();
     this.carry = createCarryProps(this.bones);
+    this.carryPose = {
+      shoulderPosition: this.bones.RightShoulder.position.clone(),
+      shoulder: this.bones.RightShoulder.quaternion.clone(),
+      upperArm: this.bones.RightUpperArm.quaternion.clone(),
+      forearm: this.bones.RightForeArm.quaternion.clone(),
+      hand: this.bones.RightHand.quaternion.clone()
+    };
+    const handAxis = new THREE.Vector3(-1, 0, 0);
+    const upperArm = new THREE.Quaternion().setFromUnitVectors(handAxis, new THREE.Vector3(0.08, -0.10, -0.99).normalize());
+    const forearm = new THREE.Quaternion().setFromUnitVectors(handAxis, new THREE.Vector3(0.40, 0.72, -0.57).normalize());
+    const hand = new THREE.Quaternion().setFromUnitVectors(this.up, new THREE.Vector3(0.02, 0.42, -0.91).normalize())
+      .multiply(this.carry.rod.quaternion.clone().invert())
+      .multiply(this.carry.rightSocket.quaternion.clone().invert());
+    this.viewPose = {
+      upperArm,
+      forearm: upperArm.clone().invert().multiply(forearm),
+      hand: forearm.clone().invert().multiply(hand)
+    };
+    const viewObjects = [this.segments, this.joints];
+    this.carry.rod.traverse((object) => { if (object.isMesh || object.isLine) viewObjects.push(object); });
+    this.viewRenderStates = viewObjects.map((object) => ({ object, layers: object.layers.mask, shadow: object.castShadow }));
+    this.armOnly = null;
     this.mixer = new THREE.AnimationMixer(this.rig);
     this.actions = Object.create(null);
     for (const [name, gait] of Object.entries(GAITS)) {
@@ -178,18 +207,67 @@ export class SnejAngler {
       const delta = Math.atan2(Math.sin(target - this.heading), Math.cos(target - this.heading));
       this.heading += delta * blend;
     }
-    this.rig.rotation.y = this.heading;
+    const viewBlend = Number.isFinite(info.viewBlend) ? info.viewBlend : info.cameraMode === "first-person" ? 0 : 1;
+    this.firstPersonWeight = info.camera ? THREE.MathUtils.clamp(1 - viewBlend, 0, 1) : 0;
+    this.rig.rotation.set(0, this.heading, 0);
+    this.rig.quaternion.slerp(this.viewIdentity, this.firstPersonWeight);
+    // Remove the previous view overlay before sampling the carry animation, including paused frames.
+    this.bones.RightShoulder.position.copy(this.carryPose.shoulderPosition);
+    this.bones.RightShoulder.quaternion.copy(this.carryPose.shoulder);
+    this.bones.RightUpperArm.quaternion.copy(this.carryPose.upperArm);
+    this.bones.RightForeArm.quaternion.copy(this.carryPose.forearm);
+    this.bones.RightHand.quaternion.copy(this.carryPose.hand);
     this.mixer.update(Math.max(0, dt));
+    this.carryPose.upperArm.copy(this.bones.RightUpperArm.quaternion);
+    this.carryPose.forearm.copy(this.bones.RightForeArm.quaternion);
+    this.carryPose.hand.copy(this.bones.RightHand.quaternion);
+    if (this.firstPersonWeight > 0) this.applyViewPose(info.camera);
     this.updatePreview();
     this.skeleton.update();
-    this.group.visible = info.cameraMode !== "first-person";
+    this.group.visible = true;
+  }
+
+  applyViewPose(camera) {
+    this.group.updateWorldMatrix(true, true);
+    camera.updateWorldMatrix(true, false);
+    const shoulder = this.bones.RightShoulder;
+    const weight = this.firstPersonWeight;
+    this.viewParentInverse.copy(this.bones.Chest.matrixWorld).invert();
+    const width = THREE.MathUtils.clamp(camera.aspect, 0.25, 1);
+    this.viewOrigin.set(0.25 * width - 0.11, -0.36, -0.05)
+      .applyMatrix4(camera.matrixWorld).applyMatrix4(this.viewParentInverse);
+    shoulder.position.lerp(this.viewOrigin, weight);
+    this.bones.Chest.getWorldQuaternion(this.viewRotation).invert();
+    camera.getWorldQuaternion(this.viewCameraRotation);
+    this.viewRotation.multiply(this.viewCameraRotation);
+    shoulder.quaternion.slerp(this.viewRotation, weight);
+    this.bones.RightUpperArm.quaternion.slerp(this.viewPose.upperArm, weight);
+    this.bones.RightForeArm.quaternion.slerp(this.viewPose.forearm, weight);
+    this.bones.RightHand.quaternion.slerp(this.viewPose.hand, weight);
   }
 
   updatePreview() {
     this.group.updateWorldMatrix(true, true);
     this.inverseWorld.copy(this.rig.matrixWorld).invert();
+    const armOnly = this.firstPersonWeight >= 0.85;
+    if (armOnly !== this.armOnly) {
+      this.armOnly = armOnly;
+      // Move the same meshes into the view pass; keep normal depth between the hand and rod.
+      for (const { object, layers, shadow } of this.viewRenderStates) {
+        if (armOnly) object.layers.set(1);
+        else object.layers.mask = layers;
+        object.castShadow = armOnly ? false : shadow;
+      }
+    }
+    this.headCage.visible = !armOnly;
+    this.chestCage.visible = !armOnly;
+    this.carry.tackleBox.visible = !armOnly;
     for (let index = 0; index < this.links.length; index += 1) {
       const { parent, bone } = this.links[index];
+      if (armOnly && !FIRST_PERSON_BONES.has(bone.name)) {
+        this.segments.setMatrixAt(index, this.linkMatrix.makeScale(0, 0, 0));
+        continue;
+      }
       this.startPoint.setFromMatrixPosition(parent.matrixWorld).applyMatrix4(this.inverseWorld);
       this.endPoint.setFromMatrixPosition(bone.matrixWorld).applyMatrix4(this.inverseWorld);
       this.linkDirection.subVectors(this.endPoint, this.startPoint);
@@ -202,7 +280,8 @@ export class SnejAngler {
       this.segments.setMatrixAt(index, this.linkMatrix);
     }
     this.skeleton.bones.forEach((bone, index) => {
-      this.linkMatrix.copy(this.inverseWorld).multiply(bone.matrixWorld);
+      if (armOnly && !FIRST_PERSON_BONES.has(bone.name)) this.linkMatrix.makeScale(0, 0, 0);
+      else this.linkMatrix.copy(this.inverseWorld).multiply(bone.matrixWorld);
       this.joints.setMatrixAt(index, this.linkMatrix);
     });
     this.headCage.matrix.copy(this.inverseWorld).multiply(this.bones.Head.matrixWorld);

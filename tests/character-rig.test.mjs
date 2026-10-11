@@ -85,7 +85,7 @@ assert.deepEqual(snapshot(), pausedPose, "Pause must freeze the pose.");
 assert.deepEqual([rig.carry.tackleBox.matrixWorld.toArray(), rig.carry.rod.matrixWorld.toArray()], pausedProps,
   "Pause must also freeze the carry props.");
 rig.update(dt, { ...info, speed: 0, cameraMode: "first-person" });
-assert.equal(rig.group.visible, false);
+assert.equal(rig.group.visible, true, "Changing view must not hide the hand-attached rod.");
 rig.update(dt, { ...info, speed: 0 });
 assert.equal(rig.group.visible, true);
 

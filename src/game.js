@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { SnejAngler } from "./angler.js?v=0.0.3-hf2.13";
+import { SnejAngler } from "./angler.js?v=0.0.3-hf2.14";
 import { SnejAudio } from "./audio.js";
 import { SnejAuth, SNEJKOV_ID, SNEJKOV_NAME } from "./auth.js";
 import { resolveLake } from "./lakeValidator.js";
@@ -218,6 +218,7 @@ export class SnejFishingGame {
       this.placementSystem.group,
       this.remoteRoom.group
     );
+    this.scene.traverse((object) => { if (object.isLight) object.layers.enable(1); });
     this.configureShadows();
     this.state.clock = 6;
   }
@@ -609,8 +610,31 @@ export class SnejFishingGame {
     const dt = clamp((now - this.lastFrame) / 1000, 0, 0.1);
     this.lastFrame = now;
     this.update(dt);
-    this.renderer.render(this.scene, this.camera);
+    this.render();
     requestAnimationFrame((time) => this.frame(time));
+  }
+
+  render() {
+    this.renderer.render(this.scene, this.camera);
+    if (!this.angler?.armOnly) return;
+    const layers = this.camera.layers.mask;
+    const autoClear = this.renderer.autoClear;
+    const shadowUpdate = this.renderer.shadowMap.autoUpdate;
+    const background = this.scene.background;
+    // Draw the same raised arm after the world so nearby terrain cannot slice through it.
+    try {
+      this.camera.layers.set(1);
+      this.renderer.autoClear = false;
+      this.renderer.shadowMap.autoUpdate = false;
+      this.scene.background = null;
+      this.renderer.clearDepth();
+      this.renderer.render(this.scene, this.camera);
+    } finally {
+      this.camera.layers.mask = layers;
+      this.renderer.autoClear = autoClear;
+      this.renderer.shadowMap.autoUpdate = shadowUpdate;
+      this.scene.background = background;
+    }
   }
 
   update(dt) {
@@ -653,7 +677,9 @@ export class SnejFishingGame {
         directionX: travelX,
         directionZ: travelZ,
         depth: this.terrain.depthAt(this.pos.x, this.pos.z),
-        cameraMode: this.cameraMode
+        cameraMode: this.cameraMode,
+        viewBlend: this.viewBlend,
+        camera: this.camera
       });
     }
     this.remoteRoom.update(dt);

@@ -4,6 +4,7 @@ import { RODS, rodForLength } from "./rods.js?v=0.0.5a";
 import { SnejInventory } from "./gear/inventory.js";
 import { SnejCatchLog } from "./game/catchLog.js";
 import { SnejStats } from "./game/stats.js";
+import { SnejWorldClock } from "./game/clock.js?v=moscow2";
 import { SnejAudio } from "./audio.js?v=0.0.4";
 import {
   SnejCastSystem, CAST_TOL, SPLASH_BASE, SPLASH_MIN, SPLASH_SCALE,
@@ -28,7 +29,6 @@ import { clamp, clamp01, damp, lerp, moveDelta, resolveWalkableStart } from "./u
 const SAVE_KEY = "snejfishing-save-v1";
 const SAVE_VERSION = 5;
 const IDENTITY_SAVE_VERSION = 3;
-const HOURS_PER_SEC = 1 / 60;
 const EYE_H = 1.62;
 const PLAYER_RADIUS = 0.34;
 const MAX_WADE_DEPTH = 1.0;
@@ -61,7 +61,8 @@ export class SnejFishingGame {
     this.currentRank = "player";
     this.hasProgress = false;
     this.seed = SNEJ_FIXED_SEED;
-    this.state = { clock: 6 };
+    this.worldClock = new SnejWorldClock();
+    this.state = { clock: this.worldClock.hour() };
     this.currentSpawn = SPAWN_INITIAL_NAME;
     this.pos = new THREE.Vector3(SPAWNS.initial.x, SPAWNS.initial.y, SPAWNS.initial.z);
     this.vel = new THREE.Vector3();
@@ -198,6 +199,11 @@ export class SnejFishingGame {
   }
 
   installEvents() {
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) this.worldClock.refresh(true);
+    });
+    window.addEventListener("pageshow", () => this.worldClock.refresh(true));
+    window.addEventListener("focus", () => this.worldClock.refresh(true));
     this.floatDepthInput.addEventListener("change", () => {
       if (!this.selectFloatDepth(this.floatDepthInput.valueAsNumber)) this.floatDepthInput.value = String(this.settings.floatDepth);
     });
@@ -343,7 +349,9 @@ export class SnejFishingGame {
     );
     this.scene.traverse((object) => { if (object.isLight) object.layers.enable(1); });
     this.configureShadows();
-    this.state.clock = 6;
+    this.worldClock.refresh(true);
+    this.state.clock = this.worldClock.hour();
+    this.sky.update(0, this.state.clock);
   }
 
   configureShadows() {
@@ -795,13 +803,14 @@ export class SnejFishingGame {
   }
 
   update(dt) {
+    this.worldClock.refresh();
+    this.state.clock = this.worldClock.hour();
     const paused = this.mode === "paused" || this.mode === "title";
     const sceneDt = paused ? 0 : dt;
     this.time += sceneDt;
     const previousX = this.pos.x;
     const previousZ = this.pos.z;
     if (this.mode === "playing") {
-      this.state.clock = (this.state.clock + dt * HOURS_PER_SEC) % 24;
       this.stats.tickPlaytime(dt);
     }
     if (this.mode === "playing" && !this.ui.buildOpen && !this.ui.profileOpen && !this.ui.inventoryOpen && !this.ui.modalOpen) {

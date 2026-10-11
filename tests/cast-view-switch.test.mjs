@@ -24,7 +24,7 @@ for (const length of [4, 5, 6]) {
     const angler = new SnejAngler();
     angler.carry.setLength(length);
     const yaw = fps === 30 ? 0 : fps === 60 ? 1.7 : Math.PI;
-    const pitch = fps === 30 ? -0.9 : fps === 60 ? 0.2 : 0.9;
+    const pitch = fps === 30 ? -0.4 : fps === 60 ? 0 : 0.9;
     angler.group.rotation.y = yaw;
     angler.heading = 0.6;
     const camera = new THREE.PerspectiveCamera(70, fps === 144 ? 390 / 844 : 16 / 9, 0.05, 1800);
@@ -70,7 +70,7 @@ for (const length of [4, 5, 6]) {
           frame(destination === 0 ? 1 - smooth : smooth);
           stableFloat();
         }
-        if (destination === 0) {
+        if (destination === 0 && pitch <= 0.05 && pitch >= -0.7) {
           const hand = angler.bones.RightHand.getWorldPosition(new THREE.Vector3()).project(camera);
           assert.ok(hand.x > 0 && hand.x < 0.95 && Math.abs(hand.y) < 0.95, "The same held hand must remain visible in first person.");
         }
@@ -84,11 +84,21 @@ for (const length of [4, 5, 6]) {
     frame(1, 0);
     assert.ok(angler.getRodTip().distanceTo(frozen) < 1e-10);
 
+    angler.group.position.x += 0.2;
     castCamera.position.x += 0.2;
     castCamera.lookAt(new THREE.Vector3(0.2, 1.62, 0).addScaledVector(look, 8));
     frame(1);
     assert.equal(float.follow(1 / fps, angler.getRodTip(), bobber, rig, context), true);
     assert.ok(bobber.x > initial.x + 0.19, "Actual rod movement must still adjust the float.");
+    const beforePitch = angler.getRodTip();
+    const correctedLook = forward.clone().multiplyScalar(Math.cos(pitch - 0.2));
+    correctedLook.y = Math.sin(pitch - 0.2);
+    castCamera.lookAt(castCamera.position.clone().addScaledVector(correctedLook, 8));
+    frame(1);
+    const afterPitch = angler.getRodTip();
+    assert.ok(Math.abs(afterPitch.y - beforePitch.y) < 1e-8, "Pitch correction must not raise the cast arm.");
+    assert.ok(Math.abs(afterPitch.distanceTo(beforePitch) - 0.006) < 1e-8, "Pitch must preserve a tiny fore/aft float correction.");
+    assert.equal(float.follow(1 / fps, afterPitch, bobber, rig, context), true);
   }
 }
 console.log("Cast view-switch stability tests passed.");

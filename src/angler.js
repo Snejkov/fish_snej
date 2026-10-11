@@ -115,6 +115,16 @@ export class SnejAngler {
       hand: forearm.clone().invert().multiply(hand),
       uprightHand: forearm.clone().invert().multiply(this.carryGripInverse)
     };
+    const holdArm = new THREE.Quaternion().setFromUnitVectors(handAxis, new THREE.Vector3(0, -0.32, 0.95).normalize());
+    const holdForearm = new THREE.Quaternion().setFromUnitVectors(handAxis, new THREE.Vector3(0.30, 0, 1).normalize());
+    this.holdPose = {
+      origin: this.bones.RightShoulder.getWorldPosition(new THREE.Vector3()),
+      upperArm: holdArm,
+      forearm: holdArm.clone().invert().multiply(holdForearm),
+      hand: holdForearm.clone().invert()
+        .multiply(new THREE.Quaternion().setFromUnitVectors(this.up, new THREE.Vector3(0, 0, 1)))
+        .multiply(this.carryGripInverse)
+    };
     const viewObjects = [this.segments, this.joints, ...this.model.meshes];
     this.carry.rod.traverse((object) => { if (object.isMesh || object.isLine) viewObjects.push(object); });
     this.viewRenderStates = viewObjects.map((object) => ({ object, layers: object.layers.mask, shadow: object.castShadow }));
@@ -234,7 +244,7 @@ export class SnejAngler {
     }
     const viewBlend = Number.isFinite(info.viewBlend) ? info.viewBlend : info.cameraMode === "first-person" ? 0 : 1;
     this.firstPersonWeight = info.camera ? THREE.MathUtils.clamp(1 - viewBlend, 0, 1) : 0;
-    const poseWeight = Math.max(this.firstPersonWeight, info.castCamera ? this.castHoldWeight : 0);
+    const poseWeight = Math.max(this.firstPersonWeight, this.castHoldWeight);
     this.rig.rotation.set(0, this.heading, 0);
     this.rig.quaternion.slerp(this.viewIdentity, poseWeight);
     // Remove the previous view overlay before sampling the carry animation, including paused frames.
@@ -248,9 +258,11 @@ export class SnejAngler {
     this.carryPose.forearm.copy(this.bones.RightForeArm.quaternion);
     this.carryPose.hand.copy(this.bones.RightHand.quaternion);
     if (this.carryMoveWeight > 0) this.applyUprightCarry();
-    // A held cast uses a world-stable grip, not the camera's moving orbit transition.
-    if (poseWeight > 0) this.applyViewPose(info.castCamera && this.castHoldWeight > 0 ? info.castCamera : info.camera, poseWeight);
-    if (this.castHoldWeight > 0) this.applyHorizontalCarry();
+    if (this.firstPersonWeight > 0) this.applyViewPose(info.camera, this.firstPersonWeight);
+    if (this.castHoldWeight > 0) {
+      this.applyCastHoldPose(info.castCamera || info.camera);
+      this.applyHorizontalCarry();
+    }
     this.updatePreview();
     this.skeleton.update();
     this.group.visible = true;
@@ -267,6 +279,33 @@ export class SnejAngler {
     if (this.castDirection.lengthSq() < 1e-8) this.castDirection.set(0, 0, 1);
     else this.castDirection.normalize();
     this.applyRodDirection(this.castDirection, this.castHoldWeight);
+  }
+
+  castHoldOrigin(camera, out) {
+    out.copy(this.holdPose.origin);
+    if (camera) {
+      camera.updateWorldMatrix(true, false);
+      const pitch = Math.asin(THREE.MathUtils.clamp(camera.getWorldDirection(this.carryDirection).y, -1, 1));
+      // A small fore/aft correction keeps pitch useful without lifting the elbow.
+      out.z += THREE.MathUtils.clamp(pitch, -1.5, 1.5) * 0.03;
+    }
+    return out;
+  }
+
+  applyCastHoldPose(camera) {
+    // Anchor the lowered elbow to the player, never to a camera orbit or pitch.
+    this.group.updateWorldMatrix(true, true);
+    const weight = this.castHoldWeight, shoulder = this.bones.RightShoulder;
+    this.viewParentInverse.copy(this.bones.Chest.matrixWorld).invert();
+    this.castHoldOrigin(camera, this.viewOrigin).applyMatrix4(this.group.matrixWorld).applyMatrix4(this.viewParentInverse);
+    shoulder.position.lerp(this.viewOrigin, weight);
+    this.bones.Chest.getWorldQuaternion(this.viewRotation).invert();
+    this.group.getWorldQuaternion(this.viewCameraRotation);
+    this.viewRotation.multiply(this.viewCameraRotation);
+    shoulder.quaternion.slerp(this.viewRotation, weight);
+    this.bones.RightUpperArm.quaternion.slerp(this.holdPose.upperArm, weight);
+    this.bones.RightForeArm.quaternion.slerp(this.holdPose.forearm, weight);
+    this.bones.RightHand.quaternion.slerp(this.holdPose.hand, weight);
   }
 
   applyRodDirection(direction, weight) {
@@ -308,21 +347,19 @@ export class SnejAngler {
 
   getCastHoldTip(camera, out = new THREE.Vector3()) {
     // Predict the settled release grip without posing, cloning, or moving the live bones.
-    camera.updateWorldMatrix(true, false);
+    this.group.updateWorldMatrix(true, false);
     this.group.getWorldDirection(this.castDirection);
     this.castDirection.y = 0;
     this.castDirection.normalize();
     const q = this.castPreviewRotation, p = this.castPreviewPoint;
-    camera.getWorldQuaternion(q);
-    const width = THREE.MathUtils.clamp(camera.aspect, 0.25, 1);
-    out.set(0.25 * width - 0.11, -0.36, -0.05).applyMatrix4(camera.matrixWorld);
+    this.group.getWorldQuaternion(q);
+    this.castHoldOrigin(camera, out).applyMatrix4(this.group.matrixWorld);
     out.add(p.copy(this.bones.RightUpperArm.position).applyQuaternion(q));
-    q.multiply(this.viewPose.upperArm);
+    q.multiply(this.holdPose.upperArm);
     out.add(p.copy(this.bones.RightForeArm.position).applyQuaternion(q));
-    q.multiply(this.viewPose.forearm);
+    q.multiply(this.holdPose.forearm);
     out.add(p.copy(this.bones.RightHand.position).applyQuaternion(q));
-    this.castPreviewHand.copy(this.viewPose.hand).slerp(this.viewPose.uprightHand, this.carryMoveWeight);
-    q.multiply(this.castPreviewHand).multiply(this.carry.rightSocket.quaternion).multiply(this.carry.rod.quaternion);
+    q.multiply(this.holdPose.hand).multiply(this.carry.rightSocket.quaternion).multiply(this.carry.rod.quaternion);
     p.copy(this.up).applyQuaternion(q);
     this.castPreviewHand.setFromUnitVectors(p, this.castDirection).multiply(q).multiply(this.carryGripInverse);
     this.carry.rod.updateMatrix();

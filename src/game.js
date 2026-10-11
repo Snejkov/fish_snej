@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { SnejAngler } from "./angler.js?v=0.0.5a-hf5";
+import { SnejAngler } from "./angler.js?v=0.0.5a-hf6";
 import { RODS, rodForLength } from "./rods.js?v=0.0.5a";
 import { SnejInventory } from "./gear/inventory.js";
 import { SnejCatchLog } from "./game/catchLog.js";

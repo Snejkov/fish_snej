@@ -39,13 +39,19 @@ for (const length of [4, 5, 6]) {
             assert.equal(rig.castHoldWeight, 1);
             assert.ok(Math.abs(axis().y) < 1e-8, "A cast rod must stay world-horizontal in either camera and every gait.");
             assert.ok(axis().dot(new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw))) > 0.9999);
+            const shoulder = rig.bones.RightUpperArm.getWorldPosition(new THREE.Vector3());
+            const elbow = rig.bones.RightForeArm.getWorldPosition(new THREE.Vector3());
+            const wrist = rig.bones.RightHand.getWorldPosition(new THREE.Vector3());
+            assert.ok(elbow.y < shoulder.y - 0.08, "The held elbow must stay lowered, not raised toward the head.");
+            assert.ok(Math.abs(wrist.y - elbow.y) < 1e-8, "The held forearm must be parallel to the water.");
+            assert.ok(wrist.y < 1.35, "The cast grip must remain below the upper chest.");
             assert.deepEqual([rig.bones.RightHand.uuid, rig.carry.rightSocket.uuid, rig.carry.rod.uuid, rig.carry.tip.uuid], ids);
             assert.equal(rig.carry.rod.parent, rig.carry.rightSocket);
             assert.equal(rig.carry.rightSocket.parent, rig.bones.RightHand);
             assert.deepEqual(rig.skeleton.boneInverses.map((matrix) => matrix.toArray()), binds);
-            if (viewBlend === 0) {
+            if (viewBlend === 0 && pitch === 0) {
               const hand = rig.bones.RightHand.getWorldPosition(new THREE.Vector3()).project(camera);
-              assert.ok(hand.x > 0 && hand.x < 0.95 && Math.abs(hand.y) < 0.95, "The original first-person hand must remain framed.");
+              assert.ok(hand.x > 0 && hand.x < 0.95 && Math.abs(hand.y) < 0.95, "The lowered hand must remain framed when looking forward.");
             }
           }
         }

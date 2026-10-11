@@ -1,4 +1,4 @@
-# SnejFishing v0.0.05a-hf5 Stage 5A
+# SnejFishing v0.0.05a-hf6 Stage 5A
 
 Stage 5A is a browser-only Three.js lakeside sandbox with local rod casting, per-profile inventory, gear purchases, equipment slots, and profile statistics. It preserves the animated 24-bone angler, hand-attached carry props, profile launcher, waterbody selection, validated Snej Lake, safe spawns, static opaque water, corrected movement, one-meter wading, first-person and third-person cameras, developer Build Mode, synthesized audio, and optional raw WebSocket multiplayer scaffold. There are no fish, bites, fights, catch rewards, or lure swimming in this stage.
 
@@ -38,6 +38,8 @@ New profiles start with 100 coins, the Bamboo 4m rod, Mono 0.20 mm line, Single 
 Profile has Profile, Catch log, and Statistics tabs. The catch log is empty until a future fishing stage; fish-related counters stay at zero. Playtime accumulates whole seconds while playing, including time in drawers but excluding the title and pause menu. Regression tests cover camera-ray aim, rejection recovery, range caps, matching equipment slots, ownership checks, drag locks, repeated view-switch stability, shallow casts, the shared water surface, live preview validation, fine float adjustment, proximity retrieval, and the skinned character model. All seventeen test files run with `node --test tests/*.test.mjs`.
 
 ## Character Rig
+
+HF6 uses a separate lowered cast-hold pose: the elbow stays below the shoulder and the forearm and rod remain parallel to the water during flight and waiting. The grip is anchored to the player's world pose, never the rendering camera's aspect or orbit. Canonical player-look pitch adds only 0.03 meters of fore/aft correction per radian (at most 0.045 meters), preserving fine inward/outward float adjustment without lifting the arm. The same sleeve and hand stay visible in first person when looking forward or toward nearby water; looking away may naturally move them out of frame. Release previews predict this exact pose without changing live bones. Walking carry and the idle first-person pose are unchanged.
 
 The local character is an original low-poly skinned angler with a face, coral cap, teal jacket, pale cuffs, grey trousers, and dark boots. `src/characterModel.js` authors 3,256 triangles locally in the existing neutral rig space, with normalized skin weights for the torso, elbows, wrists, hips, and knees. It uses the same 24-bone skeleton and hand sockets, without a downloaded model, asset loader, CDN, external textures, or engine conversion. [Human Basic Motions FREE](https://kevdev.itch.io/basic-motions-free) was reviewed as a reference, but no third-party model or animation files are bundled. Rebuilding the world releases the old model geometry, materials, and skeleton texture.
 

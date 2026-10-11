@@ -12,6 +12,7 @@ import {
 } from "./castSystem.js?v=0.0.5a-hf7";
 import { DEFAULT_FLOAT_DEPTH, FLOAT_RETRIEVE_FRACTION, SnejFloatRig, limitLineEnd, writeFixedLine } from "./floatRig.js?v=0.0.5a-hf4";
 import { SnejAuth, SNEJKOV_ID, SNEJKOV_NAME } from "./auth.js";
+import { DEFAULT_LANGUAGE, normalizeLanguage, setLanguage, t, translateText, errorMessage } from "./i18n.js";
 import { resolveLake } from "./lakeValidator.js";
 import { SNEJ_FIXED_SEED, WORLD_SIZE, WATER_REGION } from "./lake.js";
 import { SnejMultiplayerClient } from "./multiplayer/client.js";
@@ -22,7 +23,7 @@ import { SnejSky } from "./sky.js";
 import { SPAWNS, SPAWN_INITIAL_NAME, SPAWN_NAMES } from "./spawns.js";
 import { SnejTerrain } from "./terrain.js";
 import { SnejTextureManager } from "./textureManager.js";
-import { SnejUI } from "./ui.js?v=0.0.5a-hf1";
+import { SnejUI } from "./ui.js?v=ru-en-1";
 import { SnejWater } from "./water.js?v=0.0.5a-hf3";
 import { clamp, clamp01, damp, lerp, moveDelta, resolveWalkableStart } from "./util.js?v=0.0.3-hf2.12";
 
@@ -48,7 +49,7 @@ const DEFAULT_SETTINGS = {
   randomLake: false,
   rodLength: 4,
   floatDepth: DEFAULT_FLOAT_DEPTH,
-  lang: "en"
+  lang: DEFAULT_LANGUAGE
 };
 
 export class SnejFishingGame {
@@ -148,6 +149,8 @@ export class SnejFishingGame {
       this.hasProgress = Boolean(initialSave.player.lastPosition);
       if (this.identity) this.refreshDerivedRank();
     }
+    this.settings.lang = normalizeLanguage(this.settings.lang);
+    setLanguage(this.settings.lang, { persist: false });
     this.settings.rodLength = this.inventory.equippedRod().length;
 
     this.scene = new THREE.Scene();
@@ -387,7 +390,7 @@ export class SnejFishingGame {
       this.ui.updateProfile();
       return { ok: true };
     } catch (error) {
-      return { ok: false, message: error.message || "Could not create the profile." };
+      return { ok: false, message: errorMessage(error, "Could not create the profile.") };
     }
   }
 
@@ -420,7 +423,7 @@ export class SnejFishingGame {
       this.save();
       return { ok: true };
     } catch (error) {
-      return { ok: false, message: error.message || "Could not change the name." };
+      return { ok: false, message: errorMessage(error, "Could not change the name.") };
     }
   }
 
@@ -483,6 +486,8 @@ export class SnejFishingGame {
     const save = this.loadSave();
     if (!save?.player?.lastPosition) return this.newGame();
     this.settings = { ...DEFAULT_SETTINGS, ...(save.settings || {}), randomLake: false };
+    this.settings.lang = normalizeLanguage(this.settings.lang);
+    setLanguage(this.settings.lang, { persist: false });
     this.audio.settings = this.settings;
     this.identity = save.player.identity;
     this.nextLocalId = Math.max(this.nextLocalId, Number(this.identity?.nextLocalId) || 1);
@@ -589,7 +594,8 @@ export class SnejFishingGame {
   }
 
   setSetting(key, value) {
-    this.settings[key] = key === "randomLake" ? false : value;
+    this.settings[key] = key === "randomLake" ? false : key === "lang" ? normalizeLanguage(value) : value;
+    if (key === "lang") setLanguage(this.settings.lang, { persist: false });
     if (key === "volume") this.audio.setVolume(value);
     if (key === "bgm") this.audio.setBgm(value);
     if (key === "shadow" && this.renderer) this.renderer.shadowMap.enabled = Boolean(value);
@@ -632,6 +638,7 @@ export class SnejFishingGame {
       }
       : null;
     const settings = { ...DEFAULT_SETTINGS, ...migrateAmbientSettings(data.settings), randomLake: false };
+    settings.lang = normalizeLanguage(settings.lang);
     const inventory = new SnejInventory(data.player?.inventory);
     if (sourceVersion < 5 && !data.player?.inventory) {
       const rod = rodForLength(settings.rodLength);
@@ -742,7 +749,7 @@ export class SnejFishingGame {
       await this.ui.refreshTextures();
       this.ui.showToast("Texture and its placements deleted.");
     } catch (error) {
-      this.ui.showToast(error.message || "Could not delete the texture.");
+      this.ui.showToast(errorMessage(error, "Could not delete the texture."));
     }
   }
 
@@ -879,8 +886,8 @@ export class SnejFishingGame {
     this.settings.floatDepth = this.cast.rig.floatDepth;
     this.floatDepthInput.max = String(this.cast.rig.maxDepth);
     this.floatDepthInput.value = String(this.settings.floatDepth);
-    this.rodReadout.textContent = `Rod ${rod.length} m / Range ${rod.range} m`;
-    this.floatDepthReadout.textContent = `Depth ${Number(this.settings.floatDepth.toFixed(2))} m / Line ${rod.length} m`;
+    this.rodReadout.textContent = t("Rod {length} m / Range {range} m", { length: rod.length, range: rod.range });
+    this.floatDepthReadout.textContent = t("Depth {depth} m / Line {length} m", { depth: Number(this.settings.floatDepth.toFixed(2)), length: rod.length });
   }
 
   selectRod(length) {
@@ -978,15 +985,15 @@ export class SnejFishingGame {
       this.castMeterFill.style.width = `${(state.charge * 100).toFixed(1)}%`;
       this.castMeterFill.classList.toggle("on-target", onTarget);
       this.castMeterFill.classList.toggle("blocked", !state.canRelease);
-      this.castMeterDistance.textContent = `${state.requestedDist.toFixed(1)} / ${this.cast.castRange} m`;
+      this.castMeterDistance.textContent = translateText(`${state.requestedDist.toFixed(1)} / ${this.cast.castRange} m`);
       this.castMeterTarget.style.left = `${state.targetPower * 100}%`;
       const withinTolerance = Math.abs(state.charge - state.targetPower) <= CAST_TOL;
       this.castMeterTol.classList.toggle("invalid", !state.targetValid || (withinTolerance && !state.canRelease));
       if (this.castMeterStatus) {
         const depth = Math.max(0, this.water.surfaceY(state.predictedLanding.x, state.predictedLanding.z)
           - this.castGroundHeight(state.predictedLanding.x, state.predictedLanding.z));
-        const status = state.releaseBlock ? this.toastForCastRejection(state.releaseBlock)
-          : `Ready / Water ${depth.toFixed(2)} m${depth < this.settings.floatDepth ? " / Bottom contact" : ""}`;
+        const status = state.releaseBlock ? translateText(this.toastForCastRejection(state.releaseBlock))
+          : t(depth < this.settings.floatDepth ? "Ready / Water {depth} m / Bottom contact" : "Ready / Water {depth} m", { depth: depth.toFixed(2) });
         if (this.castMeterStatus.textContent !== status) this.castMeterStatus.textContent = status;
       }
       const lower = Math.max(0, state.minCastDist / this.cast.castRange, state.targetPower - CAST_TOL);
@@ -994,7 +1001,7 @@ export class SnejFishingGame {
       this.castMeterTol.style.left = `${Math.min(lower, upper) * 100}%`;
       this.castMeterTol.style.width = `${Math.max(0, upper - lower) * 100}%`;
       this.castMeter.setAttribute("aria-valuenow", (state.charge * 100).toFixed(0));
-      this.castMeter.setAttribute("aria-valuetext", `${state.requestedDist.toFixed(1)} of ${this.cast.castRange} meters`);
+      this.castMeter.setAttribute("aria-valuetext", t("{distance} of {range} meters", { distance: state.requestedDist.toFixed(1), range: this.cast.castRange }));
     }
     const markerPoint = charging ? state.predictedLanding : state.targetLanding;
     this.aimMarker.visible = enabled && state.aimValid && (state.fs === "idle" || charging)

@@ -1,11 +1,13 @@
 import { CATALOG, findItem } from "./gear/catalog.js";
-import { CLOTHING_SLOTS } from "./gear/inventory.js?v=inventory-reference-1";
-import { t, applyTranslations, onLanguageChange, getLanguage, setLanguage } from "./i18n.js";
+import { CLOTHING_SLOTS } from "./gear/inventory.js";
+import { t, translateText, formatCoins, errorMessage, applyTranslations, onLanguageChange, getLanguage, setLanguage } from "./i18n.js";
 
-const textElement = (tag, className, text) => {
+const GEAR_LABELS = Object.freeze({ rod: "Rod", bait: "Bait", line: "Line", hook: "Hook", lure: "Lure" });
+
+const textElement = (tag, className, text, localize = true) => {
   const element = document.createElement(tag);
   element.className = className;
-  element.textContent = text;
+  element.textContent = localize ? translateText(text) : text;
   return element;
 };
 export const formatPlaytime = (seconds) => `${Math.floor(seconds / 3600)}h ${Math.floor(seconds % 3600 / 60)}m`;
@@ -101,8 +103,20 @@ export class SnejUI {
     this.refreshContinue();
     onLanguageChange(() => {
       this.game.settings.lang = getLanguage();
+      this.renderSettings(document.getElementById("title-settings"));
+      this.renderSettings(document.getElementById("menu-settings"));
       this.syncSettings();
+      this.updateProfile();
+      this.game.refreshPeerList();
+      this.updateViewChip(this.game);
+      this.updateHUD(this.game, 0);
+      this.refreshFloatDepthLine();
       this.refreshInventory();
+      this.validateNameField(this.el.registrationName, this.el.registrationValidation, this.el.register);
+      if (this.modalOpen) this.validateNameField(this.el.identityName, this.el.identityValidation, this.el.identitySave);
+      if (this.networkStatusSource) this.el.networkStatus.textContent = translateText(this.networkStatusSource);
+      if (this.toastSource) this.el.toast.textContent = translateText(this.toastSource);
+      if (this.buildOpen) this.refreshTextures();
       applyTranslations(document);
     });
     applyTranslations(document);
@@ -119,6 +133,7 @@ export class SnejUI {
     const slots = this.el.equipmentSlots;
     const rig = equipment.querySelector(".inventory-rig");
     const setupTitle = textElement("h3", "inventory-section-title", t("Active tackle"));
+    setupTitle.dataset.i18n = "Active tackle";
     equipment.prepend(setupTitle);
     this.el.equipmentName.dataset.i18nSkip = "true";
     const clothingTitle = textElement("h4", "inventory-subtitle", t("Clothing"));
@@ -157,6 +172,7 @@ export class SnejUI {
     `;
     preview.append(loadouts);
     const browserTitle = textElement("h3", "inventory-section-title", t("Main inventory"));
+    browserTitle.dataset.i18n = "Main inventory";
     const toolbar = textElement("div", "inventory-toolbar", "");
     toolbar.innerHTML = `
       <div class="inventory-mode" role="group" aria-label="Inventory view">
@@ -388,7 +404,7 @@ export class SnejUI {
 
   validateNameField(input, message, button) {
     const validation = this.game.auth.validateName(input.value);
-    message.textContent = validation.message;
+    message.textContent = translateText(validation.message);
     message.classList.toggle("valid", validation.valid);
     button.disabled = !validation.valid;
     return validation;
@@ -415,7 +431,7 @@ export class SnejUI {
         for (const [value, text] of def.options) {
           const option = document.createElement("option");
           option.value = value;
-          option.textContent = text;
+          option.textContent = def.key === "lang" ? text : t(text);
           if (def.key === "lang") option.dataset.i18nSkip = "true";
           input.appendChild(option);
         }
@@ -432,7 +448,6 @@ export class SnejUI {
       this.setInputValue(input, this.game.settings[def.key]);
       input.addEventListener("input", () => {
         this.game.setSetting(def.key, this.getInputValue(input));
-        if (def.key === "lang") setLanguage(input.value);
         this.syncSettings();
       });
       label.append(span, input);
@@ -540,10 +555,10 @@ export class SnejUI {
     const rank = this.game.currentRank;
     this.el.launcherProfileInitial.textContent = identity.name.charAt(0).toUpperCase();
     this.el.launcherProfileName.textContent = identity.name;
-    this.el.launcherProfileMeta.textContent = `#${identity.id} \u00b7 ${rank}`;
-    this.el.onlineIdentity.textContent = `${identity.name} [#${identity.id}] [${rank}]`;
+    this.el.launcherProfileMeta.textContent = `#${identity.id} \u00b7 ${t(rank)}`;
+    this.el.onlineIdentity.textContent = `${identity.name} [#${identity.id}] [${t(rank)}]`;
     const allowed = this.game.auth.can(rank, "buildMode");
-    this.el.buildChip.textContent = allowed ? "[B] Build" : "[B] Build (locked)";
+    this.el.buildChip.textContent = t(allowed ? "[B] Build" : "[B] Build (locked)");
     this.el.buildChip.classList.toggle("allowed", allowed);
     this.el.buildChip.classList.toggle("locked", !allowed);
     this.openProfileTab(this.profileTab);
@@ -626,7 +641,7 @@ export class SnejUI {
         const record = await this.game.textureManager.add(file);
         this.game.placementSystem.setTexture(record.id);
       } catch (error) {
-        this.showToast(error.message || "Texture upload failed.");
+        this.showToast(errorMessage(error, "Texture upload failed."));
       }
     }
     this.el.textureInput.value = "";
@@ -645,7 +660,7 @@ export class SnejUI {
       setTimeout(() => URL.revokeObjectURL(url), 0);
       this.showToast("Texture metadata exported.");
     } catch (error) {
-      this.showToast(error.message || "Could not export texture metadata.");
+      this.showToast(errorMessage(error, "Could not export texture metadata."));
     }
   }
 
@@ -662,7 +677,7 @@ export class SnejUI {
       await this.refreshTextures();
       this.showToast(`Manifest imported: ${result.added} added, ${result.skipped} skipped.`);
     } catch (error) {
-      this.showToast(error.message || "Could not import this manifest.");
+      this.showToast(errorMessage(error, "Could not import this manifest."));
     }
   }
 
@@ -677,7 +692,7 @@ export class SnejUI {
     if (records.length === 0) {
       const empty = document.createElement("p");
       empty.className = "empty-library";
-      empty.textContent = "No local textures yet.";
+      empty.textContent = t("No local textures yet.");
       this.el.textureList.appendChild(empty);
       return;
     }
@@ -691,7 +706,7 @@ export class SnejUI {
     card.classList.toggle("selected", record.id === this.game.placementSystem.textureId);
     const select = document.createElement("button");
     select.className = "texture-select";
-    select.title = `Select ${record.name}`;
+    select.title = t("Select {name}", { name: record.name });
     const image = document.createElement("img");
     image.src = this.game.textureManager.urlFor(record);
     image.alt = record.name;
@@ -703,21 +718,21 @@ export class SnejUI {
     const name = document.createElement("button");
     name.className = "texture-name";
     name.textContent = record.name;
-    name.title = "Rename texture";
+    name.title = t("Rename texture");
     name.addEventListener("click", () => this.beginTextureRename(card, record, name));
     const dimensions = document.createElement("span");
     dimensions.className = "texture-dimensions";
     dimensions.textContent = `${record.width} x ${record.height}`;
     const remove = document.createElement("button");
     remove.className = "texture-delete";
-    remove.textContent = "Delete";
-    remove.title = `Delete ${record.name}`;
+    remove.textContent = t("Delete");
+    remove.title = t("Delete {name}", { name: record.name });
     remove.addEventListener("click", () => this.game.deleteTexture(record.id));
     card.append(select, name, dimensions, remove);
     if (record.missingBlob || !record.blob) {
       const missing = document.createElement("span");
       missing.className = "missing-media";
-      missing.textContent = "Metadata";
+      missing.textContent = t("Metadata");
       card.appendChild(missing);
     }
     return card;
@@ -743,7 +758,7 @@ export class SnejUI {
         await this.refreshTextures();
       } catch (error) {
         input.replaceWith(nameButton);
-        this.showToast(error.message || "Could not rename the texture.");
+        this.showToast(errorMessage(error, "Could not rename the texture."));
       }
     };
     input.addEventListener("keydown", (event) => {
@@ -754,12 +769,13 @@ export class SnejUI {
   }
 
   updateViewChip(game) {
-    const label = game.cameraMode === "first-person" ? "First Person" : "Third Person";
-    this.el.viewChip.textContent = `[V] View: ${label}`;
+    const label = t(game.cameraMode === "first-person" ? "First Person" : "Third Person");
+    this.el.viewChip.textContent = t("[V] View: {view}", { view: label });
   }
 
   setNetworkStatus(text) {
-    this.el.networkStatus.textContent = text;
+    this.networkStatusSource = text;
+    this.el.networkStatus.textContent = translateText(text);
   }
 
   updatePeerList(peers) {
@@ -772,7 +788,7 @@ export class SnejUI {
       label.textContent = `[#${peer.id}] ${peer.name}`;
       const badge = document.createElement("span");
       badge.className = `rank-badge rank-${peer.rank}`;
-      badge.textContent = `[${peer.rank}]`;
+      badge.textContent = `[${t(peer.rank)}]`;
       row.append(label, badge);
       this.el.peerList.appendChild(row);
     }
@@ -780,7 +796,8 @@ export class SnejUI {
 
   showToast(text) {
     clearTimeout(this.toastTimer);
-    this.el.toast.textContent = text;
+    this.toastSource = text;
+    this.el.toast.textContent = translateText(text);
     this.el.toast.classList.remove("hidden");
     this.toastTimer = setTimeout(() => this.el.toast.classList.add("hidden"), 3600);
   }
@@ -797,8 +814,8 @@ export class SnejUI {
     const depth = game.terrain ? game.terrain.depthAt(position.x, position.z) : 0;
     this.el.arrow.setAttribute("transform", `rotate(${(-game.yaw * 180) / Math.PI} 24 24)`);
     this.el.pos.textContent = `x ${position.x.toFixed(1)}, z ${position.z.toFixed(1)}`;
-    this.el.depth.textContent = depth < 0.1 ? "On land" : `Depth ${depth.toFixed(1)} m`;
-    this.el.camera.textContent = game.cameraMode === "first-person" ? "First Person" : "Third Person";
+    this.el.depth.textContent = depth < 0.1 ? t("On land") : t("Depth {depth} m", { depth: depth.toFixed(1) });
+    this.el.camera.textContent = t(game.cameraMode === "first-person" ? "First Person" : "Third Person");
     this.el.fps.textContent = `${this.fps} FPS`;
   }
 
@@ -860,10 +877,18 @@ export class SnejUI {
     const inv = this.game.inventory;
     if (!inv) return;
     const rod = inv.equippedRod();
-    this.el.rodLine.textContent = `Rod ${rod.length} m / Range ${rod.range} m`;
+    this.el.rodLine.textContent = t("Rod {length} m / Range {range} m", { length: rod.length, range: rod.range });
     const bait = inv.equippedBait();
     this.el.baitLine.textContent = bait && inv.countOf(bait.id) > 0
-      ? `Bait: ${bait.name} x${inv.countOf(bait.id)}` : "No bait";
+      ? t("Bait: {name} x{count}", { name: t(bait.name), count: inv.countOf(bait.id) }) : t("No bait");
+  }
+
+  refreshFloatDepthLine() {
+    const rod = this.game.inventory?.equippedRod();
+    const readout = document.getElementById("float-depth-line");
+    if (rod && readout) readout.textContent = t("Depth {depth} m / Line {length} m", {
+      depth: Number(this.game.settings.floatDepth.toFixed(2)), length: rod.length
+    });
   }
 
   canDropGear(item, kind) {
@@ -930,7 +955,7 @@ export class SnejUI {
     for (const slot of this.el.clothingSlots.querySelectorAll("[data-clothing-slot]")) {
       const info = CLOTHING_SLOTS.find((item) => item.id === slot.dataset.clothingSlot);
       const value = clothing[slot.dataset.clothingSlot];
-      const label = value || t("Empty");
+      const label = value ? t(value) || t("Empty") : t("Empty");
       slot.querySelector(".slot-kind").textContent = t(info?.label || "Clothing");
       slot.querySelector("strong").textContent = label;
       slot.setAttribute("aria-label", `${t(info?.label || "Clothing")}: ${label}`);
@@ -947,7 +972,7 @@ export class SnejUI {
     }
     for (const loadout of loadouts) {
       const card = textElement("article", "loadout-card", "");
-      const title = textElement("h4", "", loadout.name);
+      const title = textElement("h4", "", loadout.name, false);
       title.dataset.i18nSkip = "true";
       const items = ["rod", "line", "hook", "bait"].map((kind) => t(findItem(loadout.equipped?.[kind])?.name || "None"));
       const summary = textElement("p", "desc", items.join(" / "));
@@ -974,7 +999,7 @@ export class SnejUI {
     const marker = textElement("span", `gear-placeholder ${className}`, "");
     marker.setAttribute("aria-hidden", "true");
     marker.dataset.kind = item.kind;
-    const label = textElement("span", "placeholder-label", t({ rod: "Rod", bait: "Bait", line: "Line", hook: "Hook", lure: "Lure" }[item.kind] || "None"));
+    const label = textElement("span", "placeholder-label", t(GEAR_LABELS[item.kind] || "None"));
     marker.append(label);
     return marker;
   }
@@ -1010,7 +1035,7 @@ export class SnejUI {
     const buy = !owned || (item.stackable && this.inventoryMode === "shop");
     const button = this.el.previewAction;
     button.dataset.action = buy ? "buy" : "equip";
-    button.textContent = buy ? `${t("Buy")} / ${item.price} ${t("coins")}` : t(equipped ? "Equipped" : item.kind === "lure" ? "Owned" : "Equip");
+    button.textContent = buy ? `${t("Buy")} / ${formatCoins(item.price)}` : t(equipped ? "Equipped" : item.kind === "lure" ? "Owned" : "Equip");
     button.disabled = item.unlocked === false || (buy ? inv.coins() < item.price : equipped || item.kind === "lure" || ["charge", "flight"].includes(this.game.cast.state.fs));
     button.classList.toggle("secondary", !buy);
     button.setAttribute("aria-label", `${button.textContent} ${t(item.name)}`);
@@ -1025,11 +1050,12 @@ export class SnejUI {
     if (!this.inventoryOpen) return;
     const kind = this.currentInventoryCategory;
     this.el.equipmentName.textContent = this.game.identity.name;
-    this.el.inventoryCastRange.textContent = `${Number(this.game.cast.castRange.toFixed(2))} m`;
+    this.el.inventoryCastRange.textContent = translateText(`${Number(this.game.cast.castRange.toFixed(2))} m`);
     this.refreshClothingSlots();
     this.refreshLoadouts();
     for (const slot of this.el.equipmentSlots.querySelectorAll("[data-slot]")) {
       const item = findItem(inv.state.equipped[slot.dataset.slot]);
+      slot.querySelector(".slot-kind").textContent = t(GEAR_LABELS[slot.dataset.slot]);
       const label = item ? `${t(item.name)}${item.stackable ? ` x${inv.countOf(item.id)}` : ""}` : t("None");
       slot.querySelector("strong").textContent = label;
       const previous = slot.querySelector(".slot-thumbnail");
@@ -1070,7 +1096,7 @@ export class SnejUI {
       const heading = textElement("div", "row", "");
       heading.append(textElement("h3", "name", t(item.name)), textElement("span", `badge ${badge.toLowerCase()}`, t(badge)));
       const detail = textElement("div", "row", "");
-      detail.append(textElement("span", "price", this.inventoryMode === "owned" ? t(item.kind === "rod" ? `${item.length} m` : "Owned") : `${item.price} ${t("coins")}`));
+      detail.append(textElement("span", "price", this.inventoryMode === "owned" ? translateText(item.kind === "rod" ? `${item.length} m` : "Owned") : formatCoins(item.price)));
       if (item.stackable) detail.append(textElement("span", "count", `x${inv.countOf(item.id)}`));
       card.append(this.gearImage(item));
       card.append(heading, detail);
@@ -1125,7 +1151,7 @@ export class SnejUI {
       ["Casts", stats.castCount], ["Successful casts", stats.successfulCasts], ["Fish caught", stats.fishCaught],
       ["Best length", `${stats.bestLengthCm} cm`], ["Total weight", `${stats.totalWeightKg.toFixed(2)} kg`],
       ["Unique species", stats.uniqueSpecies], ["Playtime", formatPlaytime(stats.playtimeSec)],
-      ["Last seen", stats.lastSeenAt > 0 && Number.isFinite(seen.getTime()) ? seen.toISOString() : "Never"]
+      ["Last seen", stats.lastSeenAt > 0 && Number.isFinite(seen.getTime()) ? seen.toLocaleString(getLanguage() === "ru" ? "ru-RU" : "en-GB") : "Never"]
     ];
     const body = document.createElement("tbody");
     for (const [label, value] of rows) {

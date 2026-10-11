@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { registerHooks } from "node:module";
+import { t } from "../src/i18n.js";
 
 registerHooks({
   resolve(specifier, context, nextResolve) {
@@ -199,8 +200,8 @@ assert.equal(depthGame.cast.state.fs, "idle");
 assert.equal(depthGame.cast.castRange, 9.25);
 assert.equal(depthGame.floatDepthInput.value, "0.75");
 assert.equal(depthGame.saved.floatDepth, 0.75);
-assert.equal(depthGame.rodReadout.textContent, "Rod 5 m / Range 10 m");
-assert.equal(depthGame.floatDepthReadout.textContent, "Depth 0.75 m / Line 5 m");
+assert.equal(depthGame.rodReadout.textContent, t("Rod {length} m / Range {range} m", { length: 5, range: 10 }));
+assert.equal(depthGame.floatDepthReadout.textContent, t("Depth {depth} m / Line {length} m", { depth: 0.75, length: 5 }));
 depthGame.settings.floatDepth = 4.5;
 depthGame.applyRod({ length: 4, range: 8 });
 assert.equal(depthGame.settings.floatDepth, 3.75, "Selecting a shorter rod must clamp the stored depth to its line budget.");

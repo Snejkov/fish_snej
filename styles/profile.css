@@ -747,7 +747,7 @@
 #preview-action:disabled { opacity: 0.65; }
 .loadout-panel { flex: 1 0 auto; padding: 15px 0 0; border-right: 0; border-top: 1px solid rgba(197, 214, 210, 0.2); }
 .loadout-panel h3 { font-size: 11px; text-transform: uppercase; color: #b9ccc4; }
-.loadout-panel .compact-field { font-size: 11px; grid-template-columns: 44px minmax(0, 1fr); }
+.loadout-panel .compact-field { font-size: 11px; grid-template-columns: 64px minmax(0, 1fr); }
 #loadout-name { min-height: 30px; padding: 6px 8px; border: 1px solid rgba(188, 213, 205, 0.23); border-radius: 4px; background: rgba(0, 0, 0, 0.2); color: #e6efeb; }
 #loadout-save { margin-bottom: 9px; }
 .loadout-list { overflow: visible; gap: 7px; }

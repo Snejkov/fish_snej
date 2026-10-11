@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { CATALOG } from "../src/gear/catalog.js";
 import { SnejAuth } from "../src/auth.js";
-import { DICTIONARIES, formatCoins, getLanguage, normalizeLanguage, onLanguageChange, readLanguage, saveLanguage,
+import { DICTIONARIES, errorMessage, formatCoins, getLanguage, normalizeLanguage, onLanguageChange, readLanguage, saveLanguage,
   setLanguage, t, translateText } from "../src/i18n.js";
 
 const key = "snejfishing-save-v1";
@@ -46,6 +46,8 @@ assert.equal(storage.getItem(key), "{broken", "Do not overwrite a damaged save."
 const blocked = { getItem() { throw new Error("blocked"); }, setItem() { throw new Error("blocked"); } };
 assert.equal(readLanguage(blocked), "ru");
 assert.equal(saveLanguage("en", blocked), false);
+assert.equal(errorMessage(new SyntaxError("Unexpected token"), "Could not import this manifest."), "Could not import this manifest.");
+assert.equal(errorMessage(new Error("Texture not found."), "Texture upload failed."), "Texture not found.");
 Object.defineProperty(globalThis, "localStorage", { configurable: true, get() { throw new Error("blocked getter"); } });
 assert.equal(readLanguage(), "ru");
 assert.equal(saveLanguage("en"), false);

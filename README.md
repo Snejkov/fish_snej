@@ -12,6 +12,10 @@ python -m http.server 8000
 
 Open `http://localhost:8000/`. The game needs no Node runtime, package install, build step, CDN, webfont, native module, or downloaded media asset. Three.js is stored locally in `vendor/`.
 
+## Language
+
+Russian is the default. Select Russian or English during registration or later in Settings; language changes update the visible UI immediately. The shared `src/i18n.js` dictionary covers menus, HUD, accessible labels, gear names and descriptions, inventory, sets, profile, building tools, validation and casting messages. Source remains ASCII through Unicode escapes. The language is saved in the existing `settings.lang` field without changing inventory, positions or custom set names. Missing or unsupported languages fall back to Russian. Selecting a language before registration saves only that preference and does not create a profile. Localization tests cover defaults, migration, both languages, custom names and save integrity.
+
 ## Controls
 
 - `W/A/S/D`: move and strafe.

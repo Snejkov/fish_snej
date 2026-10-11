@@ -215,6 +215,11 @@ const templates = Object.keys(russian).filter((key) => key.includes("{"))
   return { key, names, pattern: new RegExp(`^${pattern}$`) };
 });
 
+export function errorMessage(error, fallback) {
+  const message = String(error?.message || "");
+  return Object.hasOwn(russian, message) || templates.some((template) => template.pattern.test(message)) ? message : fallback;
+}
+
 // Compatibility for legacy display strings; new messages should use t with parameters.
 export function translateText(value) {
   const text = String(value ?? "");
@@ -234,7 +239,7 @@ export function translateText(value) {
     }
   }
   if (result === undefined && /^\d+(?:\.\d+)? coins?$/.test(trimmed)) result = formatCoins(trimmed.split(" ")[0]);
-  if (result === undefined && /^\d+h \d+m$/.test(trimmed)) result = trimmed.replace("h", "\u0447").replace("m", "\u043c\u0438\u043d");
+  if (result === undefined && /^\d+h \d+m$/.test(trimmed)) result = trimmed.replace("h", " \u0447").replace("m", " \u043c\u0438\u043d");
   if (result === undefined && /^[\d. /]+ (m|cm|kg)$/.test(trimmed)) result = trimmed.replace(/(cm|kg|m)$/, (unit) => ({ cm: "\u0441\u043c", kg: "\u043a\u0433", m: "\u043c" })[unit]);
   if (result === undefined && /^\d+(?:\.\d+)? cm \/ \d+(?:\.\d+)? kg$/.test(trimmed)) result = trimmed.replace("cm", "\u0441\u043c").replace("kg", "\u043a\u0433");
   if (result === undefined && /^SnejFishing v[\w.-]+ Stage \w+ \(c\) \d{4}$/.test(trimmed)) result = trimmed.replace("Stage", t("Stage"));
@@ -261,12 +266,12 @@ export function applyTranslations(root = globalThis.document) {
   };
   if (root.nodeType === 3) translateNode(root);
   while (walker.nextNode()) translateNode(walker.currentNode);
-  const elements = root.querySelectorAll?.("[aria-label], [title], [placeholder], [data-i18n]") || [];
+  const elements = root.querySelectorAll?.("[aria-label], [aria-valuetext], [title], [placeholder], [data-i18n]") || [];
   const translateElement = (element) => {
     if (element.closest(skipSelector)) return;
     if (element.dataset.i18n) element.textContent = t(element.dataset.i18n);
     const previous = originals.get(element) || {};
-    for (const attr of ["aria-label", "title", "placeholder"]) {
+    for (const attr of ["aria-label", "aria-valuetext", "title", "placeholder"]) {
       if (!element.hasAttribute(attr)) continue;
       const current = element.getAttribute(attr);
       const source = previous[attr] && current === previous[attr].rendered ? previous[attr].source : sourceText(current);

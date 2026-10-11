@@ -103,8 +103,8 @@ export class SnejCastSystem {
       castOrigin: point(), bobber: point(), bobberVel: point(),
       castPlayerOrigin: point(), requestedDist: 0, aimValid: false, canRelease: false,
       lastRejection: null,
-      targetPower: 0, minCastDist: 0, aimPoint: point(), aimDist: 0,
-      aimCapped: false, castObstruction: null, retrieving: false,
+      targetPower: 0, minCastDist: 0, aimPoint: point(), aimDist: 0, aimYaw: null,
+      aimCapped: false, aimOutOfReach: false, castObstruction: null, retrieving: false,
       predictedLanding: point(), waitTime: 0
     });
     this._ctx = null;
@@ -133,7 +133,7 @@ export class SnejCastSystem {
     state.requestedDist = state.charge * this.castRange;
     // Validate the exact release, not the throttled preview or the ideal aim alone.
     const landing = this.predictLanding(state.castPower, state.predictedLanding);
-    const reason = !state.aimValid ? "water"
+    const reason = !state.aimValid ? state.aimOutOfReach ? "reach" : "water"
       : state.requestedDist < state.minCastDist ? "range"
         : landing.obstruction || (!landing.water ? "water" : !this.isRigWaterAt(landing) ? "depth" : null);
     if (reason) {
@@ -205,7 +205,7 @@ export class SnejCastSystem {
   }
 
   computeCastVelocityLocal(power, out = point()) {
-    const yaw = finite(this._ctx?.yaw);
+    const yaw = finite(this.state.aimYaw, finite(this._ctx?.yaw));
     const elev = elevFor(finite(this._ctx?.pitch));
     const origin = this.getCastOriginLocal();
     const pos = this._ctx?.pos || point();
@@ -236,22 +236,44 @@ export class SnejCastSystem {
     const pos = ctx.pos || point();
     const origin = this.getCastOriginLocal();
     const yaw = finite(ctx.yaw), pitch = finite(ctx.pitch);
-    const fx = Math.sin(yaw), fz = Math.cos(yaw);
     const surface = ctx.waterSurfaceY?.(pos.x, pos.z) ?? 0;
     const originOffset = Math.hypot(origin.x - finite(pos.x), origin.z - finite(pos.z));
     state.minCastDist = originOffset + waterRange(CAST_SPEED_MIN, elevFor(pitch), Math.max(0, origin.y - surface));
     const aimMax = this.castRange;
-    const eyeY = finite(pos.y) + 1.62;
-    const dirY = Math.sin(pitch);
-    const h = Math.abs(Math.cos(pitch));
-    const look = dirY < -0.02 ? h * Math.max(0, eyeY - surface) / -dirY : Infinity;
-    state.aimCapped = look > aimMax || ctx.aimBlockedByDome?.({ x: fx * h, y: dirY, z: fz * h }, eyeY) === "cap";
+    const ray = ctx.aimRay;
+    const eye = ray?.origin || { x: finite(pos.x), y: finite(pos.y) + 1.62, z: finite(pos.z) };
+    const direction = ray?.direction || {
+      x: Math.sin(yaw) * Math.cos(pitch), y: Math.sin(pitch), z: Math.cos(yaw) * Math.cos(pitch)
+    };
+    const down = direction.y < (ray ? -0.00001 : -0.02);
+    const travel = down ? (surface - eye.y) / direction.y : Infinity;
+    let look = Infinity;
+    let targetX = finite(pos.x), targetZ = finite(pos.z);
+    state.aimYaw = yaw;
+    // Third-person orbit pitch is not the rendered camera's look angle.
+    if (Number.isFinite(travel) && travel > 0) {
+      const dx = eye.x + direction.x * travel - finite(pos.x);
+      const dz = eye.z + direction.z * travel - finite(pos.z);
+      targetX = finite(pos.x) + dx;
+      targetZ = finite(pos.z) + dz;
+      look = Math.hypot(dx, dz);
+      if (look > 0.00001) state.aimYaw = Math.atan2(dx, dz);
+    }
+    const fx = Math.sin(state.aimYaw), fz = Math.cos(state.aimYaw);
+    state.aimCapped = look > aimMax || ctx.aimBlockedByDome?.(direction, eye.y) === "cap";
     state.aimDist = clamp(state.aimCapped ? aimMax : look, state.minCastDist, aimMax);
     state.aimPoint.x = finite(pos.x) + fx * state.aimDist;
     state.aimPoint.y = surface;
     state.aimPoint.z = finite(pos.z) + fz * state.aimDist;
     state.targetPower = state.aimDist / this.castRange;
-    state.aimValid = dirY < -0.02 && this.isWaterAt(state.aimPoint);
+    const visibleWater = (p) => {
+      const water = ctx.waterSurfaceY?.(p.x, p.z) ?? 0;
+      const depth = ctx.terrainDepthAt?.(p.x, p.z) ?? water - (ctx.terrainHeightAt?.(p.x, p.z) ?? -1);
+      return depth > 0 && (ctx.isWaterAt?.(p.x, p.z) ?? true);
+    };
+    state.aimValid = Number.isFinite(look) && visibleWater(state.aimPoint);
+    state.aimOutOfReach = !state.aimValid && Number.isFinite(look) && look > aimMax
+      && visibleWater({ x: targetX, z: targetZ });
   }
 
   impact(previous, end, origin) {
@@ -272,7 +294,10 @@ export class SnejCastSystem {
     if (end.y > surface) return null;
     end.y = surface;
     const depth = ctx.terrainDepthAt?.(end.x, end.z) ?? water - ground;
-    if (depth <= WATER_DEPTH_MIN || !this.isWaterAt(end)) return "terrain";
+    if (depth <= WATER_DEPTH_MIN) {
+      return depth > 0 && (ctx.isWaterAt?.(end.x, end.z) ?? ground < water) ? "depth" : "terrain";
+    }
+    if (!this.isWaterAt(end)) return "terrain";
     if (!this.isRigWaterAt(end)) return "depth";
     // The fixed rig bows sideways; obsolete vertical sag can falsely intersect the lake bed.
     const lineHit = ctx.lineObstruction?.(ctx.rodTip || origin, end, 0);

@@ -8,8 +8,8 @@ import { SnejAudio } from "./audio.js?v=0.0.4";
 import {
   SnejCastSystem, CAST_TOL, SPLASH_BASE, SPLASH_MIN, SPLASH_SCALE,
   STARTLE_R, STARTLE_SEC, WAKE_BOB_AMP, WAKE_BOB_FREQ
-} from "./castSystem.js?v=0.0.4-hf7";
-import { DEFAULT_FLOAT_DEPTH, SnejFloatRig, rigForRod, limitLineEnd, writeFixedLine } from "./floatRig.js?v=0.0.4-hf6";
+} from "./castSystem.js?v=0.0.5a-hf1";
+import { DEFAULT_FLOAT_DEPTH, SnejFloatRig, limitLineEnd, writeFixedLine } from "./floatRig.js?v=0.0.4-hf6";
 import { SnejAuth, SNEJKOV_ID, SNEJKOV_NAME } from "./auth.js";
 import { resolveLake } from "./lakeValidator.js";
 import { SNEJ_FIXED_SEED, WORLD_SIZE } from "./lake.js";
@@ -21,7 +21,7 @@ import { SnejSky } from "./sky.js";
 import { SPAWNS, SPAWN_INITIAL_NAME, SPAWN_NAMES } from "./spawns.js";
 import { SnejTerrain } from "./terrain.js";
 import { SnejTextureManager } from "./textureManager.js";
-import { SnejUI } from "./ui.js?v=0.0.5a";
+import { SnejUI } from "./ui.js?v=0.0.5a-hf1";
 import { SnejWater } from "./water.js?v=0.0.4";
 import { clamp, clamp01, damp, lerp, moveDelta, resolveWalkableStart } from "./util.js?v=0.0.3-hf2.12";
 
@@ -72,6 +72,7 @@ export class SnejFishingGame {
     this.keys = new Set();
     this.castOrigin = new THREE.Vector3();
     this.castTip = new THREE.Vector3();
+    this.castAimDirection = new THREE.Vector3();
     this.castSurfacePoint = new THREE.Vector3();
     this.cast = new SnejCastSystem({ rodRange: RODS[0].range, floatDepth: DEFAULT_FLOAT_DEPTH, getCastOrigin: () => this.angler.getCastOrigin(this.castOrigin) });
     this.floatRig = new SnejFloatRig();
@@ -85,13 +86,9 @@ export class SnejFishingGame {
     this.castMeterTarget = this.castMeter.querySelector(".cast-meter-target");
     this.castMeterTol = this.castMeter.querySelector(".cast-meter-tol");
     this.castMeterDistance = this.castMeter.querySelector(".cast-meter-distance");
-    this.rodSelect = document.getElementById("rod-select");
     this.rodReadout = document.getElementById("rod-line");
     this.floatDepthInput = document.getElementById("float-depth");
     this.floatDepthReadout = document.getElementById("float-depth-line");
-    for (const rod of RODS) {
-      this.rodSelect.add(new Option(`${rod.length} m / Range ${rod.range} m`, String(rod.length)));
-    }
     this.castContext = {
       waterSurfaceY: (x, z) => this.water.surfaceY(x, z),
       terrainHeightAt: (x, z) => this.terrain.heightAt(x, z),
@@ -100,6 +97,7 @@ export class SnejFishingGame {
       dockBlocksSegment: (a, b) => this.terrain.dockBlocksSegment(a.x, a.y, a.z, b.x, b.y, b.z),
       lineObstruction: (a, b, slack) => this.lineObstruction(a, b, slack),
       aimBlockedByDome: () => null,
+      aimRay: null,
       rodReel: 0
     };
     this.floatContext = {
@@ -194,9 +192,6 @@ export class SnejFishingGame {
   }
 
   installEvents() {
-    this.rodSelect.addEventListener("change", () => {
-      if (!this.selectRod(Number(this.rodSelect.value))) this.rodSelect.value = String(this.settings.rodLength);
-    });
     this.floatDepthInput.addEventListener("change", () => {
       if (!this.selectFloatDepth(this.floatDepthInput.valueAsNumber)) this.floatDepthInput.value = String(this.settings.floatDepth);
     });
@@ -808,8 +803,8 @@ export class SnejFishingGame {
       this.moveAmt = 0;
       this.moveSpeed = 0;
     }
-    this.updateCast(this.canCast() ? sceneDt : 0);
     this.updateCamera(sceneDt);
+    this.updateCast(this.canCast() ? sceneDt : 0);
     if (this.sky) this.sky.update(sceneDt, this.state.clock, this.camera, this.pos);
     if (this.terrain) {
       this.terrain.updateWind(this.time, 0.8);
@@ -864,12 +859,6 @@ export class SnejFishingGame {
     this.cast.setRodRange(rod.range, this.settings.floatDepth);
     this.floatRig.reset();
     this.settings.floatDepth = this.cast.rig.floatDepth;
-    this.rodSelect.value = String(rod.length);
-    for (const [index, item] of RODS.entries()) {
-      const rig = rigForRod(item.length, this.settings.floatDepth);
-      this.rodSelect.options[index].textContent = `${item.length} m / Cast ${Number(rig.castRange.toFixed(2))} m`;
-      this.rodSelect.options[index].disabled = this.inventory ? !this.inventory.owns(item.id) : false;
-    }
     this.floatDepthInput.max = String(this.cast.rig.maxDepth);
     this.floatDepthInput.value = String(this.settings.floatDepth);
     this.rodReadout.textContent = `Rod ${rod.length} m / Range ${rod.range} m`;
@@ -909,6 +898,7 @@ export class SnejFishingGame {
     this.applyRod(rodForLength(this.settings.rodLength));
     this.updateCast(0);
     this.updateCastVisuals();
+    this.ui?.refreshInventory();
     this.save();
     return true;
   }
@@ -939,12 +929,17 @@ export class SnejFishingGame {
     if (!enabled) this.cast.cancelCharge();
     this.angler.group.position.copy(this.pos);
     this.angler.group.rotation.y = this.yaw;
+    if (this.camera && this.castAimDirection) {
+      this.castContext.aimRay = {
+        origin: this.camera.position,
+        direction: this.camera.getWorldDirection(this.castAimDirection)
+      };
+    }
     Object.assign(this.castContext, { yaw: this.yaw, pitch: this.pitch, pos: this.pos, rodTip: this.angler.getRodTip(this.castTip) });
     const previous = this.cast.state.fs;
     const wasRetrieving = this.cast.state.retrieving;
     const state = this.cast.tick(dt, this.castContext);
-    this.rodSelect.disabled = state.fs === "charge" || state.fs === "flight";
-    this.floatDepthInput.disabled = this.rodSelect.disabled;
+    this.floatDepthInput.disabled = state.fs === "charge" || state.fs === "flight";
     const charging = enabled && state.fs === "charge";
     const onTarget = charging && state.canRelease && Math.abs(state.charge - state.targetPower) <= CAST_TOL;
     this.castMeter.classList.toggle("hidden", !charging);
@@ -1056,7 +1051,7 @@ export class SnejFishingGame {
   }
 
   isCastWater(x, z) {
-    if (this.terrain.depthAt(x, z) <= 0.25) return false;
+    if (this.terrain.depthAt(x, z) <= 0) return false;
     const point = this.castSurfacePoint.set(x, 0, z);
     const surface = this.water.waveHeight(x, z, 0);
     if (this.renderedTerrainHeight(point) >= surface) return false;
@@ -1118,6 +1113,7 @@ export class SnejFishingGame {
   }
 
   toastForCastRejection(reason) {
+    if (reason === "reach") return "Water is out of reach. Move closer.";
     if (reason === "depth") return "Not enough depth for this rig.";
     if (reason === "range") return "Charge a longer cast.";
     if (reason === "dock") return "Dock blocks the cast.";

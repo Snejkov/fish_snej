@@ -1,4 +1,4 @@
-import { CATALOG } from "./gear/catalog.js";
+import { CATALOG, findItem } from "./gear/catalog.js";
 
 const textElement = (tag, className, text) => {
   const element = document.createElement(tag);
@@ -18,6 +18,7 @@ export class SnejUI {
     this.profileTab = "profile";
     this.currentInventoryCategory = "rod";
     this.inventoryFocus = null;
+    this.draggedGearId = null;
     this.modalOpen = false;
     this.fpsTimer = 0;
     this.frames = 0;
@@ -57,6 +58,9 @@ export class SnejUI {
       inventoryCoins: document.getElementById("inventory-coins"),
       inventoryGrid: document.getElementById("inventory-grid"),
       inventoryCategory: document.getElementById("inventory-category"),
+      equipmentName: document.getElementById("equipment-player-name"),
+      equipmentSlots: document.getElementById("equipment-slots"),
+      inventoryCastRange: document.getElementById("inventory-cast-range"),
       rodLine: document.getElementById("rod-line"),
       baitLine: document.getElementById("bait-line"),
       identityModal: document.getElementById("identity-modal"),
@@ -112,6 +116,10 @@ export class SnejUI {
     document.getElementById("quit-title").addEventListener("click", () => this.game.quitToTitle());
     document.getElementById("title-profile").addEventListener("click", () => this.toggleProfile());
     document.getElementById("pause-profile").addEventListener("click", () => this.toggleProfile());
+    document.getElementById("pause-inventory").addEventListener("click", () => {
+      this.game.resume();
+      this.toggleInventory();
+    });
     document.getElementById("profile-close").addEventListener("click", () => this.closeProfile());
     document.getElementById("change-name").addEventListener("click", () => this.openNameModal());
     document.getElementById("sign-out").addEventListener("click", () => this.game.signOut());
@@ -129,22 +137,65 @@ export class SnejUI {
     this.bindTabKeys(this.el.inventoryCategory);
     this.el.inventoryGrid.addEventListener("click", (event) => {
       const button = event.target.closest("button[data-item]");
-      if (!button || button.disabled) return;
-      const result = button.dataset.action === "buy"
-        ? this.game.inventory.buy(button.dataset.item) : this.game.equipGear(button.dataset.item);
-      if (result.ok) {
-        this.refreshInventory();
-        this.refreshProfile();
-        this.game.save();
+      if (button) {
+        if (!button.disabled) this.inventoryAction(button.dataset.action, button.dataset.item);
+        return;
       }
-      this.showToast(result.message);
-      const replacement = [...this.el.inventoryGrid.querySelectorAll("button[data-item]")]
-        .find((next) => next.dataset.item === button.dataset.item && !next.disabled);
-      (replacement || this.el.inventoryCategory.querySelector('[aria-selected="true"]')).focus();
+      const card = event.target.closest("article[data-item]");
+      if (card?.draggable) this.inventoryAction("equip", card.dataset.item);
     });
+    this.el.inventoryGrid.addEventListener("keydown", (event) => {
+      const card = event.target;
+      if (!card.matches("article[draggable=true]") || !["Enter", " "].includes(event.key)) return;
+      event.preventDefault();
+      this.inventoryAction("equip", card.dataset.item);
+    });
+    this.el.inventoryGrid.addEventListener("dragstart", (event) => {
+      const card = event.target.closest("article[data-item]");
+      const item = card && findItem(card.dataset.item);
+      if (!item || !card.draggable || !event.dataTransfer) return event.preventDefault();
+      this.draggedGearId = item.id;
+      event.dataTransfer.setData("application/x-snej-gear", item.id);
+      event.dataTransfer.effectAllowed = "move";
+      this.el.equipmentSlots.querySelector(`[data-slot="${item.kind}"]`).classList.add("drop-ready");
+    });
+    this.el.inventoryPanel.addEventListener("dragend", () => this.clearGearDrag());
+    for (const slot of this.el.equipmentSlots.querySelectorAll("[data-slot]")) {
+      slot.addEventListener("click", () => {
+        this.currentInventoryCategory = slot.dataset.slot;
+        this.refreshInventory();
+        this.el.inventoryCategory.querySelector('[aria-selected="true"]').focus();
+      });
+      slot.addEventListener("dragover", (event) => {
+        const item = findItem(this.draggedGearId);
+        if (!this.canDropGear(item, slot.dataset.slot)) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "move";
+        slot.classList.add("drop-target");
+      });
+      slot.addEventListener("dragleave", (event) => {
+        if (!slot.contains(event.relatedTarget)) slot.classList.remove("drop-target");
+      });
+      slot.addEventListener("drop", (event) => {
+        event.preventDefault();
+        const id = event.dataTransfer?.getData("application/x-snej-gear");
+        const item = findItem(id);
+        if (id === this.draggedGearId && this.canDropGear(item, slot.dataset.slot)) {
+          this.inventoryAction("equip", id);
+          slot.focus();
+        }
+        this.clearGearDrag();
+      });
+    }
     this.el.inventoryPanel.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        this.closeInventory();
+        return;
+      }
       if (event.key !== "Tab") return;
-      const controls = [...this.el.inventoryPanel.querySelectorAll('button:not(:disabled), [tabindex="0"]')]
+      const controls = [...this.el.inventoryPanel.querySelectorAll('button:not(:disabled), input:not(:disabled), [tabindex="0"]')]
         .filter((element) => element.tabIndex >= 0 && element.getClientRects().length);
       const next = event.shiftKey ? controls.at(-1) : controls[0];
       if (document.activeElement === (event.shiftKey ? controls[0] : controls.at(-1))) {
@@ -636,6 +687,7 @@ export class SnejUI {
   }
 
   closeInventory() {
+    this.clearGearDrag();
     this.inventoryOpen = false;
     document.body.classList.remove("inventory-open");
     this.el.inventoryPanel.classList.add("hidden");
@@ -643,7 +695,7 @@ export class SnejUI {
       this.el.hud.classList.toggle("hidden", !this.hudVisible);
       this.el.hint.classList.remove("hidden");
     }
-    (this.inventoryFocus?.isConnected && this.inventoryFocus.getClientRects().length
+    (this.inventoryFocus?.isConnected && this.inventoryFocus.tabIndex >= 0 && this.inventoryFocus.getClientRects().length
       ? this.inventoryFocus : this.game.canvas).focus();
   }
 
@@ -655,7 +707,30 @@ export class SnejUI {
     const bait = inv.equippedBait();
     this.el.baitLine.textContent = bait && inv.countOf(bait.id) > 0
       ? `Bait: ${bait.name} x${inv.countOf(bait.id)}` : "No bait";
-    for (const [index, item] of CATALOG.rod.entries()) this.game.rodSelect.options[index].disabled = !inv.owns(item.id);
+  }
+
+  canDropGear(item, kind) {
+    return this.inventoryOpen && item?.kind === kind && kind !== "lure" && item.unlocked !== false
+      && this.game.inventory.owns(item.id) && !["charge", "flight"].includes(this.game.cast.state.fs);
+  }
+
+  clearGearDrag() {
+    this.draggedGearId = null;
+    for (const slot of this.el.equipmentSlots.querySelectorAll("[data-slot]")) slot.classList.remove("drop-ready", "drop-target");
+  }
+
+  inventoryAction(action, id) {
+    const result = action === "buy" ? this.game.inventory.buy(id) : this.game.equipGear(id);
+    if (result.ok) {
+      this.refreshInventory();
+      this.refreshProfile();
+      this.game.save();
+    }
+    this.showToast(result.message);
+    const replacement = [...this.el.inventoryGrid.querySelectorAll("button[data-item]")]
+      .find((next) => next.dataset.item === id && !next.disabled);
+    (replacement || this.el.inventoryCategory.querySelector('[aria-selected="true"]')).focus();
+    return result;
   }
 
   refreshInventory() {
@@ -665,6 +740,15 @@ export class SnejUI {
     this.el.inventoryCoins.textContent = String(inv.coins());
     if (!this.inventoryOpen) return;
     const kind = this.currentInventoryCategory;
+    this.el.equipmentName.textContent = this.game.identity.name;
+    this.el.inventoryCastRange.textContent = `${Number(this.game.cast.castRange.toFixed(2))} m`;
+    for (const slot of this.el.equipmentSlots.querySelectorAll("[data-slot]")) {
+      const item = findItem(inv.state.equipped[slot.dataset.slot]);
+      const label = item ? `${item.name}${item.stackable ? ` x${inv.countOf(item.id)}` : ""}` : "None";
+      slot.querySelector("strong").textContent = label;
+      slot.classList.toggle("active", slot.dataset.slot === kind);
+      slot.setAttribute("aria-label", `${slot.querySelector(".slot-kind").textContent}: ${label}`);
+    }
     for (const button of this.el.inventoryCategory.querySelectorAll("[data-category]")) {
       const active = button.dataset.category === kind;
       button.classList.toggle("active", active);
@@ -680,10 +764,13 @@ export class SnejUI {
       const card = textElement("article", `inventory-card${equipped ? " equipped" : ""}${locked ? " locked" : ""}`, "");
       card.setAttribute("role", "listitem");
       card.dataset.item = item.id;
+      card.draggable = owned && !equipped && !locked && item.kind !== "lure"
+        && !["charge", "flight"].includes(this.game.cast.state.fs);
+      if (card.draggable) card.tabIndex = 0;
       const heading = textElement("div", "row", "");
       heading.append(textElement("h3", "name", item.name), textElement("span", `badge ${badge.toLowerCase()}`, badge));
       const detail = textElement("div", "row", "");
-      detail.append(textElement("span", "price", owned && !item.stackable ? "Owned" : `${item.price} coins`));
+      detail.append(textElement("span", "price", owned && !item.stackable ? "Owned" : `${item.price} ${item.price === 1 ? "coin" : "coins"}`));
       if (item.stackable) detail.append(textElement("span", "count", `x${inv.countOf(item.id)}`));
       const actions = textElement("div", "inventory-actions", "");
       const addAction = (action, label, disabled) => {

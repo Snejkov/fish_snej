@@ -7,13 +7,13 @@
     <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=">
     <link rel="stylesheet" href="./styles.css?v=0.0.4-hf7">
     <link rel="stylesheet" href="./styles/build.css?v=0.0.3-hf2.12">
-    <link rel="stylesheet" href="./styles/profile.css?v=0.0.5a">
+    <link rel="stylesheet" href="./styles/profile.css?v=0.0.5a-hf1">
     <link rel="stylesheet" href="./styles/multiplayer.css?v=0.0.3-hf2.12">
     <script type="importmap">
       {
         "imports": {
           "three": "./vendor/three.module.min.js",
-          "./src/game.js?v=0.0.4-hf7": "./src/game.js?v=0.0.5a",
+          "./src/game.js?v=0.0.4-hf7": "./src/game.js?v=0.0.5a-hf1",
           "./src/rods.js?v=0.0.4-hf2": "./src/rods.js?v=0.0.5a"
         }
       }
@@ -109,7 +109,7 @@
             <summary>Settings</summary>
             <div id="title-settings" class="settings-grid"></div>
           </details>
-          <p class="footer">SnejFishing v0.0.05a Stage 5A (c) 2026</p>
+          <p class="footer">SnejFishing v0.0.05a-hf1 Stage 5A (c) 2026</p>
         </div>
       </section>
 
@@ -118,9 +118,8 @@
           <h2>Paused</h2>
           <div id="pause-main">
             <p id="network-status" class="status-line">Offline</p>
-            <label class="field rod-field" for="rod-select"><span>Rod</span><select id="rod-select"></select></label>
-            <label class="field rod-field" for="float-depth"><span>Float depth (m)</span><input id="float-depth" type="number" min="0" max="3.75" step="0.05" value="0.5"></label>
             <button id="resume-game">Resume</button>
+            <button id="pause-inventory" class="secondary">Inventory</button>
             <button id="pause-profile" class="secondary">Profile</button>
             <button id="show-settings" class="secondary">Settings...</button>
             <button id="new-lake" class="secondary">Reload Fixed Map</button>
@@ -184,14 +183,45 @@
           <span class="inventory-coins-label">Coins: <strong id="inventory-coins">100</strong></span>
           <button id="inventory-close" class="icon-button secondary" title="Close inventory" aria-label="Close inventory">X</button>
         </header>
-        <nav id="inventory-category" class="inventory-category" role="tablist" aria-label="Gear categories">
-          <button id="inventory-category-rod" class="tab-button active" data-category="rod" role="tab" aria-selected="true" aria-controls="inventory-grid">Rods</button>
-          <button id="inventory-category-bait" class="tab-button" data-category="bait" role="tab" aria-selected="false" tabindex="-1" aria-controls="inventory-grid">Baits</button>
-          <button id="inventory-category-lure" class="tab-button" data-category="lure" role="tab" aria-selected="false" tabindex="-1" aria-controls="inventory-grid">Lures</button>
-          <button id="inventory-category-line" class="tab-button" data-category="line" role="tab" aria-selected="false" tabindex="-1" aria-controls="inventory-grid">Lines</button>
-          <button id="inventory-category-hook" class="tab-button" data-category="hook" role="tab" aria-selected="false" tabindex="-1" aria-controls="inventory-grid">Hooks</button>
-        </nav>
-        <div id="inventory-grid" class="inventory-grid" role="list" aria-labelledby="inventory-category-rod"></div>
+        <div class="inventory-layout">
+          <section class="equipment-panel" aria-label="Equipped gear">
+            <h3 id="equipment-player-name">Player</h3>
+            <svg class="equipment-figure" viewBox="0 0 160 220" role="img" aria-label="Angler equipment figure">
+              <path d="M51 120 L76 124 L73 194 L48 194 Z M84 124 L109 120 L112 194 L87 194 Z" fill="#7d8f91"/>
+              <path d="M48 187 H73 V206 H41 V197 Z M87 187 H112 L119 197 V206 H87 Z" fill="#273d35"/>
+              <path d="M42 58 L58 64 L43 120 L27 115 Z M102 64 L118 58 L133 115 L117 120 Z" fill="#72ad8c"/>
+              <path d="M27 113 L42 118 L38 137 L24 132 Z M118 118 L133 113 L136 132 L122 137 Z" fill="#e9b590"/>
+              <path d="M61 48 L80 55 L99 48 L112 63 L104 129 H56 L48 63 Z" fill="#42755c"/>
+              <path d="M63 51 L74 62 L69 119 H57 L53 65 Z M97 51 L86 62 L91 119 H103 L107 65 Z" fill="#abc6ad"/>
+              <path d="M70 39 H90 V57 L80 64 L70 57 Z" fill="#d99b75"/>
+              <path d="M63 20 L70 9 H90 L97 20 V39 L88 49 H72 L63 39 Z" fill="#e9b590"/>
+              <path d="M59 20 L65 7 H95 L101 20 L107 25 H53 Z" fill="#c9d6be"/>
+              <path d="M59 113 H101 V121 H59 Z" fill="#c5a761"/>
+              <path d="M77 69 V105 M57 85 H68 M92 85 H103" stroke="#203d30" stroke-width="3" fill="none"/>
+            </svg>
+            <div id="equipment-slots" class="equipment-slots">
+              <button class="equipment-slot secondary" data-slot="rod" type="button"><span class="slot-kind">Rod</span><strong></strong></button>
+              <button class="equipment-slot secondary" data-slot="line" type="button"><span class="slot-kind">Line</span><strong></strong></button>
+              <button class="equipment-slot secondary" data-slot="hook" type="button"><span class="slot-kind">Hook</span><strong></strong></button>
+              <button class="equipment-slot secondary" data-slot="bait" type="button"><span class="slot-kind">Bait</span><strong></strong></button>
+              <button class="equipment-slot secondary" data-slot="lure" type="button"><span class="slot-kind">Lure</span><strong></strong></button>
+            </div>
+            <div class="inventory-rig">
+              <label class="field" for="float-depth"><span>Float depth (m)</span><input id="float-depth" type="number" min="0" max="3.75" step="0.05" value="0.5"></label>
+              <div class="profile-row"><span>Cast range</span><strong id="inventory-cast-range">7.5 m</strong></div>
+            </div>
+          </section>
+          <section class="inventory-browser" aria-label="Available gear">
+            <nav id="inventory-category" class="inventory-category" role="tablist" aria-label="Gear categories">
+              <button id="inventory-category-rod" class="tab-button active" data-category="rod" role="tab" aria-selected="true" aria-controls="inventory-grid">Rods</button>
+              <button id="inventory-category-bait" class="tab-button" data-category="bait" role="tab" aria-selected="false" tabindex="-1" aria-controls="inventory-grid">Baits</button>
+              <button id="inventory-category-lure" class="tab-button" data-category="lure" role="tab" aria-selected="false" tabindex="-1" aria-controls="inventory-grid">Lures</button>
+              <button id="inventory-category-line" class="tab-button" data-category="line" role="tab" aria-selected="false" tabindex="-1" aria-controls="inventory-grid">Lines</button>
+              <button id="inventory-category-hook" class="tab-button" data-category="hook" role="tab" aria-selected="false" tabindex="-1" aria-controls="inventory-grid">Hooks</button>
+            </nav>
+            <div id="inventory-grid" class="inventory-grid" role="list" aria-labelledby="inventory-category-rod"></div>
+          </section>
+        </div>
       </aside>
 
       <aside id="build-panel" class="build-panel hidden" aria-label="Build mode">
@@ -286,6 +316,6 @@
       </div>
       <div id="toast" class="toast hidden" role="status"></div>
     </div>
-    <script type="module" src="./src/main.js?v=0.0.5a"></script>
+    <script type="module" src="./src/main.js?v=0.0.5a-hf1"></script>
   </body>
 </html>

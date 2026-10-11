@@ -95,7 +95,7 @@ assert.equal(obstruction({ x: 4, y: 2, z: 0 }, { x: 6, y: 2, z: 0 }, 0), "rock")
 assert.equal(obstruction({ x: 4, y: 4, z: 0 }, { x: 6, y: 4, z: 0 }, 0), null);
 game.terrain.heightAt = () => 0.5;
 assert.equal(obstruction({ x: 4, y: 1, z: 4 }, { x: 6, y: 0, z: 4 }, 0), "land");
-for (const field of ["buildOpen", "profileOpen", "modalOpen"]) {
+for (const field of ["buildOpen", "profileOpen", "inventoryOpen", "modalOpen"]) {
   assert.equal(SnejFishingGame.prototype.canCast.call({ mode: "playing", ui: { [field]: true } }), false);
 }
 assert.equal(SnejFishingGame.prototype.canCast.call({ mode: "playing", ui: {} }), true);
@@ -106,7 +106,8 @@ assert.equal(SnejFishingGame.prototype.toastForCast({ charge: 0.2, targetPower: 
 for (const [reason, message] of Object.entries({
   depth: "Not enough depth for this rig.", range: "Charge a longer cast.",
   dock: "Dock blocks the cast.", rock: "Rock blocks the cast.",
-  terrain: "The cast would land on land.", water: "Aim at open water."
+  terrain: "The cast would land on land.", water: "Aim at open water.",
+  reach: "Water is out of reach. Move closer."
 })) assert.equal(SnejFishingGame.prototype.toastForCastRejection(reason), message);
 
 const element = () => ({ classList: { toggle() {} }, style: {}, setAttribute() {} });

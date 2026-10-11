@@ -27,6 +27,12 @@ export class SnejAngler {
     this.locomotionState = "idle";
     this.heading = 0;
     this.firstPersonWeight = 0;
+    this.carryMoveWeight = 0;
+    this.carryGripInverse = new THREE.Quaternion();
+    this.carryRotation = new THREE.Quaternion();
+    this.carryParentRotation = new THREE.Quaternion();
+    this.carryDirection = new THREE.Vector3();
+    this.viewHandRotation = new THREE.Quaternion();
     this.viewOrigin = new THREE.Vector3();
     this.viewParentInverse = new THREE.Matrix4();
     this.viewRotation = new THREE.Quaternion();
@@ -88,6 +94,7 @@ export class SnejAngler {
       hand: this.bones.RightHand.quaternion.clone()
     };
     const handAxis = new THREE.Vector3(-1, 0, 0);
+    this.carryGripInverse.copy(this.carry.rightSocket.quaternion).multiply(this.carry.rod.quaternion).invert();
     const upperArm = new THREE.Quaternion().setFromUnitVectors(handAxis, new THREE.Vector3(0.08, -0.10, -0.99).normalize());
     const forearm = new THREE.Quaternion().setFromUnitVectors(handAxis, new THREE.Vector3(0.40, 0.72, -0.57).normalize());
     const hand = new THREE.Quaternion().setFromUnitVectors(this.up, new THREE.Vector3(0.02, 0.42, -0.91).normalize())
@@ -96,7 +103,8 @@ export class SnejAngler {
     this.viewPose = {
       upperArm,
       forearm: upperArm.clone().invert().multiply(forearm),
-      hand: forearm.clone().invert().multiply(hand)
+      hand: forearm.clone().invert().multiply(hand),
+      uprightHand: forearm.clone().invert().multiply(this.carryGripInverse)
     };
     const viewObjects = [this.segments, this.joints];
     this.carry.rod.traverse((object) => { if (object.isMesh || object.isLine) viewObjects.push(object); });
@@ -193,6 +201,10 @@ export class SnejAngler {
     const state = moving ? (info.depth > 0.08 ? "wade" : speed > 5 ? "run" : "walk") : "idle";
     this.locomotionState = state;
     const blend = 1 - Math.exp(-12 * Math.max(0, dt));
+    const carryBlend = 1 - Math.exp(-(moving ? 14 : 4.5) * Math.max(0, dt));
+    this.carryMoveWeight += ((moving ? 1 : 0) - this.carryMoveWeight) * carryBlend;
+    if (this.carryMoveWeight < 0.0001) this.carryMoveWeight = 0;
+    else if (this.carryMoveWeight > 0.9999) this.carryMoveWeight = 1;
     const cadence = moving ? speed / GAITS[state].stride : 0;
     for (const [name, action] of Object.entries(this.actions)) {
       this.weights[name] += ((name === state ? 1 : 0) - this.weights[name]) * blend;
@@ -221,10 +233,21 @@ export class SnejAngler {
     this.carryPose.upperArm.copy(this.bones.RightUpperArm.quaternion);
     this.carryPose.forearm.copy(this.bones.RightForeArm.quaternion);
     this.carryPose.hand.copy(this.bones.RightHand.quaternion);
+    if (this.carryMoveWeight > 0) this.applyUprightCarry();
     if (this.firstPersonWeight > 0) this.applyViewPose(info.camera);
     this.updatePreview();
     this.skeleton.update();
     this.group.visible = true;
+  }
+
+  applyUprightCarry() {
+    this.group.updateWorldMatrix(true, true);
+    this.carry.rod.getWorldQuaternion(this.carryRotation);
+    this.carryDirection.copy(this.up).applyQuaternion(this.carryRotation);
+    this.viewHandRotation.setFromUnitVectors(this.carryDirection, this.up).multiply(this.carryRotation);
+    this.bones.RightForeArm.getWorldQuaternion(this.carryParentRotation).invert();
+    this.viewHandRotation.premultiply(this.carryParentRotation).multiply(this.carryGripInverse);
+    this.bones.RightHand.quaternion.slerp(this.viewHandRotation, this.carryMoveWeight);
   }
 
   applyViewPose(camera) {
@@ -243,7 +266,9 @@ export class SnejAngler {
     shoulder.quaternion.slerp(this.viewRotation, weight);
     this.bones.RightUpperArm.quaternion.slerp(this.viewPose.upperArm, weight);
     this.bones.RightForeArm.quaternion.slerp(this.viewPose.forearm, weight);
-    this.bones.RightHand.quaternion.slerp(this.viewPose.hand, weight);
+    // Keep the upright carry readable during camera look, then lower the same wrist at rest.
+    this.viewHandRotation.copy(this.viewPose.hand).slerp(this.viewPose.uprightHand, this.carryMoveWeight);
+    this.bones.RightHand.quaternion.slerp(this.viewHandRotation, weight);
   }
 
   updatePreview() {

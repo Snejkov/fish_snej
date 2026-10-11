@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { SnejAngler } from "./angler.js?v=0.0.3-hf2.14";
+import { SnejAngler } from "./angler.js?v=0.0.3-hf2.15";
 import { SnejAudio } from "./audio.js";
 import { SnejAuth, SNEJKOV_ID, SNEJKOV_NAME } from "./auth.js";
 import { resolveLake } from "./lakeValidator.js";

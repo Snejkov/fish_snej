@@ -54,8 +54,12 @@ for (const aspect of [16 / 9, 1, 390 / 844]) {
         const tip = projected(rig.carry.tip);
         assert.ok(hand.x > 0 && hand.x < 0.95 && hand.y > -0.95 && hand.y < 0.2,
           "The wrist must remain visible in the lower-right screen area.");
-        assert.ok(Math.abs(tip.x) < 0.95 && Math.abs(tip.y) < 0.95 && tip.y > hand.y,
-          "The rod must extend upward into the screen without clipping.");
+        const shaft = new THREE.Vector3(0, 0.3, 0).applyMatrix4(rig.carry.rod.matrixWorld).project(camera);
+        assert.ok(Math.abs(tip.x) < 0.95 && tip.y > hand.y,
+          "The rod must extend upward from the visible grip; upright tips may extend above the screen.");
+        assert.ok(Math.abs(shaft.x) < 0.95 && Math.abs(shaft.y) < 0.95,
+          "The lower shaft must remain visible even when the upright tip extends above the screen.");
+        if (rig.carryMoveWeight === 0) assert.ok(Math.abs(tip.y) < 0.95, "The resting rod must keep its original framing.");
         assert.ok(hand.z > -1 && hand.z < 1 && tip.z > -1 && tip.z < 1);
         const handEdge = world(rig.bones.RightHand).addScaledVector(new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0), 0.034).project(camera);
         assert.ok(handEdge.x < 0.98, "The wrist joint must not be cropped by the mobile screen edge.");

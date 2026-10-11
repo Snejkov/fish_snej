@@ -1,5 +1,6 @@
 import { CATALOG, findItem } from "./gear/catalog.js";
-import { CLOTHING_SLOTS } from "./gear/inventory.js";
+import { CLOTHING_SLOTS } from "./gear/inventory.js?v=inventory-reference-1";
+import { t, applyTranslations, onLanguageChange, getLanguage, setLanguage } from "./i18n.js";
 
 const textElement = (tag, className, text) => {
   const element = document.createElement(tag);
@@ -17,7 +18,10 @@ export class SnejUI {
     this.profileOpen = false;
     this.inventoryOpen = false;
     this.profileTab = "profile";
-    this.currentInventoryCategory = "rod";
+    this.currentInventoryCategory = "all";
+    this.inventoryMode = "owned";
+    this.inventorySearch = "";
+    this.previewItemId = null;
     this.inventoryFocus = null;
     this.draggedGearId = null;
     this.modalOpen = false;
@@ -87,6 +91,7 @@ export class SnejUI {
       toast: document.getElementById("toast")
     };
     this.ensureInventoryPanel();
+    this.ensureLanguagePicker();
     this.bind();
     this.renderSettings(document.getElementById("title-settings"));
     this.renderSettings(document.getElementById("menu-settings"));
@@ -94,6 +99,13 @@ export class SnejUI {
     this.updateViewChip(game);
     this.updateProfile();
     this.refreshContinue();
+    onLanguageChange(() => {
+      this.game.settings.lang = getLanguage();
+      this.syncSettings();
+      this.refreshInventory();
+      applyTranslations(document);
+    });
+    applyTranslations(document);
   }
 
   ensureInventoryPanel() {
@@ -106,32 +118,100 @@ export class SnejUI {
     const figure = equipment.querySelector(".equipment-figure");
     const slots = this.el.equipmentSlots;
     const rig = equipment.querySelector(".inventory-rig");
-    const clothingTitle = textElement("h4", "inventory-subtitle", "Clothing");
+    const setupTitle = textElement("h3", "inventory-section-title", t("Active tackle"));
+    equipment.prepend(setupTitle);
+    this.el.equipmentName.dataset.i18nSkip = "true";
+    const clothingTitle = textElement("h4", "inventory-subtitle", t("Clothing"));
     const clothing = textElement("div", "clothing-slots", "");
     clothing.id = "clothing-slots";
     for (const slot of CLOTHING_SLOTS) {
       const button = textElement("button", "clothing-slot secondary", "");
       button.type = "button";
       button.dataset.clothingSlot = slot.id;
-      button.append(textElement("span", "slot-kind", slot.label), textElement("strong", "", "Empty"));
+      button.append(textElement("span", "slot-kind", t(slot.label)), textElement("strong", "", t("Empty")));
       clothing.append(button);
     }
-    const gearTitle = textElement("h4", "inventory-subtitle", "Current Gear");
-    figure.after(clothingTitle, clothing, gearTitle);
+    const gearTitle = textElement("h4", "inventory-subtitle", t("Current Gear"));
+    const outfit = textElement("div", "character-outfit", "");
+    figure.replaceWith(clothingTitle, outfit, gearTitle);
+    outfit.append(figure, clothing);
     const loadouts = textElement("section", "loadout-panel", "");
-    loadouts.setAttribute("aria-label", "Custom equipment sets");
+    loadouts.setAttribute("aria-label", t("Custom equipment sets"));
     loadouts.innerHTML = `
       <h3>Sets</h3>
       <label class="compact-field" for="loadout-name"><span>Name</span><input id="loadout-name" type="text" maxlength="24" autocomplete="off"></label>
       <button id="loadout-save" type="button">Save Current</button>
       <div id="loadout-list" class="loadout-list" aria-live="polite"></div>
     `;
-    layout.replaceChildren(equipment, loadouts, browser);
+    const preview = textElement("section", "inventory-preview", "");
+    preview.innerHTML = `
+      <h3 class="inventory-section-title">Equipment preview</h3>
+      <div id="gear-preview" class="gear-preview" aria-hidden="true"></div>
+      <div class="preview-detail">
+        <span id="preview-status" class="preview-status"></span>
+        <h3 id="preview-name"></h3>
+        <p id="preview-description"></p>
+        <div id="preview-stats" class="preview-stats"></div>
+        <button id="preview-action" type="button"></button>
+      </div>
+    `;
+    preview.append(loadouts);
+    const browserTitle = textElement("h3", "inventory-section-title", t("Main inventory"));
+    const toolbar = textElement("div", "inventory-toolbar", "");
+    toolbar.innerHTML = `
+      <div class="inventory-mode" role="group" aria-label="Inventory view">
+        <button type="button" data-mode="owned" class="secondary active" aria-pressed="true">Owned</button>
+        <button type="button" data-mode="shop" class="secondary" aria-pressed="false">Shop</button>
+      </div>
+      <input id="inventory-search" type="search" placeholder="Search" aria-label="Search gear" autocomplete="off">
+    `;
+    browser.prepend(browserTitle, toolbar);
+    const all = textElement("button", "tab-button active", t("All"));
+    all.id = "inventory-category-all";
+    all.dataset.category = "all";
+    all.type = "button";
+    all.setAttribute("role", "tab");
+    all.setAttribute("aria-controls", "inventory-grid");
+    this.el.inventoryCategory.prepend(all);
+    layout.replaceChildren(equipment, preview, browser);
     equipment.append(slots, rig);
     this.el.clothingSlots = clothing;
     this.el.loadoutName = loadouts.querySelector("#loadout-name");
     this.el.loadoutSave = loadouts.querySelector("#loadout-save");
     this.el.loadoutList = loadouts.querySelector("#loadout-list");
+    this.el.inventorySearch = toolbar.querySelector("#inventory-search");
+    this.el.inventoryMode = toolbar.querySelector(".inventory-mode");
+    this.el.previewName = preview.querySelector("#preview-name");
+    this.el.previewDescription = preview.querySelector("#preview-description");
+    this.el.previewStatus = preview.querySelector("#preview-status");
+    this.el.previewStats = preview.querySelector("#preview-stats");
+    this.el.previewAction = preview.querySelector("#preview-action");
+    this.el.previewHost = preview.querySelector("#gear-preview");
+    applyTranslations(this.el.inventoryPanel);
+  }
+
+  ensureLanguagePicker() {
+    const panel = this.el.registration.querySelector(".panel");
+    if (!panel) return;
+    const label = textElement("label", "field entry-language", "");
+    label.append(textElement("span", "", t("Language")));
+    const select = document.createElement("select");
+    select.dataset.setting = "lang";
+    for (const [value, name] of [["ru", "\u0420\u0443\u0441\u0441\u043a\u0438\u0439"], ["en", "English"]]) {
+      const option = textElement("option", "", name);
+      option.value = value;
+      option.dataset.i18nSkip = "true";
+      select.append(option);
+    }
+    select.value = getLanguage();
+    select.addEventListener("change", () => {
+      this.game.settings.lang = select.value;
+      setLanguage(select.value);
+      this.syncSettings();
+    });
+    label.append(select);
+    panel.prepend(label);
+    this.game.settings.lang = getLanguage();
   }
 
   bind() {
@@ -175,6 +255,19 @@ export class SnejUI {
     }
     this.bindTabKeys(this.el.profileTabs);
     this.bindTabKeys(this.el.inventoryCategory);
+    this.el.inventorySearch.addEventListener("input", () => {
+      this.inventorySearch = this.el.inventorySearch.value.trim();
+      this.refreshInventory();
+    });
+    this.el.inventoryMode.addEventListener("click", (event) => {
+      const mode = event.target.closest("[data-mode]")?.dataset.mode;
+      if (!mode) return;
+      this.inventoryMode = mode;
+      this.refreshInventory();
+    });
+    this.el.previewAction.addEventListener("click", () => {
+      if (!this.el.previewAction.disabled) this.inventoryAction(this.el.previewAction.dataset.action, this.previewItemId);
+    });
     this.el.clothingSlots?.addEventListener("click", (event) => {
       const slot = event.target.closest("[data-clothing-slot]");
       if (slot) this.showToast("Clothing slots are ready for future clothing items.");
@@ -188,6 +281,9 @@ export class SnejUI {
       if (!button) return;
       if (button.dataset.action === "apply") this.applyLoadout(button.dataset.loadout);
       if (button.dataset.action === "delete") this.deleteLoadout(button.dataset.loadout);
+      const replacement = [...this.el.loadoutList.querySelectorAll("button[data-loadout]")]
+        .find((next) => next.dataset.loadout === button.dataset.loadout && next.dataset.action === button.dataset.action);
+      (replacement || this.el.loadoutName).focus({ preventScroll: true });
     });
     this.el.inventoryGrid.addEventListener("click", (event) => {
       const button = event.target.closest("button[data-item]");
@@ -196,13 +292,13 @@ export class SnejUI {
         return;
       }
       const card = event.target.closest("article[data-item]");
-      if (card?.draggable) this.inventoryAction("equip", card.dataset.item);
+      if (card) this.selectInventoryItem(card.dataset.item);
     });
     this.el.inventoryGrid.addEventListener("keydown", (event) => {
       const card = event.target;
-      if (!card.matches("article[draggable=true]") || !["Enter", " "].includes(event.key)) return;
+      if (!card.matches("article[data-item]") || !["Enter", " "].includes(event.key)) return;
       event.preventDefault();
-      this.inventoryAction("equip", card.dataset.item);
+      this.selectInventoryItem(card.dataset.item);
     });
     this.el.inventoryGrid.addEventListener("dragstart", (event) => {
       const card = event.target.closest("article[data-item]");
@@ -306,13 +402,13 @@ export class SnejUI {
       { key: "sens", label: "Mouse Sensitivity", type: "range", min: 0.5, max: 2, step: 0.01 },
       { key: "quality", label: "Quality", type: "select", options: [["low", "Low"], ["mid", "Mid"], ["high", "High"]] },
       { key: "shadow", label: "Shadows", type: "checkbox" },
-      { key: "lang", label: "Language", type: "select", options: [["en", "English"]] }
+      { key: "lang", label: "Language", type: "select", options: [["ru", "\u0420\u0443\u0441\u0441\u043a\u0438\u0439"], ["en", "English"]] }
     ];
     for (const def of defs) {
       const label = document.createElement("label");
       label.className = "field";
       const span = document.createElement("span");
-      span.textContent = def.label;
+      span.textContent = t(def.label);
       let input;
       if (def.type === "select") {
         input = document.createElement("select");
@@ -320,6 +416,7 @@ export class SnejUI {
           const option = document.createElement("option");
           option.value = value;
           option.textContent = text;
+          if (def.key === "lang") option.dataset.i18nSkip = "true";
           input.appendChild(option);
         }
       } else {
@@ -335,6 +432,7 @@ export class SnejUI {
       this.setInputValue(input, this.game.settings[def.key]);
       input.addEventListener("input", () => {
         this.game.setSetting(def.key, this.getInputValue(input));
+        if (def.key === "lang") setLanguage(input.value);
         this.syncSettings();
       });
       label.append(span, input);
@@ -725,7 +823,11 @@ export class SnejUI {
     if (this.buildOpen) await this.discardBuild();
     this.inventoryFocus = document.activeElement;
     this.inventoryOpen = true;
-    this.currentInventoryCategory = "rod";
+    this.currentInventoryCategory = "all";
+    this.inventoryMode = "owned";
+    this.inventorySearch = "";
+    this.el.inventorySearch.value = "";
+    this.previewItemId = this.game.inventory.state.equipped.rod;
     this.game.keys.clear();
     this.game.mouse.dx = this.game.mouse.dy = 0;
     this.game.cast.cancelCharge();
@@ -736,7 +838,8 @@ export class SnejUI {
     this.el.hud.classList.add("hidden");
     this.el.hint.classList.add("hidden");
     this.refreshInventory();
-    this.el.inventoryCategory.querySelector('[aria-selected="true"]').focus();
+    for (const panel of this.el.inventoryPanel.querySelectorAll(".inventory-layout, .equipment-panel, .inventory-preview, .inventory-grid")) panel.scrollTop = 0;
+    document.getElementById("inventory-close").focus({ preventScroll: true });
     if (document.pointerLockElement) document.exitPointerLock();
   }
 
@@ -781,8 +884,8 @@ export class SnejUI {
       this.game.save();
     }
     this.showToast(result.message);
-    const replacement = [...this.el.inventoryGrid.querySelectorAll("button[data-item]")]
-      .find((next) => next.dataset.item === id && !next.disabled);
+    const replacement = [...this.el.inventoryGrid.querySelectorAll("article[data-item]")]
+      .find((next) => next.dataset.item === id);
     (replacement || this.el.inventoryCategory.querySelector('[aria-selected="true"]')).focus();
     return result;
   }
@@ -802,6 +905,7 @@ export class SnejUI {
     const result = this.game.inventory.applyLoadout(id);
     if (result.ok) {
       this.game.applyRod(this.game.inventory.equippedRod());
+      this.previewItemId = this.game.inventory.state.equipped.rod;
       this.refreshInventory();
       this.refreshProfile();
       this.game.save();
@@ -826,9 +930,10 @@ export class SnejUI {
     for (const slot of this.el.clothingSlots.querySelectorAll("[data-clothing-slot]")) {
       const info = CLOTHING_SLOTS.find((item) => item.id === slot.dataset.clothingSlot);
       const value = clothing[slot.dataset.clothingSlot];
-      const label = value || "Empty";
+      const label = value || t("Empty");
+      slot.querySelector(".slot-kind").textContent = t(info?.label || "Clothing");
       slot.querySelector("strong").textContent = label;
-      slot.setAttribute("aria-label", `${info?.label || "Clothing"}: ${label}`);
+      slot.setAttribute("aria-label", `${t(info?.label || "Clothing")}: ${label}`);
     }
   }
 
@@ -837,27 +942,79 @@ export class SnejUI {
     const loadouts = this.game.inventory.state.loadouts || [];
     this.el.loadoutList.replaceChildren();
     if (!loadouts.length) {
-      this.el.loadoutList.append(textElement("p", "empty", "No saved sets."));
+      this.el.loadoutList.append(textElement("p", "empty", t("No saved sets.")));
       return;
     }
     for (const loadout of loadouts) {
       const card = textElement("article", "loadout-card", "");
       const title = textElement("h4", "", loadout.name);
-      const items = ["rod", "line", "hook", "bait"].map((kind) => findItem(loadout.equipped?.[kind])?.name || "None");
+      title.dataset.i18nSkip = "true";
+      const items = ["rod", "line", "hook", "bait"].map((kind) => t(findItem(loadout.equipped?.[kind])?.name || "None"));
       const summary = textElement("p", "desc", items.join(" / "));
       const actions = textElement("div", "inventory-actions", "");
-      const apply = textElement("button", "", "Apply");
+      const apply = textElement("button", "", t("Apply"));
       apply.type = "button";
       apply.dataset.action = "apply";
       apply.dataset.loadout = loadout.id;
-      const remove = textElement("button", "secondary", "Delete");
+      const remove = textElement("button", "icon-button secondary", "X");
+      remove.title = t("Delete");
+      remove.setAttribute("aria-label", t("Delete {name}", { name: loadout.name }));
       remove.type = "button";
       remove.dataset.action = "delete";
       remove.dataset.loadout = loadout.id;
       actions.append(apply, remove);
+      const rod = findItem(loadout.equipped?.rod);
+      if (rod) card.append(this.gearImage(rod, "loadout-thumbnail"));
       card.append(title, summary, actions);
       this.el.loadoutList.append(card);
     }
+  }
+
+  gearImage(item, className = "gear-thumbnail") {
+    const marker = textElement("span", `gear-placeholder ${className}`, "");
+    marker.setAttribute("aria-hidden", "true");
+    marker.dataset.kind = item.kind;
+    const label = textElement("span", "placeholder-label", t({ rod: "Rod", bait: "Bait", line: "Line", hook: "Hook", lure: "Lure" }[item.kind] || "None"));
+    marker.append(label);
+    return marker;
+  }
+
+  selectInventoryItem(id) {
+    this.previewItemId = id;
+    this.refreshInventoryPreview();
+    for (const card of this.el.inventoryGrid.querySelectorAll("[data-item]")) {
+      const selected = card.dataset.item === id;
+      card.classList.toggle("selected", selected);
+      card.setAttribute("aria-label", `${t(findItem(card.dataset.item)?.name || "None")}${selected ? `, ${t("Selected")}` : ""}`);
+    }
+  }
+
+  refreshInventoryPreview() {
+    const item = findItem(this.previewItemId) || this.game.inventory.equippedRod();
+    this.previewItemId = item.id;
+    const inv = this.game.inventory, owned = inv.owns(item.id);
+    const equipped = inv.state.equipped[item.kind] === item.id;
+    this.el.previewHost.replaceChildren(this.gearImage(item, "preview-placeholder"));
+    this.el.previewName.textContent = t(item.name);
+    this.el.previewDescription.textContent = t(item.description);
+    this.el.previewStatus.textContent = t(equipped ? "Equipped" : owned ? "Owned" : "Shop");
+    this.el.previewStats.replaceChildren();
+    const stats = item.kind === "rod" ? [["Length", `${item.length} m`], ["Range", `${item.range} m`]]
+      : item.kind === "line" ? [["Strength", `${item.breakingStrengthKg} kg`]]
+      : item.stackable ? [["Quantity", `x${inv.countOf(item.id)}`]] : [];
+    for (const [label, value] of stats) {
+      const stat = textElement("div", "", "");
+      stat.append(textElement("span", "", t(label)), textElement("strong", "", value));
+      this.el.previewStats.append(stat);
+    }
+    const buy = !owned || (item.stackable && this.inventoryMode === "shop");
+    const button = this.el.previewAction;
+    button.dataset.action = buy ? "buy" : "equip";
+    button.textContent = buy ? `${t("Buy")} / ${item.price} ${t("coins")}` : t(equipped ? "Equipped" : item.kind === "lure" ? "Owned" : "Equip");
+    button.disabled = item.unlocked === false || (buy ? inv.coins() < item.price : equipped || item.kind === "lure" || ["charge", "flight"].includes(this.game.cast.state.fs));
+    button.classList.toggle("secondary", !buy);
+    button.setAttribute("aria-label", `${button.textContent} ${t(item.name)}`);
+    applyTranslations(this.el.inventoryPanel);
   }
 
   refreshInventory() {
@@ -873,8 +1030,11 @@ export class SnejUI {
     this.refreshLoadouts();
     for (const slot of this.el.equipmentSlots.querySelectorAll("[data-slot]")) {
       const item = findItem(inv.state.equipped[slot.dataset.slot]);
-      const label = item ? `${item.name}${item.stackable ? ` x${inv.countOf(item.id)}` : ""}` : "None";
+      const label = item ? `${t(item.name)}${item.stackable ? ` x${inv.countOf(item.id)}` : ""}` : t("None");
       slot.querySelector("strong").textContent = label;
+      const previous = slot.querySelector(".slot-thumbnail");
+      previous?.remove();
+      if (item) slot.prepend(this.gearImage(item, "slot-thumbnail"));
       slot.classList.toggle("active", slot.dataset.slot === kind);
       slot.setAttribute("aria-label", `${slot.querySelector(".slot-kind").textContent}: ${label}`);
     }
@@ -886,37 +1046,38 @@ export class SnejUI {
     }
     this.el.inventoryGrid.setAttribute("aria-labelledby", `inventory-category-${kind}`);
     this.el.inventoryGrid.replaceChildren();
-    for (const item of CATALOG[kind]) {
-      const owned = inv.owns(item.id), equipped = inv.state.equipped[kind] === item.id;
+    for (const button of this.el.inventoryMode.querySelectorAll("[data-mode]")) {
+      const active = button.dataset.mode === this.inventoryMode;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", String(active));
+    }
+    const query = this.inventorySearch.toLocaleLowerCase();
+    const items = (kind === "all" ? Object.values(CATALOG).flat() : CATALOG[kind] || [])
+      .filter((item) => (this.inventoryMode === "shop" || inv.owns(item.id))
+        && (!query || `${t(item.name)} ${t(item.description)} ${item.name}`.toLocaleLowerCase().includes(query)));
+    for (const item of items) {
+      const owned = inv.owns(item.id), equipped = inv.state.equipped[item.kind] === item.id;
       const locked = item.unlocked === false;
       const badge = equipped ? "Equipped" : owned ? "Owned" : locked ? "Locked" : "Buy";
-      const card = textElement("article", `inventory-card${equipped ? " equipped" : ""}${locked ? " locked" : ""}`, "");
+      const selected = this.previewItemId === item.id;
+      const card = textElement("article", `inventory-card${equipped ? " equipped" : ""}${locked ? " locked" : ""}${selected ? " selected" : ""}`, "");
       card.setAttribute("role", "listitem");
       card.dataset.item = item.id;
       card.draggable = owned && !equipped && !locked && item.kind !== "lure"
         && !["charge", "flight"].includes(this.game.cast.state.fs);
-      if (card.draggable) card.tabIndex = 0;
+      card.tabIndex = 0;
+      card.setAttribute("aria-label", `${t(item.name)}${selected ? `, ${t("Selected")}` : ""}`);
       const heading = textElement("div", "row", "");
-      heading.append(textElement("h3", "name", item.name), textElement("span", `badge ${badge.toLowerCase()}`, badge));
+      heading.append(textElement("h3", "name", t(item.name)), textElement("span", `badge ${badge.toLowerCase()}`, t(badge)));
       const detail = textElement("div", "row", "");
-      detail.append(textElement("span", "price", owned && !item.stackable ? "Owned" : `${item.price} ${item.price === 1 ? "coin" : "coins"}`));
+      detail.append(textElement("span", "price", this.inventoryMode === "owned" ? t(item.kind === "rod" ? `${item.length} m` : "Owned") : `${item.price} ${t("coins")}`));
       if (item.stackable) detail.append(textElement("span", "count", `x${inv.countOf(item.id)}`));
-      const actions = textElement("div", "inventory-actions", "");
-      const addAction = (action, label, disabled) => {
-        const button = textElement("button", action === "equip" ? "secondary" : "", label);
-        button.type = "button";
-        button.dataset.action = action;
-        button.dataset.item = item.id;
-        button.disabled = disabled;
-        button.setAttribute("aria-label", `${label} ${item.name}`);
-        actions.append(button);
-      };
-      if (owned || equipped) addAction("equip", equipped ? "Equipped" : item.kind === "lure" ? "Owned" : "Equip",
-        equipped || locked || !owned || item.kind === "lure" || this.game.cast.state.fs === "flight");
-      if (!owned || item.stackable) addAction("buy", `Buy ${item.price}`, locked || inv.coins() < item.price);
-      card.append(heading, textElement("p", "desc", item.description.slice(0, 80)), detail, actions);
+      card.append(this.gearImage(item));
+      card.append(heading, detail);
       this.el.inventoryGrid.append(card);
     }
+    if (!items.length) this.el.inventoryGrid.append(textElement("p", "inventory-empty", t(query ? "No matching items." : "No owned items in this category.")));
+    this.refreshInventoryPreview();
   }
 
   openProfileTab(name) {

@@ -832,15 +832,16 @@ export class SnejFishingGame {
       this.castMeter.setAttribute("aria-valuenow", (state.charge * 100).toFixed(0));
       this.castMeter.setAttribute("aria-valuetext", `${state.requestedDist.toFixed(1)} of ${this.cast.castRange} meters`);
     }
-    this.aimMarker.visible = enabled && (state.fs === "idle" || charging);
+    this.aimMarker.visible = enabled && state.aimValid && (state.fs === "idle" || charging);
     if (this.aimMarker.visible) {
       const aim = state.aimPoint;
-      this.aimMarker.material.color.setHex(!state.aimValid ? 0xff5a4a : onTarget ? 0x9dffb4 : 0x9ff0ff);
+      this.aimMarker.material.color.setHex(onTarget ? 0x9dffb4 : 0x9ff0ff);
       this.aimMarker.scale.setScalar(onTarget ? 1.1 : 1);
       this.placeCastMarker(this.aimMarker, aim, 0.05);
     }
-    this.landingMarker.visible = charging;
-    if (charging) {
+    this.landingMarker.visible = charging && state.aimValid && state.predictedLanding.water
+      && this.cast.isWaterAt(state.predictedLanding);
+    if (this.landingMarker.visible) {
       const predicted = state.predictedLanding;
       this.landingMarker.material.color.setHex(!state.canRelease ? 0xff5a4a
         : this.terrain.depthAt(predicted.x, predicted.z) > 0.4 ? 0xfff0b0 : 0xff8a6a);

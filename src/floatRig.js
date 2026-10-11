@@ -2,6 +2,8 @@ import { clamp, lerp } from "./util.js";
 
 export const DEFAULT_FLOAT_DEPTH = 0.5;
 export const MIN_UPPER_LINE = 0.25;
+export const FLOAT_RETRIEVE_FRACTION = 0.4;
+const MAX_ADJUSTMENT_SLACK = 0.12;
 
 export function rigForRod(length, depth = DEFAULT_FLOAT_DEPTH) {
   const lineLength = Number.isFinite(length) && length > 0 ? length : 4;
@@ -60,6 +62,7 @@ export class SnejFloatRig {
     this.sample = point();
     this.previous = point();
     this.hook = point();
+    this.adjustmentTravel = { x: 0, z: 0 };
     this.anchored = false;
     this.actualDepth = 0;
     this.bottomSlack = 0;
@@ -67,8 +70,21 @@ export class SnejFloatRig {
 
   reset() {
     this.anchored = false;
+    this.adjustmentTravel.x = 0;
+    this.adjustmentTravel.z = 0;
     this.actualDepth = 0;
     this.bottomSlack = 0;
+  }
+
+  adjustmentDelta(axis, delta) {
+    const travel = this.adjustmentTravel[axis];
+    if (travel * delta < 0) {
+      const takeUp = Math.min(Math.abs(travel), Math.abs(delta)) * Math.sign(delta);
+      this.adjustmentTravel[axis] = travel + takeUp;
+      delta -= takeUp;
+    }
+    this.adjustmentTravel[axis] = clamp(this.adjustmentTravel[axis] + delta, -MAX_ADJUSTMENT_SLACK, MAX_ADJUSTMENT_SLACK);
+    return delta;
   }
 
   follow(dt, tip, bobber, rig, ctx) {
@@ -76,8 +92,9 @@ export class SnejFloatRig {
     const surfaceY = (p) => ctx.surfaceY(p.x, p.z);
     copy(this.target, bobber);
     if (this.anchored) {
-      this.target.x += tip.x - this.lastTip.x;
-      this.target.z += tip.z - this.lastTip.z;
+      // Reversing first takes up bounded free play; only new travel nudges the float.
+      this.target.x += this.adjustmentDelta("x", tip.x - this.lastTip.x);
+      this.target.z += this.adjustmentDelta("z", tip.z - this.lastTip.z);
     }
     // The float stays on the surface, inside the sphere allowed by the upper line.
     for (let i = 0; i < 32; i += 1) {

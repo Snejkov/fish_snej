@@ -1,6 +1,6 @@
 import { clamp, clamp01, lerp } from "./util.js";
 import { RODS } from "./rods.js?v=0.0.4-hf2";
-import { rigForRod } from "./floatRig.js?v=0.0.5a-hf3";
+import { rigForRod } from "./floatRig.js?v=0.0.5a-hf4";
 
 // Stage 4 cast analysis, sections 1, 4, 5, 9, and 10. No fish behavior is active.
 const GRAVITY = 9.8;
@@ -162,6 +162,16 @@ export class SnejCastSystem {
     this.state.castObstruction = null;
     this.state.canRelease = false;
     this.state.requestedDist = 0;
+  }
+
+  startRetrieve(reason) {
+    const state = this.state;
+    if ((state.fs !== "wait" && state.fs !== "flight") || state.retrieving) return false;
+    state.fs = "flight";
+    state.retrieving = true;
+    state.castObstruction = reason;
+    state.canRelease = false;
+    return true;
   }
 
   setRodRange(range, floatDepth = this.rig.floatDepth) {

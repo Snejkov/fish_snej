@@ -8,8 +8,8 @@ import { SnejAudio } from "./audio.js?v=0.0.4";
 import {
   SnejCastSystem, CAST_TOL, SPLASH_BASE, SPLASH_MIN, SPLASH_SCALE,
   STARTLE_R, STARTLE_SEC, WAKE_BOB_AMP, WAKE_BOB_FREQ
-} from "./castSystem.js?v=0.0.5a-hf3";
-import { DEFAULT_FLOAT_DEPTH, SnejFloatRig, limitLineEnd, writeFixedLine } from "./floatRig.js?v=0.0.5a-hf3";
+} from "./castSystem.js?v=0.0.5a-hf4";
+import { DEFAULT_FLOAT_DEPTH, FLOAT_RETRIEVE_FRACTION, SnejFloatRig, limitLineEnd, writeFixedLine } from "./floatRig.js?v=0.0.5a-hf4";
 import { SnejAuth, SNEJKOV_ID, SNEJKOV_NAME } from "./auth.js";
 import { resolveLake } from "./lakeValidator.js";
 import { SNEJ_FIXED_SEED, WORLD_SIZE, WATER_REGION } from "./lake.js";
@@ -35,6 +35,8 @@ const MAX_WADE_DEPTH = 1.0;
 const CAM_PULL_MIN = 1.1;
 const CAM_DIST = 4.6;
 const VIEW_TRANSITION_TIME = 0.18;
+const CAST_LOOK_SCALE = 0.03;
+const CAST_LOOK_SPEED = 0.06;
 
 const DEFAULT_SETTINGS = {
   volume: 0.7,
@@ -109,6 +111,7 @@ export class SnejFishingGame {
       lineObstruction: (a, b, slack) => this.lineObstruction(a, b, slack)
     };
     this.mouse = { dx: 0, dy: 0 };
+    this.castAdjusting = false;
     this.time = 0;
     this.stepTimer = 0;
     this.moveAmt = 0;
@@ -800,7 +803,7 @@ export class SnejFishingGame {
       this.stats.tickPlaytime(dt);
     }
     if (this.mode === "playing" && !this.ui.buildOpen && !this.ui.profileOpen && !this.ui.inventoryOpen && !this.ui.modalOpen) {
-      this.updateLook();
+      this.updateLook(sceneDt);
       this.updateMove(dt);
     } else {
       this.moveAmt = 0;
@@ -911,17 +914,27 @@ export class SnejFishingGame {
     const state = this.cast.state;
     if (state.fs !== "wait") {
       this.floatRig.reset();
+      this.castAdjusting = false;
       return;
     }
+    const wasAnchored = this.floatRig.anchored;
+    const previousReach = Math.hypot(state.bobber.x - this.pos.x, state.bobber.z - this.pos.z);
     const tip = this.angler.getRodTip(this.castTip);
     if (!this.floatRig.follow(dt, tip, state.bobber, this.cast.rig, this.floatContext)) {
-      state.fs = "flight";
-      state.retrieving = true;
-      state.castObstruction = "line";
+      this.cast.startRetrieve("line");
       this.floatRig.reset();
       this.audio.deny();
       this.ui.showToast("The float cannot reach this position.");
+    } else if (dt > 0 && wasAnchored && this.castAdjusting) {
+      const reach = Math.hypot(state.bobber.x - this.pos.x, state.bobber.z - this.pos.z);
+      // Only a player's correction triggers this rule, not a short landing or a view transition.
+      if (reach < previousReach - 1e-8 && reach < this.cast.rig.lineLength * FLOAT_RETRIEVE_FRACTION - 1e-8) {
+        this.cast.startRetrieve("close");
+        this.floatRig.reset();
+        this.ui.showToast("Retrieving rig.");
+      }
     }
+    this.castAdjusting = false;
   }
 
   updateCast(dt) {
@@ -1173,10 +1186,17 @@ export class SnejFishingGame {
     this.multiplayer.sendPresence(makePresence(this, this.presenceSeq));
   }
 
-  updateLook() {
-    const sensitivity = this.settings.sens * 0.0022;
-    this.yaw -= this.mouse.dx * sensitivity;
-    this.pitch -= this.mouse.dy * sensitivity;
+  updateLook(dt = 1 / 60) {
+    const adjusting = this.cast.state.fs === "flight" || this.cast.state.fs === "wait";
+    const sensitivity = this.settings.sens * 0.0022 * (adjusting ? CAST_LOOK_SCALE : 1);
+    let dx = this.mouse.dx * sensitivity, dy = this.mouse.dy * sensitivity;
+    if (adjusting) {
+      const amount = Math.hypot(dx, dy), limit = CAST_LOOK_SPEED * Math.max(0, dt);
+      if (amount > limit) { dx *= limit / amount; dy *= limit / amount; }
+    }
+    this.castAdjusting = adjusting && (dx !== 0 || dy !== 0);
+    this.yaw -= dx;
+    this.pitch -= dy;
     this.pitch = clamp(this.pitch, -Math.PI / 2 + 0.05, Math.PI / 2 - 0.05);
     this.mouse.dx = 0;
     this.mouse.dy = 0;

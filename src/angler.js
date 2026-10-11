@@ -227,8 +227,9 @@ export class SnejAngler {
     }
     const viewBlend = Number.isFinite(info.viewBlend) ? info.viewBlend : info.cameraMode === "first-person" ? 0 : 1;
     this.firstPersonWeight = info.camera ? THREE.MathUtils.clamp(1 - viewBlend, 0, 1) : 0;
+    const poseWeight = Math.max(this.firstPersonWeight, info.castCamera ? this.castHoldWeight : 0);
     this.rig.rotation.set(0, this.heading, 0);
-    this.rig.quaternion.slerp(this.viewIdentity, this.firstPersonWeight);
+    this.rig.quaternion.slerp(this.viewIdentity, poseWeight);
     // Remove the previous view overlay before sampling the carry animation, including paused frames.
     this.bones.RightShoulder.position.copy(this.carryPose.shoulderPosition);
     this.bones.RightShoulder.quaternion.copy(this.carryPose.shoulder);
@@ -240,7 +241,8 @@ export class SnejAngler {
     this.carryPose.forearm.copy(this.bones.RightForeArm.quaternion);
     this.carryPose.hand.copy(this.bones.RightHand.quaternion);
     if (this.carryMoveWeight > 0) this.applyUprightCarry();
-    if (this.firstPersonWeight > 0) this.applyViewPose(info.camera);
+    // A held cast uses a world-stable grip, not the camera's moving orbit transition.
+    if (poseWeight > 0) this.applyViewPose(info.castCamera && this.castHoldWeight > 0 ? info.castCamera : info.camera, poseWeight);
     if (this.castHoldWeight > 0) this.applyHorizontalCarry();
     this.updatePreview();
     this.skeleton.update();
@@ -270,11 +272,10 @@ export class SnejAngler {
     this.bones.RightHand.quaternion.slerp(this.viewHandRotation, weight);
   }
 
-  applyViewPose(camera) {
+  applyViewPose(camera, weight = this.firstPersonWeight) {
     this.group.updateWorldMatrix(true, true);
     camera.updateWorldMatrix(true, false);
     const shoulder = this.bones.RightShoulder;
-    const weight = this.firstPersonWeight;
     this.viewParentInverse.copy(this.bones.Chest.matrixWorld).invert();
     const width = THREE.MathUtils.clamp(camera.aspect, 0.25, 1);
     this.viewOrigin.set(0.25 * width - 0.11, -0.36, -0.05)

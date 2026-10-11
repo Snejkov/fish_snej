@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { SnejAngler } from "./angler.js?v=0.0.4-hf3";
+import { SnejAngler } from "./angler.js?v=0.0.5a-hf2";
 import { RODS, rodForLength } from "./rods.js?v=0.0.5a";
 import { SnejInventory } from "./gear/inventory.js";
 import { SnejCatchLog } from "./game/catchLog.js";
@@ -146,6 +146,7 @@ export class SnejFishingGame {
 
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(70, 1, 0.05, 1800);
+    this.castCamera = new THREE.PerspectiveCamera(70, 1, 0.05, 1800);
     this.renderer = new THREE.WebGLRenderer({
       canvas,
       antialias: this.settings.quality !== "low",
@@ -834,7 +835,8 @@ export class SnejFishingGame {
         castRetrieving: this.cast.state.retrieving,
         cameraMode: this.cameraMode,
         viewBlend: this.viewBlend,
-        camera: this.camera
+        camera: this.camera,
+        castCamera: this.castCamera
       });
     }
     this.updateFloatRig(this.canCast() ? sceneDt : 0);
@@ -1285,6 +1287,12 @@ export class SnejFishingGame {
     }
     const desiredPosition = eye.clone().lerp(thirdPosition, this.viewBlend);
     const firstTarget = eye.clone().addScaledVector(lookDir, 8);
+    if (this.castCamera) {
+      // The physical grip follows player look, never the first/third-person orbit.
+      this.castCamera.aspect = this.camera.aspect;
+      this.castCamera.position.copy(eye);
+      this.castCamera.lookAt(firstTarget);
+    }
     const desiredTarget = firstTarget.lerp(eye, this.viewBlend);
     if (transitioning) {
       this.camera.position.copy(desiredPosition);

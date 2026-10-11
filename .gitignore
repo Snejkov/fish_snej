@@ -1,0 +1,22 @@
+# Local tooling and generated verification output
+node_modules/
+.wrangler/
+previews/
+.qa-*
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# Local credentials and machine-specific settings
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+*.pem
+*.key
+.codex/
+.agents/
+.idea/
+.vscode/

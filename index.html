@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SnejFishing -- Lakeside</title>
+    <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=">
+    <link rel="stylesheet" href="./styles.css?v=0.0.3-hf2.12">
+    <link rel="stylesheet" href="./styles/build.css?v=0.0.3-hf2.12">
+    <link rel="stylesheet" href="./styles/profile.css?v=0.0.3-hf2.12">
+    <link rel="stylesheet" href="./styles/multiplayer.css?v=0.0.3-hf2.12">
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "./vendor/three.module.min.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="game-canvas"></canvas>
+
+      <section id="registration-screen" class="screen hidden">
+        <div class="panel registration-panel">
+          <p class="eyebrow">New Local Profile</p>
+          <h1>Create Your Profile</h1>
+          <p class="lead">Choose a display name. This profile stays on this browser and will be shown when you return.</p>
+          <label class="registration-field" for="registration-name">Player name</label>
+          <input id="registration-name" type="text" minlength="3" maxlength="20" autocomplete="off" spellcheck="false" placeholder="LakeWalker">
+          <p id="registration-validation" class="validation-line">Use 3 to 20 characters.</p>
+          <button id="register-player" disabled>Create Profile</button>
+          <p class="registration-rules">Letters, numbers, underscores, and hyphens. The first character cannot be a number.</p>
+        </div>
+      </section>
+
+      <section id="title-screen" class="screen hidden">
+        <div class="panel title-panel launcher-panel">
+          <section class="launcher-profile" aria-label="Saved local profile">
+            <div id="launcher-profile-initial" class="launcher-avatar" aria-hidden="true">P</div>
+            <div class="launcher-profile-copy">
+              <span class="eyebrow">Saved Profile</span>
+              <strong id="launcher-profile-name">Player</strong>
+              <span id="launcher-profile-meta">#1 &middot; player</span>
+            </div>
+            <button id="title-profile" class="secondary">Manage Profile</button>
+          </section>
+
+          <div class="launcher-title">
+            <p class="eyebrow">Choose Waterbody</p>
+            <h1>SnejFishing</h1>
+            <p class="lead">Select where you want to begin.</p>
+          </div>
+
+          <div class="waterbody-grid" role="radiogroup" aria-label="Waterbody selection">
+            <button class="waterbody-option selected" type="button" role="radio" aria-checked="true" data-waterbody="snej-lake">
+              <span class="waterbody-preview waterbody-preview-lake" aria-hidden="true"></span>
+              <span class="waterbody-copy">
+                <strong>Snej Lake</strong>
+                <small>Main lake &middot; Available</small>
+              </span>
+              <span class="waterbody-status available">Selected</span>
+            </button>
+            <button class="waterbody-option locked" type="button" disabled>
+              <span class="waterbody-preview waterbody-preview-reservoir" aria-hidden="true"></span>
+              <span class="waterbody-copy">
+                <strong>Pine Reservoir</strong>
+                <small>Locked waterbody</small>
+              </span>
+              <span class="waterbody-status">Soon</span>
+            </button>
+            <button class="waterbody-option locked" type="button" disabled>
+              <span class="waterbody-preview waterbody-preview-river" aria-hidden="true"></span>
+              <span class="waterbody-copy">
+                <strong>Northern River</strong>
+                <small>Locked waterbody</small>
+              </span>
+              <span class="waterbody-status">Soon</span>
+            </button>
+            <button class="waterbody-option locked" type="button" disabled>
+              <span class="waterbody-preview waterbody-preview-marsh" aria-hidden="true"></span>
+              <span class="waterbody-copy">
+                <strong>Marsh Lake</strong>
+                <small>Locked waterbody</small>
+              </span>
+              <span class="waterbody-status">Soon</span>
+            </button>
+          </div>
+
+          <div class="row actions launcher-actions">
+            <button id="new-game">Enter Snej Lake</button>
+            <button id="continue-game" class="hidden">Continue Snej Lake</button>
+            <button id="online-game" class="secondary hidden">Online</button>
+          </div>
+          <div id="online-setup" class="online-setup hidden">
+            <p id="online-identity" class="online-identity">Player [#1] [player]</p>
+            <label class="compact-field">
+              <span>Room</span>
+              <input id="online-room" type="text" maxlength="32" value="snej-1">
+            </label>
+            <div class="row">
+              <button id="online-connect">Connect</button>
+              <button id="online-cancel" class="secondary">Cancel</button>
+            </div>
+          </div>
+          <details class="settings-box">
+            <summary>Settings</summary>
+            <div id="title-settings" class="settings-grid"></div>
+          </details>
+          <p class="footer">SnejFishing v0.0.03 Hotfix 2.13 (c) 2026</p>
+        </div>
+      </section>
+
+      <section id="pause-screen" class="screen hidden">
+        <div class="panel menu-panel">
+          <h2>Paused</h2>
+          <div id="pause-main">
+            <p id="network-status" class="status-line">Offline</p>
+            <button id="resume-game">Resume</button>
+            <button id="pause-profile" class="secondary">Profile</button>
+            <button id="show-settings" class="secondary">Settings...</button>
+            <button id="new-lake" class="secondary">Reload Fixed Map</button>
+            <section id="peer-list-section" class="peer-list-section hidden" aria-label="Online players">
+              <h3>Players</h3>
+              <div id="peer-list" class="peer-list"></div>
+              <div class="rank-legend" aria-label="Rank reference">
+                <span class="rank-badge rank-player">player</span>
+                <span class="rank-badge rank-premium inactive">premium</span>
+                <span class="rank-badge rank-tester inactive">tester</span>
+                <span class="rank-badge rank-administrator inactive">administrator</span>
+                <span class="rank-badge rank-developer">developer</span>
+              </div>
+            </section>
+            <button id="quit-title" class="secondary">Quit to Title</button>
+          </div>
+          <div id="pause-settings" class="hidden">
+            <div id="menu-settings" class="settings-grid"></div>
+            <button id="back-menu" class="secondary">Back</button>
+          </div>
+        </div>
+      </section>
+
+      <aside id="profile-panel" class="profile-panel hidden" aria-label="Player profile">
+        <div class="profile-head">
+          <div>
+            <p class="eyebrow">Local Identity</p>
+            <h2>Profile</h2>
+          </div>
+          <button id="profile-close" class="icon-button secondary" title="Close profile" aria-label="Close profile">X</button>
+        </div>
+        <div class="identity-block">
+          <strong id="profile-name">Player</strong>
+          <span id="profile-id" class="profile-id">#1</span>
+        </div>
+        <h3>Session Stats</h3>
+        <div class="stat-grid">
+          <div><strong>0</strong><span>Sessions</span></div>
+          <div><strong>0</strong><span>Distance</span></div>
+          <div><strong>0</strong><span>Build Saves</span></div>
+        </div>
+        <div class="profile-actions">
+          <button id="change-name" class="secondary">Change Name</button>
+          <button id="sign-out" class="secondary">Sign Out</button>
+        </div>
+      </aside>
+
+      <aside id="build-panel" class="build-panel hidden" aria-label="Build mode">
+        <div class="build-head">
+          <div>
+            <p class="eyebrow">Build Mode</p>
+            <h2>Custom Textures</h2>
+          </div>
+          <button id="build-close" class="icon-button secondary" title="Close build mode" aria-label="Close build mode">X</button>
+        </div>
+        <input id="texture-input" class="hidden" type="file" accept="image/png,image/jpeg,image/webp" multiple>
+        <input id="manifest-file" class="hidden" type="file" accept="application/json,.json">
+        <div class="texture-toolbar">
+          <button id="texture-upload" class="secondary">Upload</button>
+          <button id="manifest-export" class="secondary">Export Library</button>
+          <button id="manifest-file-button" class="secondary">Import File</button>
+        </div>
+        <p class="helper">PNG, JPG, or WEBP. Maximum 8 MB.</p>
+        <p class="helper">Metadata only. Blobs must be re-uploaded on the target machine.</p>
+        <details class="manifest-import">
+          <summary>Paste Manifest</summary>
+          <textarea id="manifest-text" rows="4" spellcheck="false" placeholder="Paste manifest JSON"></textarea>
+          <button id="manifest-paste-import" class="secondary">Import Pasted JSON</button>
+        </details>
+        <div id="texture-list" class="texture-list" aria-label="Texture library"></div>
+        <fieldset>
+          <legend>Surface</legend>
+          <div class="segmented">
+            <label><input type="radio" name="surface" value="land" checked><span>Land</span></label>
+            <label><input type="radio" name="surface" value="bed"><span>Bed</span></label>
+            <label><input type="radio" name="surface" value="dock"><span>Dock</span></label>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Tool</legend>
+          <div class="segmented">
+            <label><input type="radio" name="build-tool" value="paint" checked><span>Paint</span></label>
+            <label><input type="radio" name="build-tool" value="erase"><span>Erase</span></label>
+            <label><input type="radio" name="build-tool" value="move"><span>Move</span></label>
+          </div>
+        </fieldset>
+        <div class="build-actions">
+          <button id="build-save">Save</button>
+          <button id="build-discard" class="secondary">Discard</button>
+        </div>
+      </aside>
+
+      <div id="identity-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="identity-modal-title">
+        <div class="panel identity-modal-card">
+          <h2 id="identity-modal-title">Change Name</h2>
+          <input id="identity-name" type="text" minlength="3" maxlength="20" autocomplete="off" spellcheck="false">
+          <p id="identity-validation" class="validation-line"></p>
+          <div class="row">
+            <button id="identity-save">Save</button>
+            <button id="identity-cancel" class="secondary">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="hud">
+        <div id="compass" class="hud-box">
+          <svg viewBox="0 0 48 48" aria-label="Compass">
+            <circle cx="24" cy="24" r="20"></circle>
+            <path id="compass-arrow" d="M24 6 L30 27 L24 23 L18 27 Z"></path>
+            <text x="24" y="43">N</text>
+          </svg>
+        </div>
+        <div id="readout" class="hud-box">
+          <div id="pos-line">x 0.0, z 0.0</div>
+          <div id="depth-line">On land</div>
+          <div id="camera-line">Third Person</div>
+        </div>
+        <div id="fps" class="hud-box">0 FPS</div>
+      </div>
+
+      <div id="hint-bar">
+        Move WASD &middot; Sprint Shift &middot; Look Mouse &middot;
+        <span id="view-chip" class="chip">[V] View: Third Person</span> &middot;
+        <span id="build-chip" class="chip">[B] Build (locked)</span> &middot;
+        <span class="chip">[P] Profile</span> &middot; Esc Menu &middot; U Toggle HUD
+      </div>
+      <div id="toast" class="toast hidden" role="status"></div>
+    </div>
+    <script type="module" src="./src/main.js?v=0.0.3-hf2.13"></script>
+  </body>
+</html>

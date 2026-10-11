@@ -1,0 +1,12 @@
+{
+  "name": "snejfishing-multiplayer-worker",
+  "version": "0.0.3-hotfix.2.13",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

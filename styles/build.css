@@ -1,0 +1,91 @@
+.build-panel {
+  width: min(390px, 100%);
+}
+
+.texture-toolbar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 22px;
+}
+
+.texture-toolbar button {
+  min-width: 0;
+  padding: 0 8px;
+  font-size: 11px;
+}
+
+.manifest-import {
+  margin-top: 12px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.manifest-import textarea {
+  width: 100%;
+  margin: 10px 0 8px;
+  padding: 9px;
+  resize: vertical;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #0f1722;
+  color: var(--text);
+  font: 11px/1.4 ui-monospace, monospace;
+}
+
+.manifest-import button {
+  width: 100%;
+  font-size: 11px;
+}
+
+.texture-name {
+  width: 100%;
+  min-height: 28px;
+  padding: 5px 6px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--dim);
+  font-size: 10px;
+  font-weight: 500;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.texture-card .texture-dimensions {
+  padding: 0 6px 6px;
+  color: var(--mute);
+  font-size: 9px;
+}
+
+.texture-rename-input {
+  width: 100%;
+  min-height: 28px;
+  padding: 4px 6px;
+  border: 1px solid var(--gold);
+  border-radius: 0;
+  background: #0f1722;
+  color: var(--text);
+  font-size: 10px;
+}
+
+.missing-media {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: rgba(10, 15, 22, 0.88);
+  color: var(--gold);
+  font-size: 9px;
+  pointer-events: none;
+}
+
+@media (max-width: 620px) {
+  .texture-toolbar {
+    grid-template-columns: 1fr;
+  }
+}

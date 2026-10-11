@@ -1,0 +1,67 @@
+.online-identity {
+  color: var(--gold);
+  font: 700 12px/1.4 ui-monospace, monospace;
+}
+
+.peer-list-section {
+  margin: 8px 0 14px;
+  padding-top: 2px;
+  border-top: 1px solid var(--line);
+}
+
+.peer-list {
+  display: grid;
+  gap: 6px;
+}
+
+.peer-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  color: var(--dim);
+  font-size: 12px;
+}
+
+.peer-row .rank-badge {
+  min-height: 20px;
+  font-size: 9px;
+}
+
+.peer-row .rank-premium,
+.peer-row .rank-tester,
+.peer-row .rank-administrator {
+  color: var(--mute);
+  font-style: italic;
+  opacity: 0.55;
+}
+
+.rank-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.rank-legend .rank-badge {
+  min-height: 20px;
+  font-size: 9px;
+}
+
+.rank-legend .inactive {
+  color: var(--mute);
+  font-style: italic;
+  opacity: 0.45;
+}
+
+.chip.locked {
+  color: var(--mute);
+  opacity: 0.72;
+}
+
+.chip.allowed {
+  color: var(--gold);
+}

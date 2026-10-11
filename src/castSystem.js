@@ -1,5 +1,6 @@
 import { clamp, clamp01, lerp } from "./util.js";
 import { RODS } from "./rods.js?v=0.0.4-hf2";
+import { rigForRod } from "./floatRig.js?v=0.0.4-hf6";
 
 // Stage 4 cast analysis, sections 1, 4, 5, 9, and 10. No fish behavior is active.
 const GRAVITY = 9.8;
@@ -7,8 +8,6 @@ const CAST_HEADROOM = 1.07;
 const CAST_SPEED_MIN = 0.5;
 const CAST_TOL = 0.06;
 const CAST_MISS = 0.30;
-const LINE_SLACK = 8;
-const RUN_MARGIN = 16;
 const CHARGE_RATE = 0.4;
 const SPLASH_BASE = 16;
 const SPLASH_MIN = 4;
@@ -81,10 +80,12 @@ function waterRange(speed, elev, height) {
 }
 
 export class SnejCastSystem {
-  constructor({ rodRange = RODS[0].range, getCastOrigin } = {}) {
-    this.castRange = Math.max(CAST_SPEED_MIN, finite(rodRange, RODS[0].range));
+  constructor({ rodRange = RODS[0].range, floatDepth = 0, getCastOrigin } = {}) {
+    this.rodRange = Math.max(CAST_SPEED_MIN, finite(rodRange, RODS[0].range));
+    this.rig = rigForRod(this.rodRange / 2, floatDepth);
+    this.castRange = this.rig.castRange;
     this.castTop = castTopSpeed(this.castRange);
-    this.maxLine = this.castRange + RUN_MARGIN + LINE_SLACK;
+    this.maxLine = this.rig.lineLength;
     this.getCastOrigin = getCastOrigin;
     this.state = {};
     this._origin = point();
@@ -167,12 +168,14 @@ export class SnejCastSystem {
     this.state.requestedDist = 0;
   }
 
-  setRodRange(range) {
+  setRodRange(range, floatDepth = this.rig.floatDepth) {
     if (this.state.fs === "charge" || this.state.fs === "flight") return false;
     if (!Number.isFinite(range) || range <= 0) return false;
-    this.castRange = range;
-    this.castTop = castTopSpeed(range);
-    this.maxLine = range + RUN_MARGIN + LINE_SLACK;
+    this.rodRange = range;
+    this.rig = rigForRod(range / 2, floatDepth);
+    this.castRange = this.rig.castRange;
+    this.castTop = castTopSpeed(this.castRange);
+    this.maxLine = this.rig.lineLength;
     this.reset();
     return true;
   }
@@ -182,7 +185,8 @@ export class SnejCastSystem {
     const surface = ctx.waterSurfaceY?.(p.x, p.z) ?? 0;
     const ground = ctx.terrainHeightAt?.(p.x, p.z) ?? -1;
     const depth = ctx.terrainDepthAt?.(p.x, p.z) ?? surface - ground;
-    return depth > WATER_DEPTH_MIN && ground < surface && (ctx.isWaterAt?.(p.x, p.z) ?? true);
+    return depth > WATER_DEPTH_MIN && depth >= this.rig.floatDepth + 0.02
+      && ground < surface && (ctx.isWaterAt?.(p.x, p.z) ?? true);
   }
 
   getCastOriginLocal() {
@@ -259,7 +263,7 @@ export class SnejCastSystem {
     if (obstruction) return obstruction === "land" ? "terrain" : obstruction;
     const ground = ctx.terrainHeightAt?.(end.x, end.z) ?? -1;
     const surface = Math.max(ground, water);
-    if (end.y > surface && distance(end, origin) <= this.maxLine) return null;
+    if (end.y > surface) return null;
     end.y = surface;
     const depth = ctx.terrainDepthAt?.(end.x, end.z) ?? water - ground;
     if (depth <= WATER_DEPTH_MIN || !this.isWaterAt(end)) return "terrain";
@@ -355,7 +359,7 @@ export class SnejCastSystem {
 }
 
 export {
-  GRAVITY, CAST_HEADROOM, CAST_SPEED_MIN, CAST_TOL, CAST_MISS, LINE_SLACK, RUN_MARGIN,
+  GRAVITY, CAST_HEADROOM, CAST_SPEED_MIN, CAST_TOL, CAST_MISS,
   CHARGE_RATE, FLIGHT_TIME_SCALE, SPLASH_BASE, SPLASH_MIN, SPLASH_SCALE, STARTLE_R, STARTLE_SEC,
   WAKE_BOB_AMP, WAKE_BOB_FREQ, CAST_TIP_FALLBACK, elevFor, flightRange, castTopSpeed
 };

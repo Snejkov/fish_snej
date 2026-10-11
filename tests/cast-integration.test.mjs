@@ -12,6 +12,8 @@ const { SnejAngler } = await import("../src/angler.js");
 const { SnejFishingGame } = await import("../src/game.js");
 const { SnejWater } = await import("../src/water.js");
 const { SnejAudio } = await import("../src/audio.js");
+const { SnejCastSystem } = await import("../src/castSystem.js");
+const { SnejFloatRig } = await import("../src/floatRig.js");
 const rig = new SnejAngler();
 rig.group.position.set(10, 2, -5);
 rig.group.rotation.y = Math.PI / 2;
@@ -113,7 +115,7 @@ const markerGame = {
   mode: "playing", ui: {}, yaw: 0, pitch: -0.12, pos: new THREE.Vector3(0, 0.04, 0),
   canCast: SnejFishingGame.prototype.canCast, angler: rig, castContext: {}, castTip: new THREE.Vector3(),
   cast: { state: markerState, castRange: 8, tick: () => markerState, cancelCharge() {}, isWaterAt: () => true },
-  rodSelect: {}, castMeter: element(), castMeterFill: element(), castMeterDistance: element(),
+  rodSelect: {}, floatDepthInput: {}, castMeter: element(), castMeterFill: element(), castMeterDistance: element(),
   castMeterTarget: element(), castMeterTol: element(),
   aimMarker: new THREE.Mesh(new THREE.RingGeometry(), new THREE.MeshBasicMaterial()),
   landingMarker: new THREE.Mesh(new THREE.RingGeometry(), new THREE.MeshBasicMaterial()),
@@ -151,4 +153,33 @@ for (const marker of [markerGame.aimMarker, markerGame.landingMarker]) {
   marker.geometry.dispose();
   marker.material.dispose();
 }
+const depthGame = {
+  settings: { rodLength: 5, floatDepth: 0.5 }, angler: rig,
+  cast: new SnejCastSystem({ rodRange: 10, floatDepth: 0.5 }), floatRig: new SnejFloatRig(),
+  rodSelect: { options: [{}, {}, {}] }, rodReadout: {}, floatDepthInput: {}, floatDepthReadout: {},
+  applyRod: SnejFishingGame.prototype.applyRod,
+  updateCast() {}, updateCastVisuals() {},
+  save() { this.saved = { ...this.settings }; }
+};
+for (const value of [-1, 99, NaN]) {
+  assert.equal(SnejFishingGame.prototype.selectFloatDepth.call(depthGame, value), false);
+  assert.equal(depthGame.settings.floatDepth, 0.5);
+}
+for (const fs of ["charge", "flight"]) {
+  depthGame.cast.state.fs = fs;
+  assert.equal(SnejFishingGame.prototype.selectFloatDepth.call(depthGame, 1), false);
+  assert.equal(depthGame.cast.rig.floatDepth, 0.5);
+}
+depthGame.cast.state.fs = "wait";
+assert.equal(SnejFishingGame.prototype.selectFloatDepth.call(depthGame, 0.75), true);
+assert.equal(depthGame.cast.state.fs, "idle");
+assert.equal(depthGame.cast.castRange, 9.25);
+assert.equal(depthGame.floatDepthInput.value, "0.75");
+assert.equal(depthGame.saved.floatDepth, 0.75);
+assert.equal(depthGame.rodReadout.textContent, "Rod 5 m / Cast 9.25 m");
+assert.equal(depthGame.floatDepthReadout.textContent, "Depth 0.75 m / Line 5 m");
+depthGame.settings.floatDepth = 4.5;
+depthGame.applyRod({ length: 4, range: 8 });
+assert.equal(depthGame.settings.floatDepth, 3.75, "Selecting a shorter rod must clamp the stored depth to its line budget.");
+assert.equal(depthGame.floatDepthInput.max, "3.75");
 console.log("Stage 4 cast integration tests passed.");

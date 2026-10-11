@@ -11,7 +11,7 @@ const context = {
 const make = () => new SnejCastSystem({ rodRange: 30, getCastOrigin: () => ({ x: 0, y: 3, z: 0.55 }) });
 for (const [name, expected] of Object.entries({
   GRAVITY: 9.8, CAST_HEADROOM: 1.07, CAST_SPEED_MIN: 0.5, CAST_TOL: 0.06,
-  CAST_MISS: 0.30, LINE_SLACK: 8, RUN_MARGIN: 16, CHARGE_RATE: 0.4, FLIGHT_TIME_SCALE: 0.65,
+  CAST_MISS: 0.30, CHARGE_RATE: 0.4, FLIGHT_TIME_SCALE: 0.65,
   SPLASH_BASE: 16, SPLASH_MIN: 4, SPLASH_SCALE: 0.55, WAKE_BOB_AMP: 0.012, WAKE_BOB_FREQ: 1.6
 })) assert.equal(cast[name], expected, name);
 assert.deepEqual(cast.STARTLE_R, [1, 3.2]);
@@ -208,7 +208,7 @@ assert.equal(changing.setRodRange(10), false);
 for (let i = 0; i < 600 && changing.state.fs === "flight"; i += 1) changing.tick(1 / 60, context);
 assert.equal(changing.setRodRange(8), true);
 assert.equal(changing.state.fs, "idle");
-assert.equal(changing.maxLine, 32);
+assert.equal(changing.maxLine, 4);
 changing.tick(0, context);
 assert.equal(changing.state.aimDist, 8);
 assert.equal(changing.state.targetPower, 1);

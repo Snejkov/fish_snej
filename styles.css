@@ -154,10 +154,12 @@ summary {
 .compact-field { grid-template-columns: 72px 1fr; }
 
 .field select,
+.field input[type="number"],
 .field input[type="range"],
 .compact-field input { width: 100%; }
 
 .field select,
+.field input[type="number"],
 .compact-field input {
   min-height: 36px;
   padding: 0 10px;
@@ -523,4 +525,5 @@ legend {
   }
   #fps { bottom: 96px; }
   .cast-meter { bottom: 144px; }
+  .toast { top: 146px; }
 }

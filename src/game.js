@@ -5,7 +5,8 @@ import { SnejAudio } from "./audio.js?v=0.0.4";
 import {
   SnejCastSystem, CAST_TOL, SPLASH_BASE, SPLASH_MIN, SPLASH_SCALE,
   STARTLE_R, STARTLE_SEC, WAKE_BOB_AMP, WAKE_BOB_FREQ
-} from "./castSystem.js?v=0.0.4-hf2";
+} from "./castSystem.js?v=0.0.4-hf6";
+import { DEFAULT_FLOAT_DEPTH, SnejFloatRig, rigForRod, limitLineEnd, writeFixedLine } from "./floatRig.js?v=0.0.4-hf6";
 import { SnejAuth, SNEJKOV_ID, SNEJKOV_NAME } from "./auth.js";
 import { resolveLake } from "./lakeValidator.js";
 import { SNEJ_FIXED_SEED, WORLD_SIZE } from "./lake.js";
@@ -40,6 +41,7 @@ const DEFAULT_SETTINGS = {
   shadow: true,
   randomLake: false,
   rodLength: 4,
+  floatDepth: DEFAULT_FLOAT_DEPTH,
   lang: "en"
 };
 
@@ -68,9 +70,11 @@ export class SnejFishingGame {
     this.castOrigin = new THREE.Vector3();
     this.castTip = new THREE.Vector3();
     this.castSurfacePoint = new THREE.Vector3();
-    this.cast = new SnejCastSystem({ rodRange: RODS[0].range, getCastOrigin: () => this.angler.getCastOrigin(this.castOrigin) });
+    this.cast = new SnejCastSystem({ rodRange: RODS[0].range, floatDepth: DEFAULT_FLOAT_DEPTH, getCastOrigin: () => this.angler.getCastOrigin(this.castOrigin) });
+    this.floatRig = new SnejFloatRig();
     this.castMesh = null;
     this.castLine = null;
+    this.depthLine = null;
     this.aimMarker = null;
     this.landingMarker = null;
     this.castMeter = document.getElementById("cast-meter");
@@ -80,6 +84,8 @@ export class SnejFishingGame {
     this.castMeterDistance = this.castMeter.querySelector(".cast-meter-distance");
     this.rodSelect = document.getElementById("rod-select");
     this.rodReadout = document.getElementById("rod-line");
+    this.floatDepthInput = document.getElementById("float-depth");
+    this.floatDepthReadout = document.getElementById("float-depth-line");
     for (const rod of RODS) {
       this.rodSelect.add(new Option(`${rod.length} m / Range ${rod.range} m`, String(rod.length)));
     }
@@ -92,6 +98,12 @@ export class SnejFishingGame {
       lineObstruction: (a, b, slack) => this.lineObstruction(a, b, slack),
       aimBlockedByDome: () => null,
       rodReel: 0
+    };
+    this.floatContext = {
+      playerOrigin: this.pos,
+      surfaceY: (x, z) => this.castMarkerHeight({ x, z }) + Math.sin(this.cast.state.waitTime * WAKE_BOB_FREQ) * WAKE_BOB_AMP,
+      isWaterAt: (point) => this.cast.isWaterAt(point),
+      lineObstruction: (a, b, slack) => this.lineObstruction(a, b, slack)
     };
     this.mouse = { dx: 0, dy: 0 };
     this.time = 0;
@@ -175,6 +187,9 @@ export class SnejFishingGame {
     this.rodSelect.addEventListener("change", () => {
       if (!this.selectRod(Number(this.rodSelect.value))) this.rodSelect.value = String(this.settings.rodLength);
     });
+    this.floatDepthInput.addEventListener("change", () => {
+      if (!this.selectFloatDepth(this.floatDepthInput.valueAsNumber)) this.floatDepthInput.value = String(this.settings.floatDepth);
+    });
     window.addEventListener("resize", () => this.resize());
     window.addEventListener("keydown", (event) => {
       const tag = event.target?.tagName;
@@ -220,7 +235,7 @@ export class SnejFishingGame {
     this.canvas.addEventListener("mousedown", (event) => {
       if (event.button !== 0 || !this.canCast()) return;
       this.audio.resume();
-      // Waiting is a visual stub: starting another cast clears the previous float.
+      // Starting another cast clears the previous float and its fixed rig.
       if (this.cast.state.fs === "wait") this.cast.reset();
       this.updateCast(0);
       if (this.cast.onActionDown()) {
@@ -285,11 +300,16 @@ export class SnejFishingGame {
     if (!this.castMesh) {
       this.castMesh = this.createBobberMesh();
       this.castLine = this.createCastLineMesh();
+      this.depthLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]), this.castLine.material);
+      this.depthLine.name = "SnejDepthLine";
+      this.depthLine.geometry.attributes.position.setUsage(THREE.DynamicDrawUsage);
+      this.depthLine.frustumCulled = false;
       this.aimMarker = this.createMarker(0.5, 0.66, 0x9ff0ff, 0.85);
       this.landingMarker = this.createMarker(0.86, 1.12, 0xffe98a, 0.92);
     }
     this.castMesh.visible = false;
     this.castLine.visible = false;
+    this.depthLine.visible = false;
     this.aimMarker.visible = false;
     this.landingMarker.visible = false;
     this.castMeter.classList.add("hidden");
@@ -299,7 +319,7 @@ export class SnejFishingGame {
       this.angler.group,
       this.placementSystem.group,
       this.remoteRoom.group,
-      this.castMesh, this.castLine, this.aimMarker, this.landingMarker
+      this.castMesh, this.castLine, this.depthLine, this.aimMarker, this.landingMarker
     );
     this.scene.traverse((object) => { if (object.isLight) object.layers.enable(1); });
     this.configureShadows();
@@ -478,6 +498,7 @@ export class SnejFishingGame {
   pause() {
     this.cast.cancelCharge();
     this.castMeter.classList.add("hidden");
+    this.ui.el.toast.classList.add("hidden");
     this.mode = "paused";
     this.keys.clear();
     this.ui.showPause(true);
@@ -623,6 +644,7 @@ export class SnejFishingGame {
         shadow: this.settings.shadow,
         randomLake: false,
         rodLength: this.settings.rodLength,
+        floatDepth: this.settings.floatDepth,
         lang: this.settings.lang
       },
       player: {
@@ -773,6 +795,7 @@ export class SnejFishingGame {
         camera: this.camera
       });
     }
+    this.updateFloatRig(this.canCast() ? sceneDt : 0);
     this.updateCastVisuals();
     this.remoteRoom.update(dt);
     this.updateMultiplayer(dt);
@@ -791,9 +814,18 @@ export class SnejFishingGame {
   applyRod(rod) {
     this.settings.rodLength = rod.length;
     this.angler.carry.setLength(rod.length);
-    this.cast.setRodRange(rod.range);
+    this.cast.setRodRange(rod.range, this.settings.floatDepth);
+    this.floatRig.reset();
+    this.settings.floatDepth = this.cast.rig.floatDepth;
     this.rodSelect.value = String(rod.length);
-    this.rodReadout.textContent = `Rod ${rod.length} m / Range ${rod.range} m`;
+    for (const [index, item] of RODS.entries()) {
+      const rig = rigForRod(item.length, this.settings.floatDepth);
+      this.rodSelect.options[index].textContent = `${item.length} m / Cast ${Number(rig.castRange.toFixed(2))} m`;
+    }
+    this.floatDepthInput.max = String(this.cast.rig.maxDepth);
+    this.floatDepthInput.value = String(this.settings.floatDepth);
+    this.rodReadout.textContent = `Rod ${rod.length} m / Cast ${Number(this.cast.castRange.toFixed(2))} m`;
+    this.floatDepthReadout.textContent = `Depth ${Number(this.settings.floatDepth.toFixed(2))} m / Line ${rod.length} m`;
   }
 
   selectRod(length) {
@@ -806,6 +838,34 @@ export class SnejFishingGame {
     return true;
   }
 
+  selectFloatDepth(depth) {
+    if (!Number.isFinite(depth) || depth < 0 || depth > this.cast.rig.maxDepth
+      || this.cast.state.fs === "charge" || this.cast.state.fs === "flight") return false;
+    this.settings.floatDepth = depth;
+    this.applyRod(rodForLength(this.settings.rodLength));
+    this.updateCast(0);
+    this.updateCastVisuals();
+    this.save();
+    return true;
+  }
+
+  updateFloatRig(dt) {
+    const state = this.cast.state;
+    if (state.fs !== "wait") {
+      this.floatRig.reset();
+      return;
+    }
+    const tip = this.angler.getRodTip(this.castTip);
+    if (!this.floatRig.follow(dt, tip, state.bobber, this.cast.rig, this.floatContext)) {
+      state.fs = "flight";
+      state.retrieving = true;
+      state.castObstruction = "line";
+      this.floatRig.reset();
+      this.audio.deny();
+      this.ui.showToast("The float cannot reach this position.");
+    }
+  }
+
   updateCast(dt) {
     const enabled = this.canCast();
     if (!enabled) this.cast.cancelCharge();
@@ -816,6 +876,7 @@ export class SnejFishingGame {
     const wasRetrieving = this.cast.state.retrieving;
     const state = this.cast.tick(dt, this.castContext);
     this.rodSelect.disabled = state.fs === "charge" || state.fs === "flight";
+    this.floatDepthInput.disabled = this.rodSelect.disabled;
     const charging = enabled && state.fs === "charge";
     const onTarget = charging && state.canRelease && Math.abs(state.charge - state.targetPower) <= CAST_TOL;
     this.castMeter.classList.toggle("hidden", !charging);
@@ -934,19 +995,22 @@ export class SnejFishingGame {
     const visible = this.mode !== "title" && (state.fs === "flight" || state.fs === "wait");
     this.castMesh.visible = visible;
     this.castLine.visible = visible;
+    this.depthLine.visible = visible && state.fs === "wait" && this.cast.rig.floatDepth > 0;
     if (!visible) return;
     this.castMesh.position.set(state.bobber.x, state.bobber.y, state.bobber.z);
-    if (state.fs === "wait") this.castMesh.position.y = this.castMarkerHeight(state.bobber)
-      + Math.sin(state.waitTime * WAKE_BOB_FREQ) * WAKE_BOB_AMP;
     const tip = this.angler.getRodTip(this.castTip);
     const end = this.castMesh.position;
     const points = this.castLine.geometry.attributes.position;
-    const sag = Math.min(tip.distanceTo(end) * 0.16, 1.2);
-    for (let i = 0; i < points.count; i += 1) {
-      const t = i / (points.count - 1);
-      points.setXYZ(i, lerp(tip.x, end.x, t), lerp(tip.y, end.y, t) - 6.75 * t * t * (1 - t) * sag, lerp(tip.z, end.z, t));
-    }
+    const length = state.fs === "wait" ? this.cast.rig.upperLine : this.cast.rig.lineLength;
+    limitLineEnd(tip, end, length, end);
+    writeFixedLine(tip, end, length, points.array);
     points.needsUpdate = true;
+    if (this.depthLine.visible) {
+      const lower = this.depthLine.geometry.attributes.position;
+      lower.setXYZ(0, end.x, end.y, end.z);
+      lower.setXYZ(1, end.x, end.y - this.cast.rig.floatDepth, end.z);
+      lower.needsUpdate = true;
+    }
   }
 
   lineObstruction(tip, end, slack = 0) {
@@ -985,7 +1049,7 @@ export class SnejFishingGame {
   }
 
   createCastLineMesh() {
-    const geometry = new THREE.BufferGeometry().setFromPoints(Array.from({ length: 12 }, () => new THREE.Vector3()));
+    const geometry = new THREE.BufferGeometry().setFromPoints(Array.from({ length: 33 }, () => new THREE.Vector3()));
     geometry.attributes.position.setUsage(THREE.DynamicDrawUsage);
     const line = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color: 0xeeeeee, transparent: true, opacity: 0.6 }));
     line.name = "SnejCastLine";

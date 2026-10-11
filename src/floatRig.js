@@ -1,0 +1,117 @@
+import { clamp, lerp } from "./util.js";
+
+export const DEFAULT_FLOAT_DEPTH = 0.5;
+export const MIN_UPPER_LINE = 0.25;
+
+export function rigForRod(length, depth = DEFAULT_FLOAT_DEPTH) {
+  const lineLength = Number.isFinite(length) && length > 0 ? length : 4;
+  const maxDepth = Math.max(0, lineLength - MIN_UPPER_LINE);
+  const floatDepth = clamp(Number.isFinite(depth) ? depth : DEFAULT_FLOAT_DEPTH, 0, maxDepth);
+  return { lineLength, floatDepth, maxDepth, upperLine: lineLength - floatDepth, castRange: lineLength * 2 - floatDepth };
+}
+
+const point = () => ({ x: 0, y: 0, z: 0 });
+const copy = (out, source) => Object.assign(out, { x: source.x, y: source.y, z: source.z });
+const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
+
+export function limitLineEnd(tip, end, length, out) {
+  const d = distance(tip, end);
+  const t = d > length ? length / d : 1;
+  out.x = lerp(tip.x, end.x, t);
+  out.y = lerp(tip.y, end.y, t);
+  out.z = lerp(tip.z, end.z, t);
+  return out;
+}
+
+// Solve the length of the actual rendered polyline, including its sideways slack bow.
+export function writeFixedLine(tip, end, length, positions) {
+  const count = positions.length / 3;
+  const straight = distance(tip, end);
+  if (count < 2 || straight > length + 1e-6) return false;
+  const dx = end.x - tip.x, dz = end.z - tip.z, horizontal = Math.hypot(dx, dz);
+  const nx = horizontal > 1e-8 ? -dz / horizontal : 1;
+  const nz = horizontal > 1e-8 ? dx / horizontal : 0;
+  const fill = (bow, write) => {
+    let sum = 0, px = tip.x, py = tip.y, pz = tip.z;
+    for (let i = 0; i < count; i += 1) {
+      const t = i / (count - 1), offset = 4 * t * (1 - t) * bow;
+      const x = lerp(tip.x, end.x, t) + nx * offset;
+      const y = lerp(tip.y, end.y, t);
+      const z = lerp(tip.z, end.z, t) + nz * offset;
+      if (i > 0) sum += Math.hypot(x - px, y - py, z - pz);
+      if (write) { positions[i * 3] = x; positions[i * 3 + 1] = y; positions[i * 3 + 2] = z; }
+      px = x; py = y; pz = z;
+    }
+    return sum;
+  };
+  let lo = 0, hi = length;
+  for (let i = 0; i < 28; i += 1) {
+    const mid = (lo + hi) / 2;
+    if (fill(mid, false) < length) lo = mid; else hi = mid;
+  }
+  fill((lo + hi) / 2, true);
+  return true;
+}
+
+export class SnejFloatRig {
+  constructor() {
+    this.lastTip = point();
+    this.target = point();
+    this.sample = point();
+    this.previous = point();
+    this.hook = point();
+    this.anchored = false;
+  }
+
+  reset() {
+    this.anchored = false;
+  }
+
+  follow(dt, tip, bobber, rig, ctx) {
+    if (dt <= 0) return true;
+    const surfaceY = (p) => ctx.surfaceY(p.x, p.z);
+    copy(this.target, bobber);
+    if (this.anchored) {
+      this.target.x += tip.x - this.lastTip.x;
+      this.target.z += tip.z - this.lastTip.z;
+    }
+    // The float stays on the surface, inside the sphere allowed by the upper line.
+    for (let i = 0; i < 32; i += 1) {
+      this.target.y = surfaceY(this.target);
+      const vertical = tip.y - this.target.y;
+      if (Math.abs(vertical) > rig.upperLine) return false;
+      const radius = Math.sqrt(Math.max(0, rig.upperLine * rig.upperLine - vertical * vertical));
+      const dx = this.target.x - tip.x, dz = this.target.z - tip.z, d = Math.hypot(dx, dz);
+      if (d > radius) {
+        const scale = radius / d;
+        this.target.x = tip.x + dx * scale;
+        this.target.z = tip.z + dz * scale;
+      }
+      const player = ctx.playerOrigin;
+      const reach = player ? Math.hypot(this.target.x - player.x, this.target.z - player.z) : 0;
+      if (reach > rig.castRange) {
+        const scale = rig.castRange / reach;
+        this.target.x = player.x + (this.target.x - player.x) * scale;
+        this.target.z = player.z + (this.target.z - player.z) * scale;
+      } else if (d <= radius + 1e-8) break;
+    }
+    copy(this.previous, bobber);
+    const steps = Math.max(1, Math.ceil(Math.hypot(this.target.x - bobber.x, this.target.z - bobber.z) / 0.15));
+    for (let i = 1; i <= steps; i += 1) {
+      const t = i / steps;
+      this.sample.x = lerp(bobber.x, this.target.x, t);
+      this.sample.z = lerp(bobber.z, this.target.z, t);
+      this.sample.y = surfaceY(this.sample);
+      if (!ctx.isWaterAt(this.sample) || ctx.lineObstruction?.(this.previous, this.sample, 0)) break;
+      copy(this.previous, this.sample);
+    }
+    if (!ctx.isWaterAt(this.previous) || distance(tip, this.previous) > rig.upperLine + 1e-6
+      || ctx.lineObstruction?.(tip, this.previous, 0)) return false;
+    copy(bobber, this.previous);
+    copy(this.lastTip, tip);
+    this.anchored = true;
+    copy(this.hook, bobber);
+    this.hook.y -= rig.floatDepth;
+    return true;
+  }
+}

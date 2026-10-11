@@ -41,6 +41,7 @@ assert.equal(SnejWater.prototype.surfaceY(8, 10), 0);
 const grid = new THREE.Mesh(new THREE.PlaneGeometry(10, 10, 1, 1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial());
 [0, 2, 3, 9].forEach((height, index) => grid.geometry.attributes.position.setY(index, height));
 const visualWorld = {
+  renderedTerrainHeight: SnejFishingGame.prototype.renderedTerrainHeight,
   terrain: { groundMesh: grid, heightAt: () => 0, depthAt: () => 0, dockLocal: () => ({ along: -100, side: 100 }) },
   water: { surfaceY: () => 0 }, lake: { dockLength: 20, dockWidth: 3 }
 };
@@ -50,6 +51,22 @@ for (const [x, z] of [[-3, -3], [3, 3], [-3, 3], [2, -1]]) {
   const height = SnejFishingGame.prototype.castMarkerHeight.call(visualWorld, { x, z });
   assert.ok(Math.abs(height - hit.point.y) < 1e-6, "Marker height must match both rendered grid triangles.");
 }
+const waterMaskWorld = {
+  renderedTerrainHeight: SnejFishingGame.prototype.renderedTerrainHeight,
+  castSurfacePoint: new THREE.Vector3(),
+  terrain: { ...visualWorld.terrain, depthAt: () => 4, obstacles: [] },
+  water: { waveHeight: () => 4 }, lake: { dockLength: 20, dockWidth: 3 }
+};
+const waterMask = (x, z) => SnejFishingGame.prototype.isCastWater.call(waterMaskWorld, x, z);
+assert.equal(waterMask(-3, -3), true);
+assert.equal(waterMask(3, 3), false, "Rendered land over the analytic lake cannot accept a cast.");
+waterMaskWorld.terrain.dockLocal = () => ({ along: 1, side: 0 });
+assert.equal(waterMask(-3, -3), false, "A dock covering the water must block the water mask.");
+waterMaskWorld.terrain.dockLocal = () => ({ along: -100, side: 100 });
+waterMaskWorld.terrain.obstacles = [{ x: -3, z: -3, r: 1, top: 6 }];
+assert.equal(waterMask(-3, -3), false, "A rock covering the water must block the water mask.");
+waterMaskWorld.terrain.obstacles[0].top = 2;
+assert.equal(waterMask(-3, -3), true, "A submerged rock does not hide the water texture.");
 grid.geometry.dispose();
 grid.material.dispose();
 

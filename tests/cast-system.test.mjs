@@ -10,7 +10,7 @@ const context = {
 const make = () => new SnejCastSystem({ rodRange: 30, getCastOrigin: () => ({ x: 0, y: 3, z: 0.55 }) });
 for (const [name, expected] of Object.entries({
   GRAVITY: 9.8, CAST_HEADROOM: 1.07, CAST_SPEED_MIN: 0.5, CAST_TOL: 0.06,
-  CAST_MISS: 0.30, LINE_SLACK: 8, RUN_MARGIN: 16, CHARGE_RATE: 1.05,
+  CAST_MISS: 0.30, LINE_SLACK: 8, RUN_MARGIN: 16, CHARGE_RATE: 0.4, FLIGHT_TIME_SCALE: 0.65,
   SPLASH_BASE: 16, SPLASH_MIN: 4, SPLASH_SCALE: 0.55, WAKE_BOB_AMP: 0.012, WAKE_BOB_FREQ: 1.6
 })) assert.equal(cast[name], expected, name);
 assert.deepEqual(cast.STARTLE_R, [1, 3.2]);
@@ -42,7 +42,7 @@ assert.equal(charge.onActionDown(), true);
 assert.equal(charge.onActionDown(), false);
 let elapsed = 0;
 while (charge.state.chargeDir === 1) { charge.tick(1 / 60, context); elapsed += 1 / 60; }
-assert.ok(elapsed > 0.9 && elapsed < 1, "Charge half-period must be about 0.95 seconds.");
+assert.ok(Math.abs(elapsed - 2.5) < 0.02, "Full distance charge must take 2.5 seconds.");
 charge.cancelCharge();
 charge.onActionDown();
 charge.tick(2 / cast.CHARGE_RATE, context);
@@ -63,7 +63,7 @@ for (const [power, acc, perfect] of [[0.5, 1, true], [0.56, 1, true], [0.6, 5 / 
   c.onActionUp();
   assert.ok(Math.abs(c.state.castAcc - acc) < 1e-12);
   assert.equal(c.state.castPerfect, perfect);
-  assert.equal(c.state.castPower, perfect ? 0.5 : power);
+  assert.equal(c.state.castPower, power, "Accuracy feedback must not alter the selected distance.");
   assert.equal(c.state.castLead, 0);
   assert.equal(c.state.fs, "flight");
   assert.deepEqual(c.state.bobber, c.state.castOrigin, "Release must immediately expose the bobber at its origin.");
@@ -123,14 +123,107 @@ const blocked = { ...context, dockBlocksSegment: () => true };
 obstruction.onActionDown();
 obstruction.tick(0.4 / cast.CHARGE_RATE, blocked);
 assert.equal(obstruction.state.castObstruction, "dock");
-obstruction.onActionUp();
-obstruction.tick(0.055, blocked);
-assert.equal(obstruction.state.castObstruction, "dock");
-assert.equal(obstruction.state.retrieving, true);
-assert.equal(obstruction.state.fs, "flight");
-obstruction.tick(0, blocked);
-assert.equal(obstruction.state.retrieving, true, "Paused recovery must remain frozen.");
-obstruction.tick(1 / 60, blocked);
+assert.equal(obstruction.onActionUp(), false, "Obstructed casts must be refused before launch.");
+assert.equal(obstruction.state.lastRejection, "dock");
+assert.equal(obstruction.state.retrieving, false);
 assert.equal(obstruction.state.fs, "idle");
+
+for (const range of [20, 25, 30]) {
+  for (const pitch of [-1.2, -0.5, -0.03]) {
+    for (const fraction of [0.25, 0.5, 0.75, 1]) {
+      const c = make();
+      c.setRodRange(range);
+      const ctx = { ...context, pitch };
+      c.tick(0, ctx);
+      c.onActionDown();
+      c.state.charge = fraction;
+      c.tick(0, ctx);
+      assert.equal(c.state.requestedDist, range * fraction);
+      assert.equal(c.onActionUp(), true);
+      let seconds = 0;
+      while (c.state.fs === "flight" && seconds < 10) { c.tick(1 / 60, ctx); seconds += 1 / 60; }
+      assert.equal(c.state.fs, "wait");
+      assert.ok(Math.abs(c.state.castDist - range * fraction) < 0.0001,
+        `${range} m range at ${fraction * 100}% must correspond to landing distance.`);
+      assert.ok(c.state.castDist <= range, "Full charge cannot exceed the rod limit.");
+      if (fraction === 1 && pitch === -0.03) assert.ok(seconds > 2, "Flight must be visibly slower.");
+    }
+  }
+}
+
+for (const yaw of [0, Math.PI / 2, Math.PI]) {
+  for (const offset of [{ x: 0.55, z: 0 }, { x: 0, z: -0.55 }]) {
+    for (const fraction of [0, 0.05, 0.5, 1]) {
+      const c = new SnejCastSystem({ rodRange: 30, getCastOrigin: () => ({ ...offset, y: 3 }) });
+      const ctx = { ...context, yaw };
+      c.tick(0, ctx);
+      c.onActionDown();
+      c.state.charge = fraction;
+      assert.equal(c.onActionUp(), fraction > 0, "A zero-distance release cannot launch even with a rotated origin.");
+      if (fraction > 0) {
+        for (let i = 0; i < 600 && c.state.fs === "flight"; i += 1) c.tick(1 / 60, ctx);
+        assert.ok(Math.abs(c.state.castDist - 30 * fraction) < 0.0001);
+      }
+    }
+  }
+}
+
+for (const override of [
+  { pitch: 0.4 },
+  { isWaterAt: () => false },
+  { terrainDepthAt: () => 0.1 },
+  { lineObstruction: () => "rock" },
+  { terrainHeightAt: () => 1, terrainDepthAt: () => 0 },
+  // The aim is water, but an undercast ends on land.
+  { isWaterAt: (x, z) => z > 25 },
+  // The landing is water, but the aim points at land.
+  { isWaterAt: (x, z) => z < 20 }
+]) {
+  const c = make();
+  c.tick(0, { ...context, ...override });
+  c.onActionDown();
+  c.state.charge = 0.5;
+  assert.equal(c.onActionUp(), false, "Both aim and actual landing must be unobstructed water.");
+  assert.equal(c.state.fs, "idle");
+  assert.deepEqual(c.state.bobberVel, { x: 0, y: 0, z: 0 });
+}
+
+const stale = make();
+stale.tick(0, context);
+stale.onActionDown();
+stale.state.charge = 0.5;
+stale.tick(0, context);
+assert.equal(stale.state.predictedLanding.water, true);
+stale.tick(0, { ...context, dockBlocksSegment: () => true });
+assert.equal(stale.onActionUp(), false, "Release must recalculate even when a cached preview is valid.");
+
+const changing = make();
+changing.tick(0, context);
+changing.onActionDown();
+assert.equal(changing.setRodRange(20), false, "Cannot change equipment during a cast.");
+changing.state.charge = 0.5;
+changing.onActionUp();
+assert.equal(changing.setRodRange(25), false);
+for (let i = 0; i < 600 && changing.state.fs === "flight"; i += 1) changing.tick(1 / 60, context);
+assert.equal(changing.setRodRange(20), true);
+assert.equal(changing.state.fs, "idle");
+assert.equal(changing.maxLine, 44);
+changing.tick(0, context);
+assert.equal(changing.state.aimDist, 20);
+assert.equal(changing.state.targetPower, 1);
+
+// Collision recovery remains a safeguard if scenery changes after a valid launch.
+const recovery = make();
+recovery.tick(0, context);
+recovery.onActionDown();
+recovery.state.charge = 0.5;
+assert.equal(recovery.onActionUp(), true);
+recovery.tick(0.1, blocked);
+assert.equal(recovery.state.retrieving, true);
+const frozen = JSON.stringify(recovery.state);
+recovery.tick(0, blocked);
+assert.equal(JSON.stringify(recovery.state), frozen);
+for (let i = 0; i < 600 && recovery.state.fs === "flight"; i += 1) recovery.tick(1 / 60, blocked);
+assert.equal(recovery.state.fs, "idle");
 assert.equal(new SnejCastSystem().getCastOriginLocal().y, 1.4);
 console.log("Stage 4 cast physics tests passed.");

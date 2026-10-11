@@ -482,6 +482,9 @@ legend {
 .cast-meter-tol { position: absolute; top: 0; bottom: 0; }
 .cast-meter-fill { left: 0; width: 0; background: #5ed0ff; }
 .cast-meter-fill.on-target { background: #7dff9a; }
+.cast-meter-fill.blocked { background: #ff5a4a; }
+.cast-meter-distance { font-size: 13px; line-height: 18px; margin-bottom: 5px; font-variant-numeric: tabular-nums; }
+.rod-field { margin: 12px 0; }
 .cast-meter-target { width: 2px; background: #ffffff; transform: translateX(-1px); }
 .cast-meter-tol { background: rgba(125, 255, 154, 0.35); z-index: 1; }
 .cast-meter-target { z-index: 2; }
@@ -518,4 +521,6 @@ legend {
     max-height: 68px;
     overflow: hidden;
   }
+  #fps { bottom: 96px; }
+  .cast-meter { bottom: 144px; }
 }

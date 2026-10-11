@@ -8,7 +8,7 @@ const CAST_TOL = 0.06;
 const CAST_MISS = 0.30;
 const LINE_SLACK = 8;
 const RUN_MARGIN = 16;
-const CHARGE_RATE = 1.05;
+const CHARGE_RATE = 0.4;
 const SPLASH_BASE = 16;
 const SPLASH_MIN = 4;
 const SPLASH_SCALE = 0.55;
@@ -19,6 +19,7 @@ const WAKE_BOB_FREQ = 1.6;
 const CAST_TIP_FALLBACK = { x: 0, y: 1.4, z: 0 };
 const FLIGHT_STEP = 0.055;
 const FLIGHT_DRAG = 0.0055;
+const FLIGHT_TIME_SCALE = 0.65;
 const PREDICTION_INTERVAL = 0.08;
 const WATER_DEPTH_MIN = 0.25;
 const RETRIEVE_SPEED = 9;
@@ -66,6 +67,18 @@ function advanceFlight(position, velocity) {
   position.z += velocity.z * FLIGHT_STEP;
 }
 
+function waterRange(speed, elev, height) {
+  const position = { x: 0, y: height, z: 0 };
+  const n = Math.hypot(1, elev);
+  const velocity = { x: speed / n, y: speed * elev / n, z: 0 };
+  for (let i = 0; i < 200; i += 1) {
+    const x = position.x, y = position.y;
+    advanceFlight(position, velocity);
+    if (position.y <= 0) return lerp(x, position.x, clamp01(y / (y - position.y)));
+  }
+  return position.x;
+}
+
 export class SnejCastSystem {
   constructor({ rodRange = 30, getCastOrigin } = {}) {
     this.castRange = Math.max(CAST_SPEED_MIN, finite(rodRange, 30));
@@ -86,6 +99,8 @@ export class SnejCastSystem {
       castLead: 0, // Reserved for Stage 4.5 swing synchronization.
       castPower: 0, castPerfect: false, castAcc: 0, castDist: 0,
       castOrigin: point(), bobber: point(), bobberVel: point(),
+      castPlayerOrigin: point(), requestedDist: 0, aimValid: false, canRelease: false,
+      lastRejection: null,
       targetPower: 0, minCastDist: 0, aimPoint: point(), aimDist: 0,
       aimCapped: false, castObstruction: null, retrieving: false,
       predictedLanding: point(), waitTime: 0
@@ -93,7 +108,6 @@ export class SnejCastSystem {
     this._ctx = null;
     this._flightAccum = 0;
     this._predictionTime = PREDICTION_INTERVAL;
-    this._aimKey = "";
     return this.state;
   }
 
@@ -103,6 +117,7 @@ export class SnejCastSystem {
     this.state.charge = 0;
     this.state.chargeDir = 1;
     this.state.castObstruction = null;
+    this.state.lastRejection = null;
     this._predictionTime = PREDICTION_INTERVAL;
     return true;
   }
@@ -113,12 +128,25 @@ export class SnejCastSystem {
     const err = Math.abs(state.charge - state.targetPower);
     state.castPerfect = err <= CAST_TOL + Number.EPSILON;
     state.castAcc = clamp01(1 - Math.max(0, err - CAST_TOL) / (CAST_MISS - CAST_TOL));
-    state.castPower = state.castPerfect ? state.targetPower : state.charge;
+    state.castPower = state.charge;
+    state.requestedDist = state.charge * this.castRange;
+    // Validate the exact release, not the throttled preview or the ideal aim alone.
+    const landing = this.predictLanding(state.castPower, state.predictedLanding);
+    const valid = state.aimValid && state.charge * this.castRange >= state.minCastDist
+      && landing.water && this.isWaterAt(landing) && !landing.obstruction;
+    if (!valid) {
+      const reason = landing.obstruction || "water";
+      this.cancelCharge();
+      state.lastRejection = reason;
+      state.canRelease = false;
+      return false;
+    }
     state.castLead = 0;
     state.castObstruction = null;
     state.retrieving = false;
     state.fs = "flight";
     copy(state.castOrigin, this.getCastOriginLocal());
+    copy(state.castPlayerOrigin, this._ctx?.pos || point());
     copy(state.bobber, state.castOrigin);
     copy(this._position, state.castOrigin);
     copy(this._previous, state.castOrigin);
@@ -134,6 +162,26 @@ export class SnejCastSystem {
     this.state.charge = 0;
     this.state.chargeDir = 1;
     this.state.castObstruction = null;
+    this.state.canRelease = false;
+    this.state.requestedDist = 0;
+  }
+
+  setRodRange(range) {
+    if (this.state.fs === "charge" || this.state.fs === "flight") return false;
+    if (!Number.isFinite(range) || range <= 0) return false;
+    this.castRange = range;
+    this.castTop = castTopSpeed(range);
+    this.maxLine = range + RUN_MARGIN + LINE_SLACK;
+    this.reset();
+    return true;
+  }
+
+  isWaterAt(p) {
+    const ctx = this._ctx || {};
+    const surface = ctx.waterSurfaceY?.(p.x, p.z) ?? 0;
+    const ground = ctx.terrainHeightAt?.(p.x, p.z) ?? -1;
+    const depth = ctx.terrainDepthAt?.(p.x, p.z) ?? surface - ground;
+    return depth > WATER_DEPTH_MIN && ground < surface && (ctx.isWaterAt?.(p.x, p.z) ?? true);
   }
 
   getCastOriginLocal() {
@@ -148,7 +196,22 @@ export class SnejCastSystem {
   computeCastVelocityLocal(power, out = point()) {
     const yaw = finite(this._ctx?.yaw);
     const elev = elevFor(finite(this._ctx?.pitch));
-    const speed = lerp(CAST_SPEED_MIN, this.castTop, clamp01(finite(power)));
+    const origin = this.getCastOriginLocal();
+    const pos = this._ctx?.pos || point();
+    const surface = this._ctx?.waterSurfaceY?.(origin.x, origin.z) ?? 0;
+    const ox = origin.x - finite(pos.x), oz = origin.z - finite(pos.z);
+    const fx = Math.sin(yaw), fz = Math.cos(yaw);
+    const rangeFor = (speed) => {
+      const travel = waterRange(speed, elev, Math.max(0, origin.y - surface));
+      return Math.hypot(ox + fx * travel, oz + fz * travel);
+    };
+    const want = this.castRange * clamp01(finite(power));
+    let lo = 0, hi = Math.max(this.castTop, 60);
+    for (let i = 0; i < 22; i += 1) {
+      const mid = (lo + hi) / 2;
+      if (rangeFor(mid) <= want) lo = mid; else hi = mid;
+    }
+    const speed = lo;
     const n = Math.hypot(1, elev);
     out.x = Math.sin(yaw) * speed / n;
     out.y = elev * speed / n;
@@ -163,11 +226,10 @@ export class SnejCastSystem {
     const origin = this.getCastOriginLocal();
     const yaw = finite(ctx.yaw), pitch = finite(ctx.pitch);
     const fx = Math.sin(yaw), fz = Math.cos(yaw);
-    const tipFwd = (origin.x - finite(pos.x)) * fx + (origin.z - finite(pos.z)) * fz;
     const surface = ctx.waterSurfaceY?.(pos.x, pos.z) ?? 0;
-    const rangeFor = (power) => flightRange(lerp(CAST_SPEED_MIN, this.castTop, power), elevFor(pitch), origin.y - surface);
-    state.minCastDist = Math.max(0, rangeFor(0) + tipFwd);
-    const aimMax = Math.max(state.minCastDist, this.castRange);
+    const originOffset = Math.hypot(origin.x - finite(pos.x), origin.z - finite(pos.z));
+    state.minCastDist = originOffset + waterRange(CAST_SPEED_MIN, elevFor(pitch), Math.max(0, origin.y - surface));
+    const aimMax = this.castRange;
     const eyeY = finite(pos.y) + 1.62;
     const dirY = Math.sin(pitch);
     const h = Math.abs(Math.cos(pitch));
@@ -177,31 +239,29 @@ export class SnejCastSystem {
     state.aimPoint.x = finite(pos.x) + fx * state.aimDist;
     state.aimPoint.y = surface;
     state.aimPoint.z = finite(pos.z) + fz * state.aimDist;
-    const key = [state.aimDist, tipFwd, origin.y - surface, pitch].join("/");
-    if (key !== this._aimKey) {
-      const want = state.aimDist - tipFwd;
-      let lo = 0, hi = 1;
-      for (let i = 0; i < 12; i += 1) {
-        const mid = (lo + hi) / 2;
-        if (rangeFor(mid) < want) lo = mid; else hi = mid;
-      }
-      state.targetPower = (lo + hi) / 2;
-      this._aimKey = key;
-    }
+    state.targetPower = state.aimDist / this.castRange;
+    state.aimValid = dirY < -0.02 && this.isWaterAt(state.aimPoint);
   }
 
   impact(previous, end, origin) {
     const ctx = this._ctx || {};
+    const water = ctx.waterSurfaceY?.(end.x, end.z) ?? 0;
+    if (previous.y > water && end.y <= water) {
+      // Clip the final step to the water plane, removing range jumps at step boundaries.
+      const t = clamp01((previous.y - water) / (previous.y - end.y));
+      end.x = lerp(previous.x, end.x, t);
+      end.z = lerp(previous.z, end.z, t);
+      end.y = water;
+    }
     if (ctx.dockBlocksSegment?.(previous, end)) return "dock";
     const obstruction = ctx.lineObstruction?.(previous, end, 0);
     if (obstruction) return obstruction === "land" ? "terrain" : obstruction;
     const ground = ctx.terrainHeightAt?.(end.x, end.z) ?? -1;
-    const water = ctx.waterSurfaceY?.(end.x, end.z) ?? 0;
     const surface = Math.max(ground, water);
     if (end.y > surface && distance(end, origin) <= this.maxLine) return null;
     end.y = surface;
     const depth = ctx.terrainDepthAt?.(end.x, end.z) ?? water - ground;
-    if (depth <= WATER_DEPTH_MIN) return "terrain";
+    if (depth <= WATER_DEPTH_MIN || !this.isWaterAt(end)) return "terrain";
     const lineHit = ctx.lineObstruction?.(ctx.rodTip || origin, end, 0.62);
     return lineHit ? (lineHit === "land" ? "terrain" : lineHit) : "water";
   }
@@ -225,6 +285,7 @@ export class SnejCastSystem {
     const ground = this._ctx?.terrainHeightAt?.(position.x, position.z) ?? -1;
     out.y = Math.max(ground, this._ctx?.waterSurfaceY?.(position.x, position.z) ?? 0);
     out.obstruction = hit && hit !== "water" ? hit : null;
+    out.water = hit === "water";
     return out;
   }
 
@@ -237,12 +298,15 @@ export class SnejCastSystem {
       const phase = ((state.chargeDir > 0 ? state.charge : 2 - state.charge) + CHARGE_RATE * dt) % 2;
       state.charge = phase <= 1 ? phase : 2 - phase;
       state.chargeDir = phase < 1 ? 1 : -1;
+      state.requestedDist = state.charge * this.castRange;
       this._predictionTime += dt;
       if (this._predictionTime >= PREDICTION_INTERVAL) {
         this._predictionTime %= PREDICTION_INTERVAL;
         this.predictLanding(state.charge, state.predictedLanding);
         state.castObstruction = state.predictedLanding.obstruction;
       }
+      state.canRelease = state.aimValid && state.requestedDist >= state.minCastDist
+        && state.predictedLanding.water && !state.castObstruction;
     } else if (state.fs === "flight" && state.retrieving && dt > 0) {
       const origin = this._ctx?.rodTip || this.getCastOriginLocal();
       const d = distance(state.bobber, origin);
@@ -258,7 +322,7 @@ export class SnejCastSystem {
       }
     } else if (state.fs === "flight" && dt > 0) {
       // Fixed steps keep prediction and landing frame-rate independent; interpolate visuals.
-      this._flightAccum = Math.min(this._flightAccum + dt, FLIGHT_STEP * 200);
+      this._flightAccum = Math.min(this._flightAccum + dt * FLIGHT_TIME_SCALE, FLIGHT_STEP * 200);
       while (this._flightAccum >= FLIGHT_STEP && state.fs === "flight" && !state.retrieving) {
         this._flightAccum -= FLIGHT_STEP;
         copy(this._previous, this._position);
@@ -268,7 +332,7 @@ export class SnejCastSystem {
           if (hit === "water") {
             state.fs = "wait";
             state.waitTime = 0;
-            state.castDist = Math.hypot(this._position.x - finite(this._ctx?.pos?.x), this._position.z - finite(this._ctx?.pos?.z));
+            state.castDist = Math.hypot(this._position.x - state.castPlayerOrigin.x, this._position.z - state.castPlayerOrigin.z);
           } else {
             copy(this._position, this._previous);
             state.castObstruction = hit;
@@ -291,6 +355,6 @@ export class SnejCastSystem {
 
 export {
   GRAVITY, CAST_HEADROOM, CAST_SPEED_MIN, CAST_TOL, CAST_MISS, LINE_SLACK, RUN_MARGIN,
-  CHARGE_RATE, SPLASH_BASE, SPLASH_MIN, SPLASH_SCALE, STARTLE_R, STARTLE_SEC,
+  CHARGE_RATE, FLIGHT_TIME_SCALE, SPLASH_BASE, SPLASH_MIN, SPLASH_SCALE, STARTLE_R, STARTLE_SEC,
   WAKE_BOB_AMP, WAKE_BOB_FREQ, CAST_TIP_FALLBACK, elevFor, flightRange, castTopSpeed
 };

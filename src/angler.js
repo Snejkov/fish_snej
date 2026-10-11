@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { createCarryProps } from "./carryProps.js?v=0.0.3-hf2.13";
+import { createCarryProps } from "./carryProps.js?v=0.0.4-hf1";
 
 const TAU = Math.PI * 2;
 const HIP_HEIGHT = 0.91;

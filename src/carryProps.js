@@ -63,9 +63,11 @@ export function createCarryProps(bones) {
   const shaftMaterial = new THREE.MeshStandardMaterial({
     color: 0x80b7c5, metalness: 0.25, roughness: 0.42, emissive: 0x80b7c5, emissiveIntensity: 0.12
   });
+  const sections = [];
   for (const [start, end, bottom, top] of [[0.23, 1.10, 0.017, 0.012], [1.10, 1.80, 0.012, 0.008], [1.80, 2.45, 0.008, 0.003]]) {
-    addMesh(rod, new THREE.CylinderGeometry(top, bottom, end - start, 8), shaftMaterial, 0, (start + end) / 2);
-    addMesh(rod, new THREE.CylinderGeometry(bottom * 1.1, bottom * 1.1, 0.025, 8), accent, 0, start);
+    const mesh = addMesh(rod, new THREE.CylinderGeometry(top, bottom, end - start, 8), shaftMaterial, 0, (start + end) / 2);
+    const band = addMesh(rod, new THREE.CylinderGeometry(bottom * 1.1, bottom * 1.1, 0.025, 8), accent, 0, start);
+    sections.push({ mesh, band, start, end });
   }
 
   addMesh(rod, new THREE.BoxGeometry(0.045, 0.075, 0.09), dark, 0, -0.075, -0.05);
@@ -77,10 +79,12 @@ export function createCarryProps(bones) {
   addMesh(rod, new THREE.CylinderGeometry(0.014, 0.014, 0.045, 8), dark, -0.09, -0.10, -0.09);
 
   const linePoints = [new THREE.Vector3(0, -0.075, -0.16)];
+  const guides = [];
   for (const y of [0.62, 1.10, 1.60, 2.06, 2.42]) {
     const radius = y > 2 ? 0.01 : 0.019;
     const guide = addMesh(rod, new THREE.TorusGeometry(radius, 0.003, 5, 8), accent, 0, y, 0.026);
     guide.rotation.x = Math.PI / 2;
+    guides.push({ mesh: guide, y });
     linePoints.push(new THREE.Vector3(0, y, 0.026));
   }
   const line = new THREE.Line(
@@ -94,5 +98,28 @@ export function createCarryProps(bones) {
   tip.position.y = 2.45;
   rod.add(tip);
 
-  return { leftSocket, rightSocket, tackleBox, rod, tip };
+  const carry = { leftSocket, rightSocket, tackleBox, rod, tip, length: 2.45, setLength };
+  function setLength(length) {
+    if (![4, 5, 6].includes(length)) return false;
+    // Extend only the blank. The grip, reel, guides, sockets, and object identities stay intact.
+    const tipHeight = length - 0.1925;
+    const scale = (tipHeight - 0.23) / (2.45 - 0.23);
+    const height = (y) => 0.23 + (y - 0.23) * scale;
+    for (const { mesh, band, start, end } of sections) {
+      mesh.scale.y = scale;
+      mesh.position.y = (height(start) + height(end)) / 2;
+      band.position.y = height(start);
+    }
+    const positions = line.geometry.attributes.position;
+    guides.forEach(({ mesh, y }, index) => {
+      mesh.position.y = height(y);
+      positions.setY(index + 1, mesh.position.y);
+    });
+    positions.needsUpdate = true;
+    line.geometry.computeBoundingSphere();
+    tip.position.y = tipHeight;
+    carry.length = length;
+    return true;
+  }
+  return carry;
 }

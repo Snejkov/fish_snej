@@ -106,7 +106,7 @@ try {
 let elapsed = 1000;
 let deviceTime = Date.parse("2026-10-13T16:00:00Z");
 let requests = 0;
-const clockOptions = { deviceNow: () => deviceTime, elapsedNow: () => elapsed };
+const clockOptions = { mode: "moscow", deviceNow: () => deviceTime, elapsedNow: () => elapsed };
 const serverNow = Date.parse("2026-10-12T09:00:00Z");
 const clock = new SnejWorldClock({ ...clockOptions, fetchTime: async (url, options) => {
   requests += 1;
@@ -157,4 +157,42 @@ assert.equal(await offline.refresh(), false);
 assert.equal(offline.source, "device");
 near(offline.hour(), moscowHour(deviceTime));
 
-console.log("Moscow clock tests passed: time zones, midnight, full cycle, pause/resume, HTTP Date sync, cache rejection, offline fallback, refresh interval, monotonic time, sun phase, and independent animation timing.");
+let developmentRequests = 0;
+const developmentClock = new SnejWorldClock({ deviceNow: () => deviceTime, elapsedNow: () => elapsed,
+  fetchTime: async () => { developmentRequests += 1; return { ok: true, headers: new Headers({ Date: "Mon, 12 Oct 2026 21:00:00 GMT" }) }; }
+});
+for (const date of ["1990-01-01T21:00:00Z", "2026-10-12T21:00:00Z", "2050-07-12T23:59:59Z"]) {
+  deviceTime = Date.parse(date);
+  elapsed += 86400000;
+  for (const mode of ["playing", "paused", "title"]) {
+    const game = makeGame(mode);
+    game.worldClock = developmentClock;
+    Game.prototype.update.call(game, 0.1);
+    near(game.state.clock, 12);
+    assert.ok(game.sky.sunDir.y > 0.9);
+    near(game.sky.nightAmount, 0);
+  }
+  developmentClock.refresh(true);
+  assert.equal(await developmentClock.sync(), false);
+  assert.equal(developmentClock.source, "development-day");
+}
+assert.equal(developmentRequests, 0, "Development noon must not request server time.");
+developmentClock.setMode("moscow");
+assert.equal(await developmentClock.refresh(true), true);
+near(developmentClock.hour(), 0);
+developmentClock.setMode("development-day");
+near(developmentClock.hour(), 12);
+assert.equal(developmentClock.source, "development-day");
+assert.throws(() => developmentClock.setMode("unknown"), RangeError);
+
+let finishClockRequest;
+const switchingClock = new SnejWorldClock({ mode: "moscow", deviceNow: () => deviceTime,
+  fetchTime: () => new Promise((resolve) => { finishClockRequest = resolve; }) });
+const delayedRefresh = switchingClock.refresh();
+switchingClock.setMode("development-day");
+finishClockRequest({ ok: true, headers: new Headers({ Date: "Mon, 12 Oct 2026 21:00:00 GMT" }) });
+await delayedRefresh;
+near(switchingClock.hour(), 12);
+assert.equal(switchingClock.source, "development-day", "A late server reply must not restore night in development mode.");
+
+console.log("Clock tests passed: fixed development noon, explicit Moscow mode, time zones, midnight, pause/resume, HTTP Date sync, cache rejection, fallback, and independent animation timing.");

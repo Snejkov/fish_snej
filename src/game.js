@@ -4,8 +4,8 @@ import { RODS, rodForLength } from "./rods.js?v=0.0.5a";
 import { SnejInventory } from "./gear/inventory.js";
 import { SnejCatchLog } from "./game/catchLog.js";
 import { SnejStats } from "./game/stats.js";
-import { SnejWorldClock } from "./game/clock.js?v=moscow2";
-import { SnejAudio } from "./audio.js?v=0.0.4";
+import { SnejWorldClock } from "./game/clock.js?v=development-day1";
+import { SnejAudio, DEFAULT_AMBIENT_VOLUME, AMBIENT_DEFAULTS_VERSION, migrateAmbientSettings } from "./audio.js?v=0.0.5a-hf8";
 import {
   SnejCastSystem, CAST_TOL, SPLASH_BASE, SPLASH_MIN, SPLASH_SCALE,
   STARTLE_R, STARTLE_SEC, WAKE_BOB_AMP, WAKE_BOB_FREQ
@@ -40,7 +40,8 @@ const CAST_LOOK_SPEED = 0.06;
 
 const DEFAULT_SETTINGS = {
   volume: 0.7,
-  bgm: 0.7,
+  bgm: DEFAULT_AMBIENT_VOLUME,
+  ambientDefaultsVersion: AMBIENT_DEFAULTS_VERSION,
   sens: 1.0,
   quality: "mid",
   shadow: true,
@@ -630,7 +631,7 @@ export class SnejFishingGame {
           : Number.isFinite(legacyView.pitch) ? legacyView.pitch : -0.08
       }
       : null;
-    const settings = { ...DEFAULT_SETTINGS, ...(data.settings || {}), randomLake: false };
+    const settings = { ...DEFAULT_SETTINGS, ...migrateAmbientSettings(data.settings), randomLake: false };
     const inventory = new SnejInventory(data.player?.inventory);
     if (sourceVersion < 5 && !data.player?.inventory) {
       const rod = rodForLength(settings.rodLength);
@@ -689,6 +690,7 @@ export class SnejFishingGame {
       settings: {
         volume: this.settings.volume,
         bgm: this.settings.bgm,
+        ambientDefaultsVersion: this.settings.ambientDefaultsVersion,
         sens: this.settings.sens,
         quality: this.settings.quality,
         shadow: this.settings.shadow,

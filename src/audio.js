@@ -1,5 +1,17 @@
 import { clamp } from "./util.js";
 
+export const DEFAULT_AMBIENT_VOLUME = 0;
+export const AMBIENT_DEFAULTS_VERSION = 1;
+
+export function migrateAmbientSettings(settings = {}) {
+  const migrated = { ...settings };
+  if (!(Number(migrated.ambientDefaultsVersion) >= AMBIENT_DEFAULTS_VERSION)) {
+    migrated.bgm = DEFAULT_AMBIENT_VOLUME;
+    migrated.ambientDefaultsVersion = AMBIENT_DEFAULTS_VERSION;
+  }
+  return migrated;
+}
+
 export class SnejAudio {
   constructor(settings) {
     this.settings = settings;
@@ -29,7 +41,8 @@ export class SnejAudio {
     this.muffle.connect(comp);
     comp.connect(this.ctx.destination);
     this.setVolume(this.settings.volume);
-    this.setBgm(this.settings.bgm);
+    this.bgmBus.gain.value = this.settings.bgm ?? DEFAULT_AMBIENT_VOLUME;
+    this.setBgm(this.settings.bgm ?? DEFAULT_AMBIENT_VOLUME);
     this.startAmbient();
     this.ready = true;
   }
@@ -46,6 +59,7 @@ export class SnejAudio {
 
   setBgm(value) {
     this.settings.bgm = clamp(value, 0, 1);
+    this.settings.ambientDefaultsVersion = AMBIENT_DEFAULTS_VERSION;
     if (this.bgmBus) this.bgmBus.gain.setTargetAtTime(this.settings.bgm, this.ctx.currentTime, 0.03);
   }
 

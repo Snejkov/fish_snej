@@ -14,9 +14,10 @@ export function moscowHour(now = Date.now()) {
 }
 
 const SYNC_INTERVAL_MS = 5 * 60 * 1000;
+export const DEFAULT_WORLD_CLOCK_MODE = "development-day";
 
 export class SnejWorldClock {
-  constructor({ fetchTime = globalThis.fetch, deviceNow = () => Date.now(), elapsedNow = () => performance.now() } = {}) {
+  constructor({ mode = DEFAULT_WORLD_CLOCK_MODE, fetchTime = globalThis.fetch, deviceNow = () => Date.now(), elapsedNow = () => performance.now() } = {}) {
     this.fetchTime = fetchTime;
     this.deviceNow = deviceNow;
     this.elapsedNow = elapsedNow;
@@ -25,9 +26,18 @@ export class SnejWorldClock {
     this.serverAt = 0;
     this.lastAttempt = -Infinity;
     this.pending = null;
+    this.setMode(mode);
+  }
+
+  setMode(mode) {
+    if (mode !== "development-day" && mode !== "moscow") throw new RangeError("Unknown world clock mode.");
+    this.mode = mode;
+    this.source = mode === "development-day" ? "development-day" : this.serverTime === null ? "device" : "http-date";
+    this.lastAttempt = -Infinity;
   }
 
   hour() {
+    if (this.mode === "development-day") return 12;
     const now = this.serverTime === null
       ? this.deviceNow()
       : this.serverTime + this.elapsedNow() - this.serverAt;
@@ -35,6 +45,7 @@ export class SnejWorldClock {
   }
 
   refresh(force = false) {
+    if (this.mode === "development-day") return;
     if (this.pending) return this.pending;
     if (!force && this.elapsedNow() - this.lastAttempt < SYNC_INTERVAL_MS) return;
     this.lastAttempt = this.elapsedNow();
@@ -43,6 +54,7 @@ export class SnejWorldClock {
   }
 
   async sync() {
+    if (this.mode === "development-day") return false;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
     try {
@@ -60,7 +72,7 @@ export class SnejWorldClock {
       // HTTP Date has one-second precision; estimate the return-trip delay.
       this.serverTime = serverTime + (end - start) / 2;
       this.serverAt = end;
-      this.source = "http-date";
+      if (this.mode === "moscow") this.source = "http-date";
       return true;
     } catch {
       return false;

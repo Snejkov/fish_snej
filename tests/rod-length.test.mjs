@@ -10,7 +10,7 @@ registerHooks({
 const THREE = await import("three");
 const { SnejAngler } = await import("../src/angler.js");
 const { RODS, rodForLength } = await import("../src/rods.js");
-assert.deepEqual(RODS, [{ length: 4, range: 20 }, { length: 5, range: 25 }, { length: 6, range: 30 }]);
+assert.deepEqual(RODS, [{ length: 4, range: 8 }, { length: 5, range: 10 }, { length: 6, range: 12 }]);
 assert.equal(rodForLength("6"), RODS[2]);
 assert.equal(rodForLength(99), RODS[0]);
 const rig = new SnejAngler();

@@ -1,4 +1,5 @@
 import { clamp, clamp01, lerp } from "./util.js";
+import { RODS } from "./rods.js?v=0.0.4-hf2";
 
 // Stage 4 cast analysis, sections 1, 4, 5, 9, and 10. No fish behavior is active.
 const GRAVITY = 9.8;
@@ -80,8 +81,8 @@ function waterRange(speed, elev, height) {
 }
 
 export class SnejCastSystem {
-  constructor({ rodRange = 30, getCastOrigin } = {}) {
-    this.castRange = Math.max(CAST_SPEED_MIN, finite(rodRange, 30));
+  constructor({ rodRange = RODS[0].range, getCastOrigin } = {}) {
+    this.castRange = Math.max(CAST_SPEED_MIN, finite(rodRange, RODS[0].range));
     this.castTop = castTopSpeed(this.castRange);
     this.maxLine = this.castRange + RUN_MARGIN + LINE_SLACK;
     this.getCastOrigin = getCastOrigin;

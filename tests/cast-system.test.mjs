@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import * as cast from "../src/castSystem.js";
+import { RODS } from "../src/rods.js";
 
 const { SnejCastSystem, flightRange, castTopSpeed, elevFor } = cast;
 const context = {
@@ -128,7 +129,7 @@ assert.equal(obstruction.state.lastRejection, "dock");
 assert.equal(obstruction.state.retrieving, false);
 assert.equal(obstruction.state.fs, "idle");
 
-for (const range of [20, 25, 30]) {
+for (const { range } of RODS) {
   for (const pitch of [-1.2, -0.5, -0.03]) {
     for (const fraction of [0.25, 0.5, 0.75, 1]) {
       const c = make();
@@ -146,7 +147,7 @@ for (const range of [20, 25, 30]) {
       assert.ok(Math.abs(c.state.castDist - range * fraction) < 0.0001,
         `${range} m range at ${fraction * 100}% must correspond to landing distance.`);
       assert.ok(c.state.castDist <= range, "Full charge cannot exceed the rod limit.");
-      if (fraction === 1 && pitch === -0.03) assert.ok(seconds > 2, "Flight must be visibly slower.");
+      if (fraction === 1 && pitch === -0.03) assert.ok(seconds > 1.5, "Flight must be visibly slower.");
     }
   }
 }
@@ -200,16 +201,16 @@ assert.equal(stale.onActionUp(), false, "Release must recalculate even when a ca
 const changing = make();
 changing.tick(0, context);
 changing.onActionDown();
-assert.equal(changing.setRodRange(20), false, "Cannot change equipment during a cast.");
+assert.equal(changing.setRodRange(8), false, "Cannot change equipment during a cast.");
 changing.state.charge = 0.5;
 changing.onActionUp();
-assert.equal(changing.setRodRange(25), false);
+assert.equal(changing.setRodRange(10), false);
 for (let i = 0; i < 600 && changing.state.fs === "flight"; i += 1) changing.tick(1 / 60, context);
-assert.equal(changing.setRodRange(20), true);
+assert.equal(changing.setRodRange(8), true);
 assert.equal(changing.state.fs, "idle");
-assert.equal(changing.maxLine, 44);
+assert.equal(changing.maxLine, 32);
 changing.tick(0, context);
-assert.equal(changing.state.aimDist, 20);
+assert.equal(changing.state.aimDist, 8);
 assert.equal(changing.state.targetPower, 1);
 
 // Collision recovery remains a safeguard if scenery changes after a valid launch.
@@ -226,4 +227,5 @@ assert.equal(JSON.stringify(recovery.state), frozen);
 for (let i = 0; i < 600 && recovery.state.fs === "flight"; i += 1) recovery.tick(1 / 60, blocked);
 assert.equal(recovery.state.fs, "idle");
 assert.equal(new SnejCastSystem().getCastOriginLocal().y, 1.4);
+assert.equal(new SnejCastSystem().castRange, 8);
 console.log("Stage 4 cast physics tests passed.");

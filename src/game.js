@@ -1,11 +1,11 @@
 import * as THREE from "three";
 import { SnejAngler } from "./angler.js?v=0.0.4-hf1";
-import { RODS, rodForLength } from "./rods.js?v=0.0.4-hf1";
+import { RODS, rodForLength } from "./rods.js?v=0.0.4-hf2";
 import { SnejAudio } from "./audio.js?v=0.0.4";
 import {
   SnejCastSystem, CAST_TOL, SPLASH_BASE, SPLASH_MIN, SPLASH_SCALE,
   STARTLE_R, STARTLE_SEC, WAKE_BOB_AMP, WAKE_BOB_FREQ
-} from "./castSystem.js?v=0.0.4-hf1";
+} from "./castSystem.js?v=0.0.4-hf2";
 import { SnejAuth, SNEJKOV_ID, SNEJKOV_NAME } from "./auth.js";
 import { resolveLake } from "./lakeValidator.js";
 import { SNEJ_FIXED_SEED, WORLD_SIZE } from "./lake.js";

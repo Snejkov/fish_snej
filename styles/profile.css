@@ -472,23 +472,47 @@
 }
 
 /* Equipment occupies the left column; the right column keeps category browsing. */
-.inventory-panel { width: min(1120px, calc(100% - 32px)); }
+.inventory-panel { width: min(1180px, calc(100% - 32px)); }
 .inventory-layout {
   display: grid;
-  grid-template-columns: 238px minmax(0, 1fr);
-  gap: 22px;
+  grid-template-columns: 246px 218px minmax(0, 1fr);
+  gap: 18px;
   margin-top: 18px;
   min-height: 0;
   overflow: hidden;
 }
 .equipment-panel {
   min-width: 0;
-  padding-right: 20px;
+  padding-right: 18px;
   border-right: 1px solid var(--line);
   overflow-y: auto;
 }
 .equipment-panel h3 { margin: 0 0 8px; font-size: 15px; overflow-wrap: anywhere; }
-.equipment-figure { display: block; width: 100%; height: 156px; margin-bottom: 12px; }
+.equipment-figure { display: block; width: 100%; height: 142px; margin-bottom: 10px; }
+.inventory-subtitle {
+  margin: 12px 0 7px;
+  color: var(--dim);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.clothing-slots {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+.clothing-slot {
+  display: grid;
+  align-content: center;
+  min-width: 0;
+  min-height: 54px;
+  padding: 8px;
+  border-radius: 4px;
+  background: #121b22;
+  text-align: left;
+}
+.clothing-slot .slot-kind { color: var(--dim); font-size: 10px; font-weight: 400; }
+.clothing-slot strong { margin-top: 3px; font-size: 12px; overflow-wrap: anywhere; }
 .equipment-slots { display: grid; gap: 7px; }
 .equipment-slot {
   display: grid;
@@ -512,6 +536,65 @@
 .inventory-rig .field { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; }
 .inventory-rig .field span { flex: 1; }
 .inventory-rig .field input[type="number"] { width: 78px; flex: 0 0 78px; min-width: 0; padding: 7px; font-size: 12px; }
+.loadout-panel {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  padding-right: 18px;
+  border-right: 1px solid var(--line);
+  flex-direction: column;
+}
+.loadout-panel h3 {
+  margin: 0 0 12px;
+  font-size: 15px;
+}
+.loadout-panel .compact-field {
+  grid-template-columns: 52px minmax(0, 1fr);
+  margin-bottom: 10px;
+}
+.loadout-panel input {
+  width: 100%;
+  min-width: 0;
+}
+#loadout-save {
+  width: 100%;
+  min-height: 38px;
+  margin-bottom: 12px;
+  padding: 8px;
+  font-size: 12px;
+}
+.loadout-list {
+  display: grid;
+  gap: 9px;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.loadout-list .empty {
+  margin-top: 10px;
+  color: var(--dim);
+  font-size: 12px;
+  text-align: center;
+}
+.loadout-card {
+  display: grid;
+  gap: 8px;
+  padding: 11px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #141d25;
+}
+.loadout-card h4 {
+  margin: 0;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.loadout-card .desc {
+  color: var(--dim);
+  font-size: 11px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
 .inventory-browser { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 .inventory-browser .inventory-category { margin-top: 0; }
 .inventory-browser .inventory-grid { align-content: start; padding-bottom: 3px; }
@@ -529,10 +612,17 @@
     border-bottom: 1px solid var(--line);
     overflow: visible;
   }
-  .equipment-panel h3, .inventory-rig { grid-column: 1 / -1; margin: 0; }
+  .equipment-panel h3, .inventory-subtitle, .clothing-slots, .equipment-slots, .inventory-rig { grid-column: 1 / -1; margin: 0; }
   .equipment-figure { height: 214px; margin: 0; }
   .equipment-slot { min-height: 38px; padding: 7px 8px; }
   .equipment-slots { gap: 6px; }
+  .loadout-panel {
+    flex-shrink: 0;
+    padding: 0 0 14px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .loadout-list { overflow: visible; }
   .inventory-rig { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: center; }
   .inventory-rig .field { margin: 0; }
   .inventory-rig .profile-row { align-items: center; gap: 6px; }

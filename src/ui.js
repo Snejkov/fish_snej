@@ -1,4 +1,5 @@
 import { CATALOG, findItem } from "./gear/catalog.js";
+import { CLOTHING_SLOTS } from "./gear/inventory.js";
 
 const textElement = (tag, className, text) => {
   const element = document.createElement(tag);
@@ -85,6 +86,7 @@ export class SnejUI {
       pauseSettings: document.getElementById("pause-settings"),
       toast: document.getElementById("toast")
     };
+    this.ensureInventoryPanel();
     this.bind();
     this.renderSettings(document.getElementById("title-settings"));
     this.renderSettings(document.getElementById("menu-settings"));
@@ -92,6 +94,44 @@ export class SnejUI {
     this.updateViewChip(game);
     this.updateProfile();
     this.refreshContinue();
+  }
+
+  ensureInventoryPanel() {
+    const layout = this.el.inventoryPanel.querySelector(".inventory-layout");
+    const equipment = layout?.querySelector(".equipment-panel");
+    const browser = layout?.querySelector(".inventory-browser");
+    if (!layout || !equipment || !browser || layout.dataset.ready === "true") return;
+    layout.dataset.ready = "true";
+    equipment.classList.add("character-panel");
+    const figure = equipment.querySelector(".equipment-figure");
+    const slots = this.el.equipmentSlots;
+    const rig = equipment.querySelector(".inventory-rig");
+    const clothingTitle = textElement("h4", "inventory-subtitle", "Clothing");
+    const clothing = textElement("div", "clothing-slots", "");
+    clothing.id = "clothing-slots";
+    for (const slot of CLOTHING_SLOTS) {
+      const button = textElement("button", "clothing-slot secondary", "");
+      button.type = "button";
+      button.dataset.clothingSlot = slot.id;
+      button.append(textElement("span", "slot-kind", slot.label), textElement("strong", "", "Empty"));
+      clothing.append(button);
+    }
+    const gearTitle = textElement("h4", "inventory-subtitle", "Current Gear");
+    figure.after(clothingTitle, clothing, gearTitle);
+    const loadouts = textElement("section", "loadout-panel", "");
+    loadouts.setAttribute("aria-label", "Custom equipment sets");
+    loadouts.innerHTML = `
+      <h3>Sets</h3>
+      <label class="compact-field" for="loadout-name"><span>Name</span><input id="loadout-name" type="text" maxlength="24" autocomplete="off"></label>
+      <button id="loadout-save" type="button">Save Current</button>
+      <div id="loadout-list" class="loadout-list" aria-live="polite"></div>
+    `;
+    layout.replaceChildren(equipment, loadouts, browser);
+    equipment.append(slots, rig);
+    this.el.clothingSlots = clothing;
+    this.el.loadoutName = loadouts.querySelector("#loadout-name");
+    this.el.loadoutSave = loadouts.querySelector("#loadout-save");
+    this.el.loadoutList = loadouts.querySelector("#loadout-list");
   }
 
   bind() {
@@ -135,6 +175,20 @@ export class SnejUI {
     }
     this.bindTabKeys(this.el.profileTabs);
     this.bindTabKeys(this.el.inventoryCategory);
+    this.el.clothingSlots?.addEventListener("click", (event) => {
+      const slot = event.target.closest("[data-clothing-slot]");
+      if (slot) this.showToast("Clothing slots are ready for future clothing items.");
+    });
+    this.el.loadoutSave?.addEventListener("click", () => this.saveLoadout());
+    this.el.loadoutName?.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") this.saveLoadout();
+    });
+    this.el.loadoutList?.addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-loadout]");
+      if (!button) return;
+      if (button.dataset.action === "apply") this.applyLoadout(button.dataset.loadout);
+      if (button.dataset.action === "delete") this.deleteLoadout(button.dataset.loadout);
+    });
     this.el.inventoryGrid.addEventListener("click", (event) => {
       const button = event.target.closest("button[data-item]");
       if (button) {
@@ -733,6 +787,79 @@ export class SnejUI {
     return result;
   }
 
+  saveLoadout() {
+    const result = this.game.inventory.saveLoadout(this.el.loadoutName?.value);
+    if (result.ok) {
+      if (this.el.loadoutName) this.el.loadoutName.value = "";
+      this.refreshInventory();
+      this.game.save();
+    }
+    this.showToast(result.message);
+    return result;
+  }
+
+  applyLoadout(id) {
+    const result = this.game.inventory.applyLoadout(id);
+    if (result.ok) {
+      this.game.applyRod(this.game.inventory.equippedRod());
+      this.refreshInventory();
+      this.refreshProfile();
+      this.game.save();
+    }
+    this.showToast(result.message);
+    return result;
+  }
+
+  deleteLoadout(id) {
+    const result = this.game.inventory.deleteLoadout(id);
+    if (result.ok) {
+      this.refreshInventory();
+      this.game.save();
+    }
+    this.showToast(result.message);
+    return result;
+  }
+
+  refreshClothingSlots() {
+    if (!this.el.clothingSlots) return;
+    const clothing = this.game.inventory.state.clothing || {};
+    for (const slot of this.el.clothingSlots.querySelectorAll("[data-clothing-slot]")) {
+      const info = CLOTHING_SLOTS.find((item) => item.id === slot.dataset.clothingSlot);
+      const value = clothing[slot.dataset.clothingSlot];
+      const label = value || "Empty";
+      slot.querySelector("strong").textContent = label;
+      slot.setAttribute("aria-label", `${info?.label || "Clothing"}: ${label}`);
+    }
+  }
+
+  refreshLoadouts() {
+    if (!this.el.loadoutList) return;
+    const loadouts = this.game.inventory.state.loadouts || [];
+    this.el.loadoutList.replaceChildren();
+    if (!loadouts.length) {
+      this.el.loadoutList.append(textElement("p", "empty", "No saved sets."));
+      return;
+    }
+    for (const loadout of loadouts) {
+      const card = textElement("article", "loadout-card", "");
+      const title = textElement("h4", "", loadout.name);
+      const items = ["rod", "line", "hook", "bait"].map((kind) => findItem(loadout.equipped?.[kind])?.name || "None");
+      const summary = textElement("p", "desc", items.join(" / "));
+      const actions = textElement("div", "inventory-actions", "");
+      const apply = textElement("button", "", "Apply");
+      apply.type = "button";
+      apply.dataset.action = "apply";
+      apply.dataset.loadout = loadout.id;
+      const remove = textElement("button", "secondary", "Delete");
+      remove.type = "button";
+      remove.dataset.action = "delete";
+      remove.dataset.loadout = loadout.id;
+      actions.append(apply, remove);
+      card.append(title, summary, actions);
+      this.el.loadoutList.append(card);
+    }
+  }
+
   refreshInventory() {
     const inv = this.game.inventory;
     if (!inv) return;
@@ -742,6 +869,8 @@ export class SnejUI {
     const kind = this.currentInventoryCategory;
     this.el.equipmentName.textContent = this.game.identity.name;
     this.el.inventoryCastRange.textContent = `${Number(this.game.cast.castRange.toFixed(2))} m`;
+    this.refreshClothingSlots();
+    this.refreshLoadouts();
     for (const slot of this.el.equipmentSlots.querySelectorAll("[data-slot]")) {
       const item = findItem(inv.state.equipped[slot.dataset.slot]);
       const label = item ? `${item.name}${item.stackable ? ` x${inv.countOf(item.id)}` : ""}` : "None";

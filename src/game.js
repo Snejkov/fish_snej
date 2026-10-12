@@ -1166,7 +1166,7 @@ export class SnejFishingGame {
     this.updateFloatRig(this.canCast() ? sceneDt : 0);
     this.updateCastVisuals();
     if (this.nameplateLayer) this.nameplateLayer.hidden = this.mode !== "playing" || this.ui.profileOpen || this.ui.inventoryOpen || this.ui.buildOpen || this.ui.modalOpen;
-    this.remoteRoom.update(dt, this.camera, this.canvas && { width: this.canvas.clientWidth, height: this.canvas.clientHeight });
+    this.remoteRoom.update(dt, this.camera, this.canvas && { width: this.canvas.clientWidth, height: this.canvas.clientHeight }, this.pos);
     this.updateMultiplayer(dt);
     this.ui.updateHUD(this, dt);
     this.lastSave += dt;

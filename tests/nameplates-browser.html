@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nameplate distance fixture</title>
+<style>html,body{margin:0;height:100%;background:#111}iframe{display:block;width:100%;height:100%;border:0}.test-tool{position:fixed;z-index:100;left:12px;bottom:12px;background:#111;color:white;font-size:11px}#check-result{bottom:50px;max-width:calc(100% - 24px)}</style>
+<iframe id="fixture" title="Nameplate game fixture" src="../index.html"></iframe>
+<button id="run-checks" class="test-tool">Check nameplate distances</button>
+<output id="check-result" class="test-tool"></output>
+<script type="module">
+  const frame = document.getElementById("fixture"), button = document.getElementById("run-checks"), report = document.getElementById("check-result");
+  button.onclick = async () => {
+    const win = frame.contentWindow, game = win.snejFishing;
+    const check = (value, message) => { if (!value) throw new Error(message); };
+    const viewport = { width: win.innerWidth, height: win.innerHeight };
+    try {
+      check(game.mode === "playing" && !game.server.enabled, "Enter the isolated local game first");
+      const room = game.remoteRoom;
+      room.clear(); game.cast.reset();
+      game.cameraMode = "first-person"; game.viewBlend = 0; game.viewTransition = null;
+      game.pitch = 0; game.updateCamera(1); game.ui.updateViewChip(game);
+      const forwardX = Math.sin(game.yaw), forwardZ = Math.cos(game.yaw);
+      const add = (id, distance, side = 0) => {
+        room.applyPresence({ clientId: id, presence: {
+          x: game.pos.x + forwardX * distance + forwardZ * side,
+          y: game.pos.y, z: game.pos.z + forwardZ * distance - forwardX * side,
+          id: id === "near" ? 7 : 8, name: id === "near" ? "NearbyAngler" : "DistantAngler"
+        } });
+        room.update(0, game.camera, viewport, game.pos);
+        return room.players.get(id).label;
+      };
+      for (const [distance, distant] of [[49.99, false], [50.01, true], [75, true], [100.01, true], [125, true]]) {
+        const label = add("near", distance);
+        check(label.dataset.distant === String(distant), "Wrong distance boundary at " + distance);
+        check(label.textContent === (distant ? "" : "NearbyAngler #7"), "Wrong name visibility at " + distance);
+        const style = win.getComputedStyle(label);
+        if (distant) {
+          check(style.width === "10px" && style.height === "10px" && style.borderRadius === "50%", "Activity marker is not round");
+          check(style.backgroundColor === "rgb(74, 222, 128)", "Activity marker is not green");
+        }
+        check(!label.hidden, "Visible player lost the label or activity marker");
+        room.remove("near");
+      }
+      const near = add("near", 25, -3), far = add("far", 125, 15);
+      await new Promise(resolve => win.requestAnimationFrame(resolve));
+      check(near.dataset.distant === "false" && far.dataset.distant === "true", "Final near/far preview failed");
+      for (const label of [near, far]) {
+        const rect = label.getBoundingClientRect();
+        check(rect.left >= 0 && rect.right <= viewport.width && rect.top >= 0 && rect.bottom <= viewport.height, "Nameplate overflows the viewport");
+        check(win.getComputedStyle(label).pointerEvents === "none", "Nameplate captures gameplay input");
+      }
+      report.textContent = "PASS: 50 m names / 75 m and beyond-chat green markers / viewport / noninteractive labels";
+      button.hidden = true;
+    } catch (error) { report.textContent = "FAIL: " + error.message; }
+  };
+</script>
+</html>

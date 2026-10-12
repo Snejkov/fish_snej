@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import { SnejAngler } from "../angler.js?v=0.0.5a-hf6";
 
+const NAMEPLATE_RANGE = 50;
+
 function materialsOf(model) {
   const materials = new Set();
   model.traverse((part) => {
@@ -61,7 +63,7 @@ export class SnejRemotePlayerRoom {
     player.name = String(data.name || player.name);
     player.rank = String(data.rank || player.rank);
     player.lastSeen = performance.now();
-    if (player.label) player.label.textContent = `${player.name} #${player.id}`;
+    if (player.label && player.label.dataset.distant !== "true") player.label.textContent = `${player.name} #${player.id}`;
   }
 
   remove(id) {
@@ -90,7 +92,7 @@ export class SnejRemotePlayerRoom {
       .sort((a, b) => a.id - b.id);
   }
 
-  update(dt, observerCamera, viewport) {
+  update(dt, observerCamera, viewport, observerPlayer) {
     dt = Number.isFinite(dt) ? Math.max(0, dt) : 0;
     const alpha = 1 - Math.exp(-12 * dt);
     if (observerCamera) observerCamera.getWorldPosition(this.observerPosition);
@@ -115,6 +117,13 @@ export class SnejRemotePlayerRoom {
       const eyeHeight = this.observerPosition.y - player.model.position.y;
       player.model.visible = !observerCamera || dx * dx + dz * dz >= 0.16 || eyeHeight < 0 || eyeHeight > 1.95;
       if (player.label) {
+        const observer = observerPlayer || this.observerPosition;
+        const distanceX = observer.x - player.model.position.x;
+        const distanceZ = observer.z - player.model.position.z;
+        const distant = String(distanceX * distanceX + distanceZ * distanceZ > NAMEPLATE_RANGE * NAMEPLATE_RANGE);
+        if (player.label.dataset.distant !== distant) player.label.dataset.distant = distant;
+        const text = distant === "true" ? "" : `${player.name} #${player.id}`;
+        if (player.label.textContent !== text) player.label.textContent = text;
         const point = this.labelPoint.copy(player.model.position);
         point.y += 2.15;
         if (observerCamera) point.project(observerCamera);

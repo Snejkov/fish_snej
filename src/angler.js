@@ -345,7 +345,7 @@ export class SnejAngler {
     return out.set(0.45, 1.3, 0).applyMatrix4(this.group.matrixWorld);
   }
 
-  getCastHoldTip(camera, out = new THREE.Vector3()) {
+  getCastHoldTip(camera, out = new THREE.Vector3(), facingYaw) {
     // Predict the settled release grip without posing, cloning, or moving the live bones.
     this.group.updateWorldMatrix(true, false);
     this.group.getWorldDirection(this.castDirection);
@@ -365,11 +365,25 @@ export class SnejAngler {
     this.carry.rod.updateMatrix();
     this.carry.rightSocket.updateMatrix();
     p.copy(this.carry.tip.position).applyMatrix4(this.carry.rod.matrix).applyMatrix4(this.carry.rightSocket.matrix);
-    return out.add(p.applyQuaternion(this.castPreviewHand));
+    out.add(p.applyQuaternion(this.castPreviewHand));
+    if (Number.isFinite(facingYaw)) {
+      const yaw = Math.atan2(this.castDirection.x, this.castDirection.z);
+      const delta = facingYaw - yaw, sin = Math.sin(delta), cos = Math.cos(delta);
+      this.group.getWorldPosition(p);
+      const dx = out.x - p.x, dz = out.z - p.z;
+      out.x = p.x + dx * cos + dz * sin;
+      out.z = p.z - dx * sin + dz * cos;
+    }
+    return out;
   }
 
-  getCastOrigin(out = new THREE.Vector3()) {
+  getCastOrigin(out = new THREE.Vector3(), facingYaw) {
     this.group.updateWorldMatrix(true, false);
+    if (Number.isFinite(facingYaw)) {
+      // Preview the grip after the pending turn; live arm poses cannot move the target.
+      this.group.getWorldPosition(out);
+      return out.add(this.castDirection.set(Math.sin(facingYaw) * 0.55, 1.25, Math.cos(facingYaw) * 0.55));
+    }
     // Heading is local to group, not world yaw; ignore live arm and camera poses.
     return out.set(Math.sin(this.heading) * 0.55, 1.25, Math.cos(this.heading) * 0.55)
       .applyMatrix4(this.group.matrixWorld);

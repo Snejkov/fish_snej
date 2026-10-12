@@ -45,9 +45,10 @@ button.onclick = () => {
   };
   try {
     check(game.mode === "playing" && !game.server.enabled, "Enter the isolated local game first");
-    check(game.castContext.holdCast, "Hold casting was not enabled");
+    check(game.castContext.holdCast && game.castContext.cameraAim, "Camera hold casting was not enabled");
     if (!button.dataset.ready) {
       game.cancelCastAction(); game.cast.reset(); game.desktopCursor.release();
+      game.cameraMode = "third-person"; game.viewBlend = 1; game.viewTransition = null;
       const start = game.pos.clone(); let found = false;
       search: for (let dx = -18; dx <= 18; dx += 2) for (let dz = -18; dz <= 18; dz += 2) {
         const x = start.x + dx, z = start.z + dz;
@@ -57,12 +58,21 @@ button.onclick = () => {
           game.yaw = i * Math.PI / 16; game.pitch = -0.35;
           game.angler.heading = 0; game.angler.rig.rotation.y = 0; game.angler.group.rotation.y = game.yaw;
           game.angler.group.updateMatrixWorld(true);
+          game.updateCamera(10);
           game.cast.reset(); game.beginHoldCast(); game.updateCast(2.5);
-          found = game.cast.state.canRelease; game.cancelCastAction(); game.cast.reset();
+          found = game.cast.state.canRelease;
+          const heading = game.yaw;
+          for (const offset of [-0.08, 0.08]) {
+            if (!found) break;
+            game.yaw = heading + offset; game.updateCamera(10); game.updateCast(0);
+            found &&= game.cast.state.canRelease;
+          }
+          game.yaw = heading; game.updateCamera(10);
+          game.cancelCastAction(); game.cast.reset();
           if (found) break search;
         }
       }
-      check(found, "No unobstructed forward shore cast spot");
+      check(found, "No unobstructed camera shore cast spot");
       game.cameraMode = "third-person"; game.viewBlend = 1; game.viewTransition = null;
       game.updateCamera(10); game.ui.updateViewChip(game); game.updateCast(0);
       button.dataset.ready = "1"; button.textContent = "Check hold cast";
@@ -87,8 +97,32 @@ button.onclick = () => {
       && game.camera.position.distanceTo(savedCamera) < 0.001, "Charging moved the original view");
     check(game.castMeter.getAttribute("aria-valuenow") === "100", "Strength UI did not show 100 percent");
     check(game.aimMarker.visible && game.aimMarker.material.color.getHex() === 0x54e58b, "Valid forward ring not green");
+    const oldAim = { ...game.cast.state.aimPoint }, oldFacing = game.castFacing;
+    if (mobile) {
+      const target = game.mobileInput.lookZone, r = target.getBoundingClientRect(), id = touchId++;
+      const finger = x => new win.Touch({ identifier: id, target, clientX: r.left + r.width * 0.7 + x, clientY: r.top + r.height * 0.5 });
+      target.dispatchEvent(new win.TouchEvent("touchstart", { bubbles: true, cancelable: true, changedTouches: [finger(0)], touches: [finger(0)] }));
+      target.dispatchEvent(new win.TouchEvent("touchmove", { bubbles: true, cancelable: true, changedTouches: [finger(12)], touches: [finger(12)] }));
+      target.dispatchEvent(new win.TouchEvent("touchend", { bubbles: true, cancelable: true, changedTouches: [finger(12)], touches: [] }));
+    } else game.mouse.dx = 12;
+    game.updateLook(); game.updateCamera(10); game.updateCast(0);
+    check(Math.hypot(game.cast.state.aimPoint.x - oldAim.x, game.cast.state.aimPoint.z - oldAim.z) > 0.01, "Held camera input did not move the preview");
+    check(game.castFacing === oldFacing && game.cameraMode === "third-person", "Aiming snapped the character or view");
+    const bar = game.castMeter.getBoundingClientRect(), barStyle = win.getComputedStyle(game.castMeter);
+    check(bar.height <= 5 && bar.top <= 6 && barStyle.paddingTop === "0px", "Strength was not a thin top line");
+    check(game.cast.state.canRelease, "Small camera adjustment blocked the test cast");
     const chosen = { ...game.cast.state.predictedLanding };
-    lift(false); check(game.cast.state.fs === "flight", "Release did not launch");
+    lift(false); check(game.cast.state.fs === "charge" && game.castTurn, "Release skipped the smooth turn");
+    check(game.cameraMode === "third-person", "Turning changed the view before launch");
+    game.updateCast(0.05);
+    check(game.castFacing !== oldFacing, "Character did not turn smoothly");
+    const releaseTarget = { ...game.castRelease.target };
+    game.yaw += 0.2; game.updateCamera(10);
+    for (let i = 0; i < 90 && game.cast.state.fs === "charge"; i += 1) {
+      game.updateCast(1 / 60);
+      check(Math.hypot(game.cast.state.aimPoint.x - releaseTarget.x, game.cast.state.aimPoint.z - releaseTarget.z) < 0.00001, "Turn/approval retargeted the release");
+    }
+    check(game.cast.state.fs === "flight", "Turn did not complete the launch");
     check(game.cameraMode === "first-person", "Successful release did not switch to first person");
     for (let i = 0; i < 600 && game.cast.state.fs === "flight"; i += 1) game.updateCast(1 / 60);
     check(game.cast.state.fs === "wait", "Cast did not land");
@@ -99,6 +133,7 @@ button.onclick = () => {
     game.toggleView(); game.updateCamera(10); game.cast.reset();
     game.yaw = savedYaw + Math.PI; game.angler.heading = 0; game.angler.rig.rotation.y = 0;
     game.angler.group.rotation.y = game.yaw; game.angler.group.updateMatrixWorld(true);
+    game.updateCamera(10);
     lift = press(); game.updateCast(2.5);
     if (!game.cast.state.canRelease) {
       check(game.aimMarker.material.color.getHex() === 0xff5555, "Invalid forward ring not red");
@@ -106,8 +141,8 @@ button.onclick = () => {
     } else lift(true);
     game.yaw = savedYaw; game.angler.group.rotation.y = savedYaw; game.angler.group.updateMatrixWorld(true);
     game.updateCamera(10); game.cast.reset(); game.updateCast(0);
-    press(); game.updateCast(1.8);
-    report.textContent = "PASS: hold / capped strength / release forward / exact landing / cancel / unchanged charge view / release first person";
+    press(); game.updateCast(2.5);
+    report.textContent = "PASS: camera aim / smooth turn / frozen target / exact landing / top line / hold cap / cancel";
     button.hidden = true;
   } catch (error) { report.textContent = "FAIL: " + error.message; }
 };

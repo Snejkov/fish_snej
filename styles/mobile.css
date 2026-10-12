@@ -141,7 +141,6 @@
 .touch-device #hint-bar, .touch-device #fps { display: none; }
 .touch-device #hud { inset: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
 .touch-device #readout { top: 52px; min-width: 0; max-width: 250px; font-size: 11px; padding: 4px 6px; }
-.touch-device .cast-meter { bottom: max(24px, env(safe-area-inset-bottom)); width: min(240px, calc(100% - 290px)); }
 .touch-device .screen { padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); overflow: auto; }
 .touch-device .screen > .panel { max-height: calc(100dvh - 24px); overflow-y: auto; margin: auto; }
 .touch-device .field { grid-template-columns: minmax(0, 1fr) minmax(80px, 140px); }
@@ -150,12 +149,11 @@
 .touch-device .mobile-cast { overflow-wrap: anywhere; line-height: 1.2; padding: 4px; }
 .touch-device .cast-actions { width: min(430px, calc(100% - 190px)); }
 .touch-device.cast-session .mobile-stick, .touch-device.cast-session .mobile-run { visibility: hidden; pointer-events: none; }
-.touch-device.cast-session .cast-meter { bottom: 125px; width: min(340px, calc(100% - 40px)); }
+.touch-device.cast-session .mobile-buttons { top: max(12px, calc(env(safe-area-inset-top, 0px) + 12px)); }
+.touch-device.cast-session #hud { top: max(12px, calc(env(safe-area-inset-top, 0px) + 12px)); }
 @media (orientation: portrait) {
   .touch-device #readout { top: 110px; }
-  .touch-device .cast-meter { bottom: 165px; width: min(240px, calc(100% - 32px)); }
   .touch-device .cast-actions { bottom: 110px; width: calc(100% - 32px); }
-  .touch-device.cast-session .cast-meter { bottom: 250px; }
 }
 @media (orientation: landscape) {
   .mobile-orientation { display: none; }

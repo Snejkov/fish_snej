@@ -255,13 +255,13 @@ export class SnejCastSystem {
 
   computeCastVelocityLocal(power, out = point()) {
     const yaw = finite(this.state.aimYaw, finite(this._ctx?.yaw));
-    const elev = elevFor(finite(this._ctx?.pitch));
+    const elev = elevFor(finite(this._ctx?.frozenCast?.pitch, finite(this._ctx?.pitch)));
     const origin = this.getCastOriginLocal();
     const pos = this._ctx?.pos || point();
     if (this.state.selectedTarget || this._ctx?.aimRay || this._ctx?.holdCast) {
       const want = this.castRange * clamp01(finite(power));
-      const endX = finite(pos.x) + Math.sin(yaw) * want;
-      const endZ = finite(pos.z) + Math.cos(yaw) * want;
+      const endX = this._ctx?.frozenCast?.target.x ?? finite(pos.x) + Math.sin(yaw) * want;
+      const endZ = this._ctx?.frozenCast?.target.z ?? finite(pos.z) + Math.cos(yaw) * want;
       const dx = endX - origin.x, dz = endZ - origin.z, travel = Math.hypot(dx, dz);
       const surface = this._ctx?.waterSurfaceY?.(endX, endZ) ?? 0;
       let lo = 0, hi = Math.max(this.castTop, 60);
@@ -301,19 +301,34 @@ export class SnejCastSystem {
     const ctx = this._ctx || {};
     const pos = ctx.pos || point();
     const origin = this.getCastOriginLocal();
-    const yaw = finite(ctx.yaw), pitch = finite(ctx.pitch);
+    const yaw = finite(ctx.yaw), pitch = finite(ctx.frozenCast?.pitch, finite(ctx.pitch));
     const surface = ctx.waterSurfaceY?.(pos.x, pos.z) ?? 0;
     const originOffset = Math.hypot(origin.x - finite(pos.x), origin.z - finite(pos.z));
     state.minCastDist = Math.max(CAST_DISTANCE_MIN, originOffset + waterRange(CAST_SPEED_MIN, elevFor(pitch), Math.max(0, origin.y - surface)));
     if (ctx.holdCast) {
-      state.aimYaw = finite(ctx.castHeading, yaw);
-      state.targetPower = state.fs === "charge" ? clamp01(state.charge) : 1;
+      const frozen = ctx.frozenCast;
+      let heading = finite(ctx.castHeading, yaw), cameraValid = true;
+      if (ctx.cameraAim && ctx.aimRay && !frozen) {
+        const { origin: eye, direction } = ctx.aimRay;
+        // Project the rendered camera ray to water before measuring from the player.
+        // This includes third-person orbit offsets, unlike copying camera yaw.
+        const travel = direction.y < -0.00001 ? (surface - eye.y) / direction.y : Infinity;
+        cameraValid = Number.isFinite(travel) && travel > 0;
+        const dx = cameraValid ? eye.x + direction.x * travel - finite(pos.x) : direction.x;
+        const dz = cameraValid ? eye.z + direction.z * travel - finite(pos.z) : direction.z;
+        cameraValid &&= Math.hypot(dx, dz) > 0.00001;
+        if (Math.hypot(dx, dz) > 0.00001) heading = Math.atan2(dx, dz);
+      }
+      state.aimYaw = frozen ? Math.atan2(frozen.target.x - finite(pos.x), frozen.target.z - finite(pos.z)) : heading;
+      state.targetPower = frozen ? frozen.power : state.fs === "charge" ? clamp01(state.charge) : 1;
       state.aimDist = state.targetPower * this.castRange;
       state.aimHasPoint = true;
       state.aimCapped = state.aimOutOfReach = false;
-      Object.assign(state.aimPoint, { x: finite(pos.x) + Math.sin(state.aimYaw) * state.aimDist,
+      Object.assign(state.aimPoint, frozen ? frozen.target : { x: finite(pos.x) + Math.sin(state.aimYaw) * state.aimDist,
         y: surface, z: finite(pos.z) + Math.cos(state.aimYaw) * state.aimDist });
-      state.aimValid = state.aimDist >= state.minCastDist - 1e-8 && this.isWaterAt(state.aimPoint);
+      if (frozen) state.aimDist = Math.hypot(state.aimPoint.x - finite(pos.x), state.aimPoint.z - finite(pos.z));
+      state.aimOutOfReach = state.aimDist > this.castRange + 1e-8;
+      state.aimValid = cameraValid && !state.aimOutOfReach && state.aimDist >= state.minCastDist - 1e-8 && this.isWaterAt(state.aimPoint);
       return;
     }
     if (state.selectedTarget) {
@@ -400,7 +415,8 @@ export class SnejCastSystem {
     if (depth <= 0) return "terrain";
     if (!this.isWaterAt(end)) return "terrain";
     // The fixed rig bows sideways; obsolete vertical sag can falsely intersect the lake bed.
-    const lineHit = ctx.lineObstruction?.(ctx.rodTip || origin, end, 0);
+    const lineTip = ctx.rodTipForYaw?.(this.state.aimYaw) || ctx.rodTip || origin;
+    const lineHit = ctx.lineObstruction?.(lineTip, end, 0);
     return lineHit ? (lineHit === "land" ? "terrain" : lineHit) : "water";
   }
 

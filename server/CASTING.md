@@ -42,10 +42,23 @@ physical Backquote key toggles free cursor and pointer-lock camera look.
 Mobile/tablet users hold the mobile-only Cast button, then release to cast;
 ordinary screen swipes still look around. Strength grows monotonically to
 the maximum in 2.5 seconds and stays there without automatically throwing.
-Casting follows the visible character's facing at the beginning of the hold,
-not a free mouse/water pointer or an orbit-camera ray. The ring previews the
-charged endpoint; it is not draggable. Touch cancellation, blur and menus
-abort charging. Third person changes to first person only after accepted release.
+Casting follows the rendered camera ray projected to the water plane, then
+measures the charged distance from the player along that direction. This
+accounts for third-person orbit parallax; camera pitch is not copied from
+the orbit controls. The ring previews the charged endpoint and is not draggable.
+Looking around remains available during the hold without immediately turning
+the character. A camera ray that cannot meet water is invalid, not silently
+clamped. Strength appears as an accessible, four-pixel top line with safe-area
+insets, not a centered card.
+
+Release freezes the target, power and flight pitch. The character smoothly
+turns by the shortest angle over 0.16 to 0.65 seconds; the flight waits for
+both that turn and server approval. Other players receive this visual facing,
+not the independent aiming camera angle. Later camera changes cannot retarget
+the throw. Prediction uses the future turned grip; the final physical throw
+uses that same aligned grip and exact endpoint. Touch cancellation, blur,
+menus, disconnect and changed player origin invalidate the pending turn and
+any late approval. Third person changes to first person only after launch.
 
 ## Authority boundary
 

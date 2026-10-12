@@ -463,19 +463,30 @@ legend {
 
 .cast-meter {
   position: fixed;
-  z-index: 13;
+  z-index: 30;
   pointer-events: none;
-  left: 50%;
-  bottom: 110px;
-  transform: translateX(-50%);
-  width: min(280px, calc(100% - 32px));
-  padding: 8px 10px;
-  border-radius: 4px;
+  left: max(12px, env(safe-area-inset-left));
+  right: max(12px, env(safe-area-inset-right));
+  top: calc(env(safe-area-inset-top, 0px) + 4px);
+  bottom: auto;
+  transform: none;
+  width: auto;
+  height: 4px;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.cast-meter-label, .cast-meter-distance, .cast-meter-status {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
 }
 
 .cast-meter-track {
   position: relative;
-  height: 12px;
+  height: 4px;
   border-radius: 2px;
   background: rgba(255, 255, 255, 0.12);
   overflow: hidden;
@@ -536,6 +547,5 @@ legend {
     overflow: hidden;
   }
   #fps { bottom: 96px; }
-  .cast-meter { bottom: 144px; }
   .toast { top: 146px; }
 }

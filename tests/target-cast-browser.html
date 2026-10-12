@@ -39,7 +39,7 @@
       check(game.mobileInput.useTouchEvents, "Native touch was not selected");
       game.cast.reset(); game.mobileInput.reset(); game.mobileInput.setActive(true);
       // Find a genuine unobstructed shore spot in this test-only local world.
-      const start = game.pos.clone(); let found = false;
+      const start = game.pos.clone(); let found = false, shoreTarget;
       search: for (let dx = -18; dx <= 18; dx += 2) for (let dz = -18; dz <= 18; dz += 2) {
         const x = start.x + dx, z = start.z + dz;
         if (game.terrain.depthAt(x, z) > 0.05 || game.terrain.blockedAt(x, z, 0.34, game.terrain.heightAt(x, z) + 0.8)) continue;
@@ -51,16 +51,25 @@
           if (!game.isCastWater(point.x, point.z)) continue;
           game.updateCast(0); game.cast.beginTargeting();
           found = game.cast.selectTarget(point); game.cast.reset();
-          if (found) break search;
+          if (found) { shoreTarget = point; break search; }
         }
       }
       check(found, "No valid nearby shore test spot");
-      game.cameraMode = "third-person"; game.viewBlend = 1;
+      game.cameraMode = "third-person"; game.viewBlend = 1; game.viewTransition = null;
+      game.updateCamera(0.3); game.ui.updateViewChip(game);
+      const viewButton = game.ui.el.mobileControls.querySelector("[data-mobile-action='view']");
+      check(viewButton.textContent === "3P", "Mobile view button did not report third person");
+      const savedPitch = game.pitch, savedCamera = game.camera.position.clone();
       tapButton();
-      check(game.cast.state.fs === "aim" && game.cameraMode === "first-person", "Cast button did not start first-person aiming");
+      check(game.cast.state.fs === "aim" && game.cameraMode === "third-person", "Aiming changed the original view");
+      check(game.pitch === savedPitch && game.camera.position.distanceTo(savedCamera) < 0.001, "Aiming moved the original camera");
+      check(viewButton.disabled, "View button did not lock during aiming");
       const pos = game.pos.clone(); game.keys.add("KeyW"); game.updateMove(0.1); game.keys.clear();
       check(game.pos.distanceTo(pos) === 0, "Aiming allowed movement");
-      const rect = game.canvas.getBoundingClientRect(), x = rect.left + rect.width / 2, y = rect.top + rect.height / 2;
+      const rect = game.canvas.getBoundingClientRect();
+      const waterPoint = game.pos.clone().set(shoreTarget.x, game.water.surfaceY(shoreTarget.x, shoreTarget.z), shoreTarget.z);
+      game.camera.updateMatrixWorld(); waterPoint.project(game.camera);
+      const x = rect.left + (waterPoint.x + 1) * rect.width / 2, y = rect.top + (1 - waterPoint.y) * rect.height / 2;
       const surface = win.document.elementFromPoint(x, y);
       check(surface === game.canvas || surface === game.ui.el.mobileLook, "Water tap covered by UI");
       tap(surface, x, y, true); check(game.cast.state.fs === "aim", "Cancelled finger selected water");
@@ -75,6 +84,7 @@
       game.cast.state.charge = power + 0.02; game.updateCast(0);
       check(game.castMeterFill.classList.contains("on-target"), "Green timing not recognized");
       tapButton(); check(game.cast.state.fs === "flight", "Second button tap did not release");
+      check(game.cameraMode === "first-person" && viewButton.textContent === "1P" && !viewButton.disabled, "Release did not switch to first person");
       for (let i = 0; i < 600 && game.cast.state.fs === "flight"; i += 1) game.updateCast(1 / 60);
       check(game.cast.state.fs === "wait" && game.cast.state.castPerfect, "Green throw failed");
       close(Math.hypot(game.cast.state.bobber.x - chosen.x, game.cast.state.bobber.z - chosen.z), 0, "Green missed selected water point");
@@ -85,13 +95,18 @@
       game.updateFloatRig(1 / 60);
       check(game.cast.state.fs === "wait", "Settled model pulled cast into recovery");
       close(Math.hypot(game.cast.state.bobber.x - chosen.x, game.cast.state.bobber.z - chosen.z), 0, "Settled model moved exact landing");
+      viewButton.click(); check(game.cameraMode === "third-person", "Mobile view button did not restore third person");
+      game.updateCamera(0.3);
       game.cast.reset(); game.updateCast(0); tapButton();
-      tap(win.document.elementFromPoint(x, y), x, y);
-      check(game.cast.state.fs === "charge", "Second cast failed");
+      check(game.cast.state.fs === "aim" && game.cameraMode === "third-person", "Second aim changed the selected view");
       win.document.getElementById("cast-cancel").click();
       check(game.cast.state.fs === "idle" && game.cast.state.selectedTarget === null, "Cancel did not reset flow");
+      check(game.cameraMode === "third-person" && !viewButton.disabled, "Cancel changed the view or left the button locked");
+      viewButton.click(); check(game.cameraMode === "first-person", "Mobile view button did not select first person");
+      game.updateCamera(0.3);
       // Leave the real meter visible for layout and hit-area inspection.
-      tapButton(); tap(win.document.elementFromPoint(x, y), x, y);
+      const centerX = rect.left + rect.width / 2, centerY = rect.top + rect.height / 2;
+      tapButton(); tap(win.document.elementFromPoint(centerX, centerY), centerX, centerY);
       await wait();
       check(game.cast.state.fs === "charge", "Final meter preview missing");
       // Freeze only the final test preview at green; the preceding throw used the real flow.
@@ -99,7 +114,7 @@
       game.cast.tick = (dt, ctx) => tick(game.cast.state.fs === "charge" ? 0 : dt, ctx);
       game.cast.state.charge = game.cast.state.targetPower;
       game.updateCast(0);
-      report.textContent = "PASS: native touch / first person / exact green / cancel / line-depth";
+      report.textContent = "PASS: original view / release first person / mobile view / native touch / exact green / cancel";
       button.hidden = true;
     } catch (error) { report.textContent = "FAIL: " + error.message; }
   };

@@ -30,7 +30,7 @@ test("Cast instructions and cancellation show only during an active cast session
   const mobile = { dataset: {}, textContent: "", disabled: false };
   const game = { cast: { state: {} }, castActions: { classList: classes() },
     castCancelButton: { classList: classes() }, castInstruction: {},
-    ui: { el: { mobileControls: { querySelector: () => mobile } } } };
+    ui: { el: { mobileControls: { querySelector: selector => selector === "[data-mobile-cast]" ? mobile : null } } } };
   try {
     setLanguage("en", { persist: false });
     for (const enabled of [true, false]) for (const state of ["idle", "aim", "charge", "flight", "wait"]) {

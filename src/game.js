@@ -24,7 +24,7 @@ import { SnejSky } from "./sky.js";
 import { SPAWNS, SPAWN_INITIAL_NAME, SPAWN_NAMES } from "./spawns.js";
 import { SnejTerrain } from "./terrain.js";
 import { SnejTextureManager } from "./textureManager.js";
-import { SnejUI } from "./ui.js?v=chat-1";
+import { SnejUI } from "./ui.js?v=cast-camera-1";
 import { SnejMobileInput, movementInput, requestLandscape } from "./mobileInput.js?v=target-cast-1";
 import { SnejWater } from "./water.js?v=0.0.5a-hf3";
 import { clamp, clamp01, damp, lerp, moveDelta, resolveWalkableStart } from "./util.js?v=0.0.3-hf2.12";
@@ -463,13 +463,6 @@ export class SnejFishingGame {
     this.updateCast(0);
     if (!this.cast.beginTargeting()) return false;
     this.floatRig.reset();
-    this.cameraMode = "first-person";
-    this.viewBlend = 0;
-    this.viewTransition = null;
-    this.pitch = Math.min(this.pitch, -Math.atan2(EYE_H, Math.max(1, this.cast.castRange * 0.75)));
-    this.camera.position.copy(this.pos).y += EYE_H;
-    this.updateCamera(0);
-    this.ui.updateViewChip(this);
     this.keys.clear();
     this.mobileInput?.reset();
     if (document.pointerLockElement) document.exitPointerLock();
@@ -521,6 +514,8 @@ export class SnejFishingGame {
     const label = fs === "charge" ? "Stop cast" : "Cast";
     const mobile = this.ui.el.mobileControls?.querySelector("[data-mobile-cast]");
     if (mobile) { mobile.dataset.i18n = label; mobile.textContent = t(label); mobile.disabled = fs === "flight"; }
+    const view = this.ui.el.mobileControls?.querySelector("[data-mobile-action='view']");
+    if (view) view.disabled = session;
     this.castInstruction.textContent = t(fs === "aim" ? "Tap the water to choose a target." : fs === "charge" ? "Tap again when the marker reaches green." : "");
     document.documentElement.classList.toggle("cast-session", enabled && session);
   }
@@ -529,7 +524,10 @@ export class SnejFishingGame {
     if (this.cast.state.fs !== "charge") return;
     if (!this.canCast()) { this.cancelCastAction(); return; }
     this.updateCast(0);
-    if (this.cast.onActionUp()) this.audio.cast(this.cast.state.castPower);
+    if (this.cast.onActionUp()) {
+      if (this.cameraMode === "third-person") this.toggleView();
+      this.audio.cast(this.cast.state.castPower);
+    }
     else if (this.cast.state.lastRejection) {
       this.audio.deny();
       this.ui.showToast(this.toastForCastRejection(this.cast.state.lastRejection));

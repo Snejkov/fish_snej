@@ -101,6 +101,9 @@
   pointer-events: auto;
   touch-action: none;
 }
+.mobile-view { font-size: 14px; font-weight: 700; }
+.mobile-view[aria-pressed="true"] { border-color: #91dac6; }
+.mobile-view:disabled { opacity: 0.5; }
 .mobile-run {
   position: absolute;
   z-index: 1;

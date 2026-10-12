@@ -58,7 +58,10 @@ else
 fi
 if [[ -d "$BASE/releases/$RELEASE" ]]; then
   [[ -f "$BASE/releases/$RELEASE/.release" && $(<"$BASE/releases/$RELEASE/.release") == "$RELEASE" ]] || fail 'Requested release path has unknown contents.'
-  [[ "$CURRENT" == "$BASE/releases/$RELEASE" ]] && curl --fail --silent --max-time 5 "http://127.0.0.1:$PORT/healthz" >/dev/null && {
+  [[ "$CURRENT" == "$BASE/releases/$RELEASE" ]] &&
+    curl --fail --silent --max-time 5 "http://127.0.0.1:$PORT/healthz" >/dev/null &&
+    curl --fail --silent --max-time 5 "http://127.0.0.1:$PORT/" >/dev/null &&
+    curl --fail --silent --max-time 5 "http://127.0.0.1:$PORT/src/main.js" >/dev/null && {
     printf 'Already installed: %s on port %s. External reachability is not checked.\n' "$RELEASE" "$PORT"; exit 0;
   }
   fail 'This release already exists but is not healthy/current. Inspect before reusing it.'
@@ -74,6 +77,8 @@ import pathlib, sys, tarfile
 archive, dest, release = sys.argv[1:]
 root = pathlib.Path(dest)
 root.mkdir(mode=0o755)
+# Explicit chmod is required: the installer's umask otherwise changes 0755 to 0750.
+root.chmod(0o755)
 prefix = 'fish_snej-' + release
 dirs = {'src', 'styles', 'vendor', 'assets', 'textures'}
 suffixes = {'.js', '.css', '.json', '.png', '.jpg', '.jpeg', '.webp', '.svg', '.glb', '.gltf', '.bin', '.woff2'}
@@ -94,6 +99,10 @@ with tarfile.open(archive, 'r:gz') as bundle:
             raise SystemExit('Unexpectedly large public archive')
         target = root.joinpath(*local.parts)
         target.parent.mkdir(parents=True, exist_ok=True, mode=0o755)
+        for directory in target.parents:
+            if directory == root.parent:
+                break
+            directory.chmod(0o755)
         with bundle.extractfile(member) as source, target.open('xb') as output:
             output.write(source.read())
         target.chmod(0o644)
@@ -132,10 +141,10 @@ class Preview(http.server.BaseHTTPRequestHandler):
                 self.send_error(404); return
             if not (path in {'/', '/index.html', '/styles.css'} or path.startswith(('/src/', '/styles/', '/vendor/', '/assets/', '/textures/'))):
                 self.send_error(404); return
-            target = (self.server.root / (path.lstrip('/') or 'index.html')).resolve()
-            if not target.is_relative_to(self.server.root) or not target.is_file() or target.suffix.lower() not in MIME:
-                self.send_error(404); return
             try:
+                target = (self.server.root / (path.lstrip('/') or 'index.html')).resolve()
+                if not target.is_relative_to(self.server.root) or not target.is_file() or target.suffix.lower() not in MIME:
+                    self.send_error(404); return
                 data = target.read_bytes()
             except OSError:
                 self.send_error(404); return
@@ -227,7 +236,9 @@ systemctl enable "$SERVICE"
 systemctl restart "$SERVICE"
 HEALTHY=false
 for attempt in {1..15}; do
-  if curl --fail --silent --max-time 2 "http://127.0.0.1:$PORT/healthz" | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["mode"]=="static-preview" and d["release"]==sys.argv[1]' "$RELEASE"; then HEALTHY=true; break; fi
+  if curl --fail --silent --max-time 2 "http://127.0.0.1:$PORT/healthz" | python3 -c 'import json,sys; raw=sys.stdin.read(); d=json.loads(raw) if raw else {}; sys.exit(0 if d.get("mode")=="static-preview" and d.get("release")==sys.argv[1] else 1)' "$RELEASE" &&
+     curl --fail --silent --max-time 2 "http://127.0.0.1:$PORT/" --output /dev/null &&
+     curl --fail --silent --max-time 2 "http://127.0.0.1:$PORT/src/main.js" --output /dev/null; then HEALTHY=true; break; fi
   sleep 1
 done
 if [[ "$HEALTHY" != true ]]; then

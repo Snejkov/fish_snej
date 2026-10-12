@@ -36,6 +36,23 @@ SHA gets a new immutable release. Failed health checks restore the previous
 managed service/code, never a database. Diagnostics/staging are retained for
 inspection; no broad cleanup is performed.
 
+Public directories are explicitly set to 0755 despite the installer's restrictive
+umask; public files remain 0644. Only extracted public assets receive these modes.
+Startup succeeds only when health, the game page, and main JavaScript are readable
+through the service, not just when the health endpoint responds.
+
+For a preview installed with the first installer, inspect the exact managed
+public directory before applying this narrow permission repair as root:
+
+```sh
+public=/opt/snejfishing-preview/releases/17707769c5b3ef886f941f0b6a892102ec276b22/public
+test "$(readlink -f "$public")" = "$public" && find "$public" -type d -exec chmod 0755 {} +
+curl --fail http://127.0.0.1:8080/
+```
+
+This changes only public-directory traversal rights, not files, SSH, firewall,
+database data, service-user write permissions, or any other site.
+
 Local checks after installation:
 
 ```sh

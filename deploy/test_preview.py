@@ -6,6 +6,7 @@ import threading
 import unittest
 import io
 import tarfile
+import os
 from unittest.mock import patch
 
 
@@ -60,6 +61,11 @@ class PreviewChecks(unittest.TestCase):
         self.assertFalse(data['online'])
         self.assertEqual(data['release'], 'a' * 40)
 
+    def test_inaccessible_public_path_returns_not_found(self):
+        with patch.object(pathlib.Path, 'is_file', side_effect=PermissionError('test denied directory')):
+            self.assertEqual(self.request('/src/main.js')[0], 404)
+        self.assertEqual(self.request('/')[0], 200)
+
     def test_private_and_traversal_routes(self):
         for path in ['/.env', '/server/admin.mjs', '/.git/config', '/worker/index.js', '/api/profile', '/ws',
                      '/src/../.env', '/src/%2e%2e/.env', '/src/..%5c.env', '/src/main.js%00']:
@@ -103,10 +109,23 @@ class PreviewChecks(unittest.TestCase):
             link.linkname = '../../private.js'
             bundle.addfile(link)
         source = SCRIPT.split("<<'EXTRACT_PUBLIC'\n", 1)[1].split('\nEXTRACT_PUBLIC\n', 1)[0]
-        with patch('sys.argv', ['extract', str(archive), str(target), 'a' * 40]):
-            exec(compile(source, 'extract_public.py', 'exec'), {})
+        previous_umask = os.umask(0o027)
+        try:
+            with patch('sys.argv', ['extract', str(archive), str(target), 'a' * 40]):
+                exec(compile(source, 'extract_public.py', 'exec'), {})
+        finally:
+            os.umask(previous_umask)
         self.assertEqual(sorted(str(p.relative_to(target)).replace('\\', '/') for p in target.rglob('*') if p.is_file()),
                          ['index.html', 'src/main.js', 'styles.css', 'vendor/three.module.min.js'])
+        if os.name == 'posix':
+            for directory in [target, *[p for p in target.rglob('*') if p.is_dir()]]:
+                self.assertEqual(directory.stat().st_mode & 0o777, 0o755)
+
+    def test_extractor_explicitly_sets_directory_permissions(self):
+        source = SCRIPT.split("<<'EXTRACT_PUBLIC'\n", 1)[1].split('\nEXTRACT_PUBLIC\n', 1)[0]
+        self.assertIn('root.chmod(0o755)', source)
+        self.assertIn('directory.chmod(0o755)', source)
+        self.assertIn('if directory == root.parent:', source)
 
     def test_archive_traversal_is_rejected(self):
         archive = pathlib.Path(self.temp.name) / 'malicious.tar.gz'

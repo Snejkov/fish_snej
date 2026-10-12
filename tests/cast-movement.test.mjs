@@ -35,7 +35,7 @@ for (const fps of [30, 60, 144]) {
       for (const keys of [["KeyW"], ["KeyS"], ["KeyA"], ["KeyD"], ["KeyW", "KeyD", "ShiftLeft"]]) {
         const { game, effects } = makeGame(depth, keys, yaw);
         const origin = game.pos.clone();
-        for (const [fs, retrieving] of [["flight", false], ["wait", false], ["flight", true]]) {
+        for (const [fs, retrieving] of [["aim", false], ["charge", false], ["flight", false], ["wait", false], ["flight", true]]) {
           Object.assign(game.cast.state, { fs, retrieving });
           game.moveAmt = 1;
           game.moveSpeed = 6.8;
@@ -65,7 +65,7 @@ for (const fps of [30, 60, 144]) {
   }
 }
 
-for (const fs of ["idle", "charge"]) {
+for (const fs of ["idle"]) {
   const { game, effects } = makeGame(0.6, ["KeyW", "ShiftRight"], 0);
   game.cast.state.fs = fs;
   const origin = game.pos.clone();

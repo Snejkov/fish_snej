@@ -952,7 +952,7 @@ export class SnejUI {
     const inv = this.game.inventory;
     if (!inv) return;
     const rod = inv.equippedRod();
-    this.el.rodLine.textContent = t("Rod {length} m / Range {range} m", { length: rod.length, range: rod.range });
+    this.el.rodLine.textContent = t("Rod {length} m / Range {range} m", { length: rod.length, range: this.game.cast.castRange });
     const bait = inv.equippedBait();
     this.el.baitLine.textContent = bait && inv.countOf(bait.id) > 0
       ? t("Bait: {name} x{count}", { name: t(bait.name), count: inv.countOf(bait.id) }) : t("No bait");
@@ -968,7 +968,7 @@ export class SnejUI {
 
   canDropGear(item, kind) {
     return this.inventoryOpen && item?.kind === kind && kind !== "lure" && item.unlocked !== false
-      && this.game.inventory.owns(item.id) && !["charge", "flight"].includes(this.game.cast.state.fs);
+      && this.game.inventory.owns(item.id) && !["aim", "charge", "flight"].includes(this.game.cast.state.fs);
   }
 
   clearGearDrag() {
@@ -1124,7 +1124,7 @@ export class SnejUI {
     const button = this.el.previewAction;
     button.dataset.action = buy ? "buy" : "equip";
     button.textContent = buy ? `${t("Buy")} / ${formatCoins(item.price)}` : t(equipped ? "Equipped" : item.kind === "lure" ? "Owned" : "Equip");
-    button.disabled = item.unlocked === false || (buy ? inv.coins() < item.price : equipped || item.kind === "lure" || ["charge", "flight"].includes(this.game.cast.state.fs));
+    button.disabled = item.unlocked === false || (buy ? inv.coins() < item.price : equipped || item.kind === "lure" || ["aim", "charge", "flight"].includes(this.game.cast.state.fs));
     button.classList.toggle("secondary", !buy);
     button.setAttribute("aria-label", `${button.textContent} ${t(item.name)}`);
     applyTranslations(this.el.inventoryPanel);
@@ -1178,7 +1178,7 @@ export class SnejUI {
       card.setAttribute("role", "listitem");
       card.dataset.item = item.id;
       card.draggable = owned && !equipped && !locked && item.kind !== "lure"
-        && !["charge", "flight"].includes(this.game.cast.state.fs);
+        && !["aim", "charge", "flight"].includes(this.game.cast.state.fs);
       card.tabIndex = 0;
       card.setAttribute("aria-label", `${t(item.name)}${selected ? `, ${t("Selected")}` : ""}`);
       const heading = textElement("div", "row", "");

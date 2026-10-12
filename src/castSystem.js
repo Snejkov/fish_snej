@@ -1,6 +1,6 @@
 import { clamp, clamp01, lerp } from "./util.js";
 import { RODS } from "./rods.js?v=0.0.4-hf2";
-import { rigForRod } from "./floatRig.js?v=0.0.5a-hf4";
+import { rigForRod } from "./floatRig.js?v=target-cast-1";
 
 // Stage 4 cast analysis, sections 1, 4, 5, 9, and 10. No fish behavior is active.
 const GRAVITY = 9.8;
@@ -105,7 +105,7 @@ export class SnejCastSystem {
       targetPower: 0, minCastDist: 0, aimPoint: point(), aimDist: 0, aimYaw: null,
       aimCapped: false, aimOutOfReach: false, castObstruction: null, retrieving: false,
       predictedLanding: point(), waitTime: 0,
-      targetLanding: point(), targetValid: false, releaseBlock: null
+      targetLanding: point(), targetValid: false, releaseBlock: null, selectedTarget: null
     });
     this._ctx = null;
     this._flightAccum = 0;
@@ -122,6 +122,34 @@ export class SnejCastSystem {
     return true;
   }
 
+  beginTargeting() {
+    if (!["idle", "wait"].includes(this.state.fs)) return false;
+    const ctx = this._ctx;
+    this.reset();
+    this._ctx = ctx;
+    this.state.fs = "aim";
+    this.updateAim();
+    return true;
+  }
+
+  selectTarget(target) {
+    if (this.state.fs !== "aim" || !Number.isFinite(target?.x) || !Number.isFinite(target?.z)) return false;
+    this.state.selectedTarget = { x: target.x, y: 0, z: target.z };
+    this.updateAim();
+    const reason = this.state.aimDist < this.state.minCastDist ? "range"
+      : this.releaseReason(this.state.targetPower, this.state.targetLanding);
+    if (reason) {
+      this.state.selectedTarget = null;
+      this.state.lastRejection = reason;
+      return false;
+    }
+    this.state.fs = "charge";
+    this.state.charge = 0;
+    this.state.chargeDir = 1;
+    this.state.lastRejection = null;
+    return true;
+  }
+
   onActionUp() {
     const state = this.state;
     if (state.fs !== "charge") return false;
@@ -129,8 +157,9 @@ export class SnejCastSystem {
     const err = Math.abs(state.charge - state.targetPower);
     state.castPerfect = err <= CAST_TOL + Number.EPSILON;
     state.castAcc = clamp01(1 - Math.max(0, err - CAST_TOL) / (CAST_MISS - CAST_TOL));
-    state.castPower = state.charge;
-    state.requestedDist = state.charge * this.castRange;
+    // The green zone is forgiving timing, not a displaced landing point.
+    state.castPower = this.chargePower();
+    state.requestedDist = state.castPower * this.castRange;
     // The meter and release use the same current trajectory and validation.
     const reason = this.releaseReason(state.castPower, state.predictedLanding);
     if (reason) {
@@ -155,13 +184,22 @@ export class SnejCastSystem {
   }
 
   cancelCharge() {
-    if (this.state.fs !== "charge") return;
+    if (!["aim", "charge"].includes(this.state.fs)) return;
     this.state.fs = "idle";
     this.state.charge = 0;
     this.state.chargeDir = 1;
     this.state.castObstruction = null;
     this.state.canRelease = false;
     this.state.requestedDist = 0;
+    this.state.selectedTarget = null;
+  }
+
+  chargePower() {
+    const state = this.state;
+    if (!state.selectedTarget) return clamp01(state.charge);
+    if (Math.abs(state.charge - state.targetPower) <= CAST_TOL + Number.EPSILON) return state.targetPower;
+    // Very early stops still make the closest safe throw instead of firing backwards at zero power.
+    return clamp(state.charge, Math.min(1, state.minCastDist / this.castRange), 1);
   }
 
   startRetrieve(reason) {
@@ -175,7 +213,7 @@ export class SnejCastSystem {
   }
 
   setRodRange(range, floatDepth = this.rig.floatDepth) {
-    if (this.state.fs === "charge" || this.state.fs === "flight") return false;
+    if (["aim", "charge", "flight"].includes(this.state.fs)) return false;
     if (!Number.isFinite(range) || range <= 0) return false;
     this.rodRange = range;
     this.rig = rigForRod(range / 2, floatDepth);
@@ -220,6 +258,23 @@ export class SnejCastSystem {
     const elev = elevFor(finite(this._ctx?.pitch));
     const origin = this.getCastOriginLocal();
     const pos = this._ctx?.pos || point();
+    if (this.state.selectedTarget) {
+      const want = this.castRange * clamp01(finite(power));
+      const endX = finite(pos.x) + Math.sin(yaw) * want;
+      const endZ = finite(pos.z) + Math.cos(yaw) * want;
+      const dx = endX - origin.x, dz = endZ - origin.z, travel = Math.hypot(dx, dz);
+      const surface = this._ctx?.waterSurfaceY?.(endX, endZ) ?? 0;
+      let lo = 0, hi = Math.max(this.castTop, 60);
+      for (let i = 0; i < 24; i += 1) {
+        const mid = (lo + hi) / 2;
+        if (waterRange(mid, elev, Math.max(0, origin.y - surface)) <= travel) lo = mid; else hi = mid;
+      }
+      const speed = lo / Math.hypot(1, elev);
+      out.x = travel > 1e-8 ? dx / travel * speed : 0;
+      out.y = elev * speed;
+      out.z = travel > 1e-8 ? dz / travel * speed : 0;
+      return out;
+    }
     const surface = this._ctx?.waterSurfaceY?.(origin.x, origin.z) ?? 0;
     const ox = origin.x - finite(pos.x), oz = origin.z - finite(pos.z);
     const fx = Math.sin(yaw), fz = Math.cos(yaw);
@@ -250,6 +305,20 @@ export class SnejCastSystem {
     const surface = ctx.waterSurfaceY?.(pos.x, pos.z) ?? 0;
     const originOffset = Math.hypot(origin.x - finite(pos.x), origin.z - finite(pos.z));
     state.minCastDist = Math.max(CAST_DISTANCE_MIN, originOffset + waterRange(CAST_SPEED_MIN, elevFor(pitch), Math.max(0, origin.y - surface)));
+    if (state.selectedTarget) {
+      const target = state.selectedTarget;
+      const dx = target.x - finite(pos.x), dz = target.z - finite(pos.z), look = Math.hypot(dx, dz);
+      state.aimYaw = Math.atan2(dx, dz);
+      state.aimCapped = look > this.castRange;
+      state.aimDist = Math.min(look, this.castRange);
+      state.aimPoint.x = finite(pos.x) + Math.sin(state.aimYaw) * state.aimDist;
+      state.aimPoint.y = this._ctx?.waterSurfaceY?.(target.x, target.z) ?? 0;
+      state.aimPoint.z = finite(pos.z) + Math.cos(state.aimYaw) * state.aimDist;
+      state.targetPower = state.aimDist / this.castRange;
+      state.aimValid = look >= state.minCastDist && this.isWaterAt(target) && this.isWaterAt(state.aimPoint);
+      state.aimOutOfReach = look > this.castRange && !this.isWaterAt(state.aimPoint);
+      return;
+    }
     const aimMax = this.castRange;
     const ray = ctx.aimRay;
     const eye = ray?.origin || { x: finite(pos.x), y: finite(pos.y) + 1.62, z: finite(pos.z) };
@@ -339,16 +408,17 @@ export class SnejCastSystem {
     const state = this.state;
     if (ctx) this._ctx = ctx;
     dt = Math.max(0, finite(dt));
-    if (state.fs === "idle" || state.fs === "charge") this.updateAim();
-    if (state.fs === "idle") {
+    if (["idle", "aim", "charge"].includes(state.fs)) this.updateAim();
+    if (state.fs === "idle" || state.fs === "aim") {
       // The initial marker forecasts a real throw too, including an offset release grip.
       state.targetValid = state.aimValid && !this.releaseReason(state.targetPower, state.targetLanding);
     } else if (state.fs === "charge") {
       const phase = ((state.chargeDir > 0 ? state.charge : 2 - state.charge) + CHARGE_RATE * dt) % 2;
       state.charge = phase <= 1 ? phase : 2 - phase;
       state.chargeDir = phase < 1 ? 1 : -1;
-      state.requestedDist = state.charge * this.castRange;
-      state.releaseBlock = this.releaseReason(state.charge, state.predictedLanding);
+      const power = this.chargePower();
+      state.requestedDist = power * this.castRange;
+      state.releaseBlock = this.releaseReason(power, state.predictedLanding);
       state.targetValid = !this.releaseReason(state.targetPower, state.targetLanding);
       state.castObstruction = state.predictedLanding.obstruction;
       state.canRelease = !state.releaseBlock;

@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Target cast fixture (emulated native touch)</title>
+<style>html,body{margin:0;height:100%;background:#111}iframe{display:block;width:100%;height:100%;border:0}.test-tool{position:fixed;z-index:100;left:12px;top:12px;background:#111;color:white}</style>
+<iframe id="fixture" title="Target cast game fixture"></iframe>
+<button id="run-checks" class="test-tool">Check native-touch cast</button>
+<output id="check-result" class="test-tool"></output>
+<script type="module">
+  const page = new DOMParser().parseFromString(await (await fetch("../index.html")).text(), "text/html");
+  const base = page.createElement("base"); base.href = new URL("../", location.href).href; page.head.prepend(base);
+  const setup = page.createElement("script");
+  setup.textContent = `const nativeMatchMedia = window.matchMedia.bind(window);
+    window.matchMedia = (query) => { const result = nativeMatchMedia(query);
+      if (query === '(pointer: coarse)' || query === '(any-pointer: coarse)') Object.defineProperty(result, 'matches', { value: true }); return result; };
+    Object.defineProperty(navigator, 'maxTouchPoints', { value: 5 });`;
+  base.after(setup);
+  const frame = document.getElementById("fixture"), button = document.getElementById("run-checks"), report = document.getElementById("check-result");
+  frame.onload = () => frame.contentDocument.body.append(button, report);
+  frame.srcdoc = "<!doctype html>" + page.documentElement.outerHTML;
+  button.onclick = async () => {
+    const win = frame.contentWindow, game = win.snejFishing;
+    const check = (value, message) => { if (!value) throw new Error(message); };
+    const close = (a, b, message) => check(Math.abs(a - b) < 0.001, message);
+    const wait = () => new Promise(resolve => win.requestAnimationFrame(resolve));
+    let identifier = 800;
+    const tap = (target, x, y, cancel = false) => {
+      const touch = new win.Touch({ identifier: identifier++, target, clientX: x, clientY: y });
+      target.dispatchEvent(new win.TouchEvent("touchstart", { bubbles: true, cancelable: true, changedTouches: [touch], touches: [touch] }));
+      target.dispatchEvent(new win.TouchEvent(cancel ? "touchcancel" : "touchend", { bubbles: true, cancelable: true, changedTouches: [touch], touches: [] }));
+    };
+    const tapButton = () => {
+      const target = game.ui.el.mobileControls.querySelector("[data-mobile-cast]"), r = target.getBoundingClientRect();
+      tap(target, r.left + r.width / 2, r.top + r.height / 2);
+    };
+    try {
+      check(game.mode === "playing" && !game.server.enabled, "Enter the isolated local game first");
+      check(game.mobileInput.useTouchEvents, "Native touch was not selected");
+      game.cast.reset(); game.mobileInput.reset(); game.mobileInput.setActive(true);
+      // Find a genuine unobstructed shore spot in this test-only local world.
+      const start = game.pos.clone(); let found = false;
+      search: for (let dx = -18; dx <= 18; dx += 2) for (let dz = -18; dz <= 18; dz += 2) {
+        const x = start.x + dx, z = start.z + dz;
+        if (game.terrain.depthAt(x, z) > 0.05 || game.terrain.blockedAt(x, z, 0.34, game.terrain.heightAt(x, z) + 0.8)) continue;
+        game.pos.set(x, game.terrain.heightAt(x, z) + 0.04, z);
+        for (let i = 0; i < 32; i += 1) {
+          game.yaw = i * Math.PI / 16;
+          game.pitch = -Math.atan2(game.pos.y + 1.62, 2.6);
+          const point = { x: x + Math.sin(game.yaw) * 2.6, z: z + Math.cos(game.yaw) * 2.6 };
+          if (!game.isCastWater(point.x, point.z)) continue;
+          game.updateCast(0); game.cast.beginTargeting();
+          found = game.cast.selectTarget(point); game.cast.reset();
+          if (found) break search;
+        }
+      }
+      check(found, "No valid nearby shore test spot");
+      game.cameraMode = "third-person"; game.viewBlend = 1;
+      tapButton();
+      check(game.cast.state.fs === "aim" && game.cameraMode === "first-person", "Cast button did not start first-person aiming");
+      const pos = game.pos.clone(); game.keys.add("KeyW"); game.updateMove(0.1); game.keys.clear();
+      check(game.pos.distanceTo(pos) === 0, "Aiming allowed movement");
+      const rect = game.canvas.getBoundingClientRect(), x = rect.left + rect.width / 2, y = rect.top + rect.height / 2;
+      const surface = win.document.elementFromPoint(x, y);
+      check(surface === game.canvas || surface === game.ui.el.mobileLook, "Water tap covered by UI");
+      tap(surface, x, y, true); check(game.cast.state.fs === "aim", "Cancelled finger selected water");
+      tap(surface, x, y);
+      check(game.cast.state.fs === "charge", "Water tap did not start strength meter");
+      check(!game.castMeter.classList.contains("hidden"), "Strength meter invisible");
+      const hudVisible = game.ui.hudVisible;
+      game.ui.toggleHUD();
+      check(game.castMeter.getBoundingClientRect().height > 0, "Hidden HUD also hid the required casting meter");
+      if (game.ui.hudVisible !== hudVisible) game.ui.toggleHUD();
+      const chosen = { ...game.cast.state.aimPoint }, power = game.cast.state.targetPower;
+      game.cast.state.charge = power + 0.02; game.updateCast(0);
+      check(game.castMeterFill.classList.contains("on-target"), "Green timing not recognized");
+      tapButton(); check(game.cast.state.fs === "flight", "Second button tap did not release");
+      for (let i = 0; i < 600 && game.cast.state.fs === "flight"; i += 1) game.updateCast(1 / 60);
+      check(game.cast.state.fs === "wait" && game.cast.state.castPerfect, "Green throw failed");
+      close(Math.hypot(game.cast.state.bobber.x - chosen.x, game.cast.state.bobber.z - chosen.z), 0, "Green missed selected water point");
+      close(game.cast.castRange, game.cast.rig.lineLength - game.settings.floatDepth, "Wrong rig budget");
+      for (let i = 0; i < 90; i += 1) {
+        game.angler.update(1 / 60, { state: "playing", speed: 0, viewBlend: 0, camera: game.camera, castCamera: game.castCamera, castState: "wait" });
+      }
+      game.updateFloatRig(1 / 60);
+      check(game.cast.state.fs === "wait", "Settled model pulled cast into recovery");
+      close(Math.hypot(game.cast.state.bobber.x - chosen.x, game.cast.state.bobber.z - chosen.z), 0, "Settled model moved exact landing");
+      game.cast.reset(); game.updateCast(0); tapButton();
+      tap(win.document.elementFromPoint(x, y), x, y);
+      check(game.cast.state.fs === "charge", "Second cast failed");
+      win.document.getElementById("cast-cancel").click();
+      check(game.cast.state.fs === "idle" && game.cast.state.selectedTarget === null, "Cancel did not reset flow");
+      // Leave the real meter visible for layout and hit-area inspection.
+      tapButton(); tap(win.document.elementFromPoint(x, y), x, y);
+      await wait();
+      check(game.cast.state.fs === "charge", "Final meter preview missing");
+      // Freeze only the final test preview at green; the preceding throw used the real flow.
+      const tick = game.cast.tick.bind(game.cast);
+      game.cast.tick = (dt, ctx) => tick(game.cast.state.fs === "charge" ? 0 : dt, ctx);
+      game.cast.state.charge = game.cast.state.targetPower;
+      game.updateCast(0);
+      report.textContent = "PASS: native touch / first person / exact green / cancel / line-depth";
+      button.hidden = true;
+    } catch (error) { report.textContent = "FAIL: " + error.message; }
+  };
+</script>
+</html>

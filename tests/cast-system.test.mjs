@@ -8,7 +8,7 @@ const context = {
   waterSurfaceY: () => 0, terrainHeightAt: () => -4, terrainDepthAt: () => 4,
   dockBlocksSegment: () => false, lineObstruction: () => null
 };
-const make = () => new SnejCastSystem({ rodRange: 30, getCastOrigin: () => ({ x: 0, y: 3, z: 0.55 }) });
+const make = () => new SnejCastSystem({ rodRange: 60, getCastOrigin: () => ({ x: 0, y: 3, z: 0.55 }) });
 for (const [name, expected] of Object.entries({
   GRAVITY: 9.8, CAST_HEADROOM: 1.07, CAST_SPEED_MIN: 0.5, CAST_TOL: 0.06,
   CAST_MISS: 0.30, CHARGE_RATE: 0.4, FLIGHT_TIME_SCALE: 0.65,
@@ -133,7 +133,7 @@ for (const { range } of RODS) {
   for (const pitch of [-1.2, -0.5, -0.03]) {
     for (const fraction of [0.25, 0.5, 0.75, 1]) {
       const c = make();
-      c.setRodRange(range);
+      c.setRodRange(range * 2);
       const ctx = { ...context, pitch };
       c.tick(0, ctx);
       c.onActionDown();
@@ -155,7 +155,7 @@ for (const { range } of RODS) {
 for (const yaw of [0, Math.PI / 2, Math.PI]) {
   for (const offset of [{ x: 0.55, z: 0 }, { x: 0, z: -0.55 }]) {
     for (const fraction of [0, 0.05, 0.5, 1]) {
-      const c = new SnejCastSystem({ rodRange: 30, getCastOrigin: () => ({ ...offset, y: 3 }) });
+      const c = new SnejCastSystem({ rodRange: 60, getCastOrigin: () => ({ ...offset, y: 3 }) });
       const ctx = { ...context, yaw };
       c.tick(0, ctx);
       c.onActionDown();
@@ -209,7 +209,7 @@ assert.equal(changing.setRodRange(8), true);
 assert.equal(changing.state.fs, "idle");
 assert.equal(changing.maxLine, 4);
 changing.tick(0, context);
-assert.equal(changing.state.aimDist, 8);
+assert.equal(changing.state.aimDist, 4);
 assert.equal(changing.state.targetPower, 1);
 
 // Collision recovery remains a safeguard if scenery changes after a valid launch.
@@ -287,5 +287,5 @@ flatLine.onActionDown();
 flatLine.state.charge = 1;
 assert.equal(flatLine.onActionUp(), true, "A fixed sideways line must not be checked against obsolete vertical sag.");
 assert.equal(new SnejCastSystem().getCastOriginLocal().y, 1.4);
-assert.equal(new SnejCastSystem().castRange, 8);
+assert.equal(new SnejCastSystem().castRange, 4);
 console.log("Stage 4 cast physics tests passed.");

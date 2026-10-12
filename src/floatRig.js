@@ -9,7 +9,8 @@ export function rigForRod(length, depth = DEFAULT_FLOAT_DEPTH) {
   const lineLength = Number.isFinite(length) && length > 0 ? length : 4;
   const maxDepth = Math.max(0, lineLength - MIN_UPPER_LINE);
   const floatDepth = clamp(Number.isFinite(depth) ? depth : DEFAULT_FLOAT_DEPTH, 0, maxDepth);
-  return { lineLength, floatDepth, maxDepth, upperLine: lineLength - floatDepth, castRange: lineLength * 2 - floatDepth };
+  return { lineLength, floatDepth, maxDepth, upperLine: lineLength - floatDepth,
+    castRange: lineLength - floatDepth, rodReach: lineLength * 2 - floatDepth };
 }
 
 const point = () => ({ x: 0, y: 0, z: 0 });
@@ -110,8 +111,9 @@ export class SnejFloatRig {
       }
       const player = ctx.playerOrigin;
       const reach = player ? Math.hypot(this.target.x - player.x, this.target.z - player.z) : 0;
-      if (reach > rig.castRange) {
-        const scale = rig.castRange / reach;
+      // Casting uses the line budget; later pole corrections use the physical pole-plus-line span.
+      if (reach > rig.rodReach) {
+        const scale = rig.rodReach / reach;
         this.target.x = player.x + (this.target.x - player.x) * scale;
         this.target.z = player.z + (this.target.z - player.z) * scale;
       } else if (d <= radius + 1e-8) break;

@@ -463,6 +463,8 @@ legend {
 
 .cast-meter {
   position: fixed;
+  z-index: 13;
+  pointer-events: none;
   left: 50%;
   bottom: 110px;
   transform: translateX(-50%);
@@ -492,6 +494,14 @@ legend {
 .cast-meter-tol.invalid { background: rgba(255, 90, 74, 0.25); }
 .cast-meter-status { font-size: 12px; line-height: 16px; min-height: 16px; margin-bottom: 5px; }
 .cast-meter-target { z-index: 2; }
+.cast-meter-label { margin-bottom: 4px; color: #f5cf6b; font-size: 15px; }
+.cast-meter-cursor { position: absolute; top: 0; bottom: 0; width: 4px; background: #f5cf6b; transform: translateX(-2px); z-index: 3; }
+.cast-meter-tol { background: rgba(80, 230, 120, 0.75); }
+.cast-actions { position: fixed; z-index: 14; bottom: max(18px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); width: min(430px, calc(100% - 32px)); text-align: center; pointer-events: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.cast-action-buttons { display: flex; justify-content: center; gap: 10px; }
+.cast-actions button { min-height: 48px; min-width: 110px; pointer-events: auto; touch-action: manipulation; }
+.cast-instruction:not(:empty) { margin-bottom: 8px; padding: 8px 12px; border-radius: 6px; background: rgba(16, 30, 25, 0.9); color: #eff6f1; font-size: 13px; }
+.cast-session #hint-bar { display: none; }
 
 .toast {
   position: fixed;

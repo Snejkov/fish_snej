@@ -9,8 +9,8 @@ import { SnejAudio, DEFAULT_AMBIENT_VOLUME, AMBIENT_DEFAULTS_VERSION, migrateAmb
 import {
   SnejCastSystem, CAST_TOL, SPLASH_BASE, SPLASH_MIN, SPLASH_SCALE,
   STARTLE_R, STARTLE_SEC, WAKE_BOB_AMP, WAKE_BOB_FREQ
-} from "./castSystem.js?v=0.0.5a-hf7";
-import { DEFAULT_FLOAT_DEPTH, FLOAT_RETRIEVE_FRACTION, SnejFloatRig, limitLineEnd, writeFixedLine } from "./floatRig.js?v=0.0.5a-hf4";
+} from "./castSystem.js?v=target-cast-1";
+import { DEFAULT_FLOAT_DEPTH, FLOAT_RETRIEVE_FRACTION, SnejFloatRig, limitLineEnd, writeFixedLine } from "./floatRig.js?v=target-cast-1";
 import { SnejAuth, SNEJKOV_ID, SNEJKOV_NAME } from "./auth.js";
 import { SnejServerClient, editableProfile } from "./serverClient.js?v=guests-1";
 import { DEFAULT_LANGUAGE, normalizeLanguage, setLanguage, t, translateText, errorMessage } from "./i18n.js";
@@ -24,8 +24,8 @@ import { SnejSky } from "./sky.js";
 import { SPAWNS, SPAWN_INITIAL_NAME, SPAWN_NAMES } from "./spawns.js";
 import { SnejTerrain } from "./terrain.js";
 import { SnejTextureManager } from "./textureManager.js";
-import { SnejUI } from "./ui.js?v=joystick-3";
-import { SnejMobileInput, movementInput, requestLandscape } from "./mobileInput.js?v=safari-touch-4";
+import { SnejUI } from "./ui.js?v=target-cast-1";
+import { SnejMobileInput, movementInput, requestLandscape } from "./mobileInput.js?v=target-cast-1";
 import { SnejWater } from "./water.js?v=0.0.5a-hf3";
 import { clamp, clamp01, damp, lerp, moveDelta, resolveWalkableStart } from "./util.js?v=0.0.3-hf2.12";
 
@@ -98,6 +98,11 @@ export class SnejFishingGame {
     this.castMeterTol = this.castMeter.querySelector(".cast-meter-tol");
     this.castMeterDistance = this.castMeter.querySelector(".cast-meter-distance");
     this.castMeterStatus = this.castMeter.querySelector(".cast-meter-status");
+    this.castMeterCursor = this.castMeter.querySelector(".cast-meter-cursor");
+    this.castActions = document.getElementById("cast-actions");
+    this.castStartButton = document.getElementById("cast-start");
+    this.castCancelButton = document.getElementById("cast-cancel");
+    this.castInstruction = document.getElementById("cast-instruction");
     this.rodReadout = document.getElementById("rod-line");
     this.floatDepthInput = document.getElementById("float-depth");
     this.floatDepthReadout = document.getElementById("float-depth-line");
@@ -218,9 +223,11 @@ export class SnejFishingGame {
     this.mobileInput = new SnejMobileInput({
       canvas: this.canvas, controls: this.ui.el.mobileControls,
       canInteract: () => this.canCast() && !this.ui.rosterOpen,
-      onCastStart: () => this.beginCastAction(),
-      onCastEnd: () => this.endCastAction(),
-      onCastCancel: () => this.cancelCastAction(),
+      onCastStart: () => this.canCast() && this.cast.state.fs !== "flight",
+      onCastEnd: () => this.beginCastAction(),
+      onCastCancel: () => {},
+      onTap: (x, y) => this.handleCastTap(x, y),
+      isTargeting: () => ["aim", "charge"].includes(this.cast.state.fs),
       onAvailability: (enabled) => document.documentElement.classList.toggle("touch-device", enabled)
     });
     this.resize();
@@ -332,6 +339,8 @@ export class SnejFishingGame {
   }
 
   installEvents() {
+    this.castStartButton.addEventListener("click", () => this.beginCastAction());
+    this.castCancelButton.addEventListener("click", () => this.cancelCastAction());
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden) this.worldClock.refresh(true);
     });
@@ -359,6 +368,10 @@ export class SnejFishingGame {
         return;
       }
       if (event.code === "KeyU" && !event.repeat) this.ui.toggleHUD();
+      if (event.code === "KeyC" && !event.repeat && this.canCast()) {
+        this.beginCastAction();
+        return;
+      }
       if (event.code === "KeyV" && !event.repeat && this.mode === "playing" && !this.ui.buildOpen && !this.ui.profileOpen && !this.ui.inventoryOpen && !this.ui.modalOpen) {
         this.toggleView();
         return;
@@ -373,6 +386,7 @@ export class SnejFishingGame {
         else if (this.ui.inventoryOpen) this.ui.closeInventory();
         else if (this.ui.buildOpen) this.ui.discardBuild();
         else if (this.ui.profileOpen) this.ui.closeProfile();
+        else if (["aim", "charge"].includes(this.cast.state.fs)) this.cancelCastAction();
         else if (this.mode === "playing") this.pause();
         else if (this.mode === "paused") this.resume();
         return;
@@ -401,17 +415,14 @@ export class SnejFishingGame {
       });
       surface.addEventListener("touchstart", () => { this.lastTouchCanvas = performance.now(); }, { passive: true });
       surface.addEventListener("mousedown", (event) => {
-        if (event.button === 0 && !this.isTouchCompatibilityEvent(event)) this.beginCastAction();
+        if (event.button === 0 && !this.isTouchCompatibilityEvent(event)) this.handleCastTap(event.clientX, event.clientY);
       });
       surface.addEventListener("click", (event) => {
-        if (this.isTouchCompatibilityEvent(event) || !this.canCast()) return;
+        if (this.isTouchCompatibilityEvent(event) || !this.canCast() || ["aim", "charge", "flight"].includes(this.cast.state.fs)) return;
         this.audio.resume();
         this.canvas.requestPointerLock();
       });
     }
-    window.addEventListener("mouseup", (event) => {
-      if (event.button === 0 && !this.isTouchCompatibilityEvent(event)) this.endCastAction();
-    });
     window.addEventListener("blur", () => {
       this.cast.cancelCharge();
       this.castMeter.classList.add("hidden");
@@ -432,15 +443,76 @@ export class SnejFishingGame {
 
   beginCastAction() {
     if (!this.canCast()) return false;
+    if (this.cast.state.fs === "charge") { this.endCastAction(); return true; }
+    if (this.cast.state.fs === "aim") { this.ui.showToast("Tap the water to choose a target."); return false; }
+    if (this.cast.state.fs === "flight") return false;
+    if (!this.castWaterNearby()) { this.ui.showToast("Move closer to the water."); return false; }
     this.audio.resume();
-    // Starting another cast clears the previous float and its fixed rig.
-    if (this.cast.state.fs === "wait") this.cast.reset();
     this.updateCast(0);
-    if (!this.cast.onActionDown()) return false;
+    if (!this.cast.beginTargeting()) return false;
+    this.floatRig.reset();
+    this.cameraMode = "first-person";
+    this.viewBlend = 0;
+    this.viewTransition = null;
+    this.pitch = Math.min(this.pitch, -Math.atan2(EYE_H, Math.max(1, this.cast.castRange * 0.75)));
+    this.camera.position.copy(this.pos).y += EYE_H;
+    this.updateCamera(0);
+    this.ui.updateViewChip(this);
+    this.keys.clear();
+    this.mobileInput?.reset();
+    if (document.pointerLockElement) document.exitPointerLock();
     this.ui.el.toast.classList.add("hidden");
+    this.updateCast(0);
+    return true;
+  }
+
+  castWaterNearby() {
+    for (let r = Math.min(0.5, this.cast.castRange); r <= this.cast.castRange + 1e-8; r += 0.25) {
+      for (let i = 0; i < 32; i += 1) {
+        const angle = i * Math.PI / 16;
+        if (this.isCastWater(this.pos.x + Math.sin(angle) * r, this.pos.z + Math.cos(angle) * r)) return true;
+      }
+    }
+    return false;
+  }
+
+  handleCastTap(x, y) {
+    if (!this.canCast()) return false;
+    if (this.cast.state.fs === "charge") { this.endCastAction(); return true; }
+    if (this.cast.state.fs !== "aim") return false;
+    const rect = this.canvas.getBoundingClientRect();
+    if (!Number.isFinite(x) || !Number.isFinite(y) || !rect.width || !rect.height) return false;
+    const pointer = new THREE.Vector2((x - rect.left) / rect.width * 2 - 1, 1 - (y - rect.top) / rect.height * 2);
+    this.camera.updateMatrixWorld();
+    const ray = new THREE.Raycaster();
+    ray.setFromCamera(pointer, this.camera);
+    const target = ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -this.water.surfaceY(this.pos.x, this.pos.z)), new THREE.Vector3());
+    if (!target || !this.isCastWater(target.x, target.z)) { this.ui.showToast("Tap the water to choose a target."); return false; }
+    this.updateCast(0);
+    if (!this.cast.selectTarget(target)) {
+      this.ui.showToast(this.toastForCastRejection(this.cast.state.lastRejection));
+      return false;
+    }
+    // Face the selected point so the settled pole and fixed line follow the chosen heading.
+    this.yaw = this.cast.state.aimYaw;
+    this.updateCamera(0);
     this.audio.charge();
     this.updateCast(0);
     return true;
+  }
+
+  updateCastControls(enabled) {
+    if (!this.castActions) return;
+    const fs = this.cast.state.fs, session = ["aim", "charge"].includes(fs);
+    this.castActions.classList.toggle("hidden", !enabled);
+    this.castCancelButton.classList.toggle("hidden", !session);
+    this.castStartButton.disabled = fs === "flight" || fs === "aim";
+    const label = fs === "charge" ? "Stop cast" : "Cast";
+    this.castStartButton.textContent = t(label);
+    const mobile = this.ui.el.mobileControls?.querySelector("[data-mobile-cast]");
+    if (mobile) { mobile.dataset.i18n = label; mobile.textContent = t(label); mobile.disabled = fs === "flight"; }
+    this.castInstruction.textContent = t(fs === "aim" ? "Tap the water to choose a target." : fs === "charge" ? "Tap again when the marker reaches green." : "");
+    document.documentElement.classList.toggle("cast-session", enabled && session);
   }
 
   endCastAction() {
@@ -458,7 +530,11 @@ export class SnejFishingGame {
 
   cancelCastAction() {
     this.cast.cancelCharge();
+    this.mobileInput?.reset();
+    this.keys.clear();
+    this.mouse.dx = this.mouse.dy = 0;
     this.updateCast(0);
+    this.updateCastVisuals();
   }
 
   resize() {
@@ -773,6 +849,7 @@ export class SnejFishingGame {
   }
 
   toggleView() {
+    if (["aim", "charge"].includes(this.cast.state.fs)) return;
     const next = this.cameraMode === "first-person" ? "third-person" : "first-person";
     this.cameraMode = next;
     this.viewTransition = {
@@ -1091,7 +1168,7 @@ export class SnejFishingGame {
 
   canCast() {
     return this.mode === "playing" && (!this.server?.enabled || (this.multiplayer.connected && !this.serverBusy))
-      && !this.ui.buildOpen && !this.ui.profileOpen && !this.ui.inventoryOpen && !this.ui.modalOpen;
+      && !this.ui.buildOpen && !this.ui.profileOpen && !this.ui.inventoryOpen && !this.ui.modalOpen && !this.ui.rosterOpen;
   }
 
   applyRod(rod) {
@@ -1102,13 +1179,13 @@ export class SnejFishingGame {
     this.settings.floatDepth = this.cast.rig.floatDepth;
     this.floatDepthInput.max = String(this.cast.rig.maxDepth);
     this.floatDepthInput.value = String(this.settings.floatDepth);
-    this.rodReadout.textContent = t("Rod {length} m / Range {range} m", { length: rod.length, range: rod.range });
+    this.rodReadout.textContent = t("Rod {length} m / Range {range} m", { length: rod.length, range: this.cast.castRange });
     this.floatDepthReadout.textContent = t("Depth {depth} m / Line {length} m", { depth: Number(this.settings.floatDepth.toFixed(2)), length: rod.length });
   }
 
   selectRod(length) {
     const rod = RODS.find((item) => item.length === length);
-    if (!rod || this.cast.state.fs === "charge" || this.cast.state.fs === "flight") return false;
+    if (!rod || ["aim", "charge", "flight"].includes(this.cast.state.fs)) return false;
     if (this.inventory && !this.inventory.equip(rod.id).ok) return false;
     this.applyRod(rod);
     this.updateCast(0);
@@ -1118,7 +1195,7 @@ export class SnejFishingGame {
   }
 
   equipGear(itemId) {
-    if (this.cast.state.fs === "charge" || this.cast.state.fs === "flight") {
+    if (["aim", "charge", "flight"].includes(this.cast.state.fs)) {
       return { ok: false, message: "Equipment is locked during the cast." };
     }
     if (this.server.enabled) return this.serverCommand("equip", itemId);
@@ -1135,7 +1212,7 @@ export class SnejFishingGame {
 
   selectFloatDepth(depth) {
     if (!Number.isFinite(depth) || depth < 0 || depth > this.cast.rig.maxDepth
-      || this.cast.state.fs === "charge" || this.cast.state.fs === "flight") return false;
+      || ["aim", "charge", "flight"].includes(this.cast.state.fs)) return false;
     this.settings.floatDepth = depth;
     this.applyRod(rodForLength(this.settings.rodLength));
     this.updateCast(0);
@@ -1187,19 +1264,21 @@ export class SnejFishingGame {
         direction: this.camera.getWorldDirection(this.castAimDirection)
       };
     }
-    const previewing = this.cast.state.fs === "idle" || this.cast.state.fs === "charge";
+    const previewing = ["idle", "aim", "charge"].includes(this.cast.state.fs);
     const rodTip = previewing && this.castCamera && this.angler.getCastHoldTip
       ? this.angler.getCastHoldTip(this.castCamera, this.castTip) : this.angler.getRodTip(this.castTip);
     Object.assign(this.castContext, { yaw: this.yaw, pitch: this.pitch, pos: this.pos, rodTip });
     const previous = this.cast.state.fs;
     const wasRetrieving = this.cast.state.retrieving;
     const state = this.cast.tick(dt, this.castContext);
-    this.floatDepthInput.disabled = state.fs === "charge" || state.fs === "flight";
+    this.floatDepthInput.disabled = ["aim", "charge", "flight"].includes(state.fs);
+    this.updateCastControls?.(enabled);
     const charging = enabled && state.fs === "charge";
     const onTarget = charging && state.canRelease && Math.abs(state.charge - state.targetPower) <= CAST_TOL;
     this.castMeter.classList.toggle("hidden", !charging);
     if (charging) {
       this.castMeterFill.style.width = `${(state.charge * 100).toFixed(1)}%`;
+      if (this.castMeterCursor) this.castMeterCursor.style.left = `${state.charge * 100}%`;
       this.castMeterFill.classList.toggle("on-target", onTarget);
       this.castMeterFill.classList.toggle("blocked", !state.canRelease);
       this.castMeterDistance.textContent = translateText(`${state.requestedDist.toFixed(1)} / ${this.cast.castRange} m`);
@@ -1213,15 +1292,15 @@ export class SnejFishingGame {
           : t(depth < this.settings.floatDepth ? "Ready / Water {depth} m / Bottom contact" : "Ready / Water {depth} m", { depth: depth.toFixed(2) });
         if (this.castMeterStatus.textContent !== status) this.castMeterStatus.textContent = status;
       }
-      const lower = Math.max(0, state.minCastDist / this.cast.castRange, state.targetPower - CAST_TOL);
+      const lower = Math.max(0, state.selectedTarget ? 0 : state.minCastDist / this.cast.castRange, state.targetPower - CAST_TOL);
       const upper = Math.min(1, state.targetPower + CAST_TOL);
       this.castMeterTol.style.left = `${Math.min(lower, upper) * 100}%`;
       this.castMeterTol.style.width = `${Math.max(0, upper - lower) * 100}%`;
       this.castMeter.setAttribute("aria-valuenow", (state.charge * 100).toFixed(0));
       this.castMeter.setAttribute("aria-valuetext", t("{distance} of {range} meters", { distance: state.requestedDist.toFixed(1), range: this.cast.castRange }));
     }
-    const markerPoint = charging ? state.predictedLanding : state.targetLanding;
-    this.aimMarker.visible = enabled && state.aimValid && (state.fs === "idle" || charging)
+    const markerPoint = state.selectedTarget ? state.targetLanding : charging ? state.predictedLanding : state.targetLanding;
+    this.aimMarker.visible = enabled && state.aimValid && (["idle", "aim"].includes(state.fs) || charging)
       && this.cast.isWaterAt(markerPoint);
     if (this.aimMarker.visible) {
       this.placeCastMarker(this.aimMarker, markerPoint, 0.05);
@@ -1418,6 +1497,11 @@ export class SnejFishingGame {
     const adjusting = this.cast.state.fs === "flight" || this.cast.state.fs === "wait";
     const sensitivity = this.settings.sens * 0.0022 * (adjusting ? CAST_LOOK_SCALE : 1);
     const touch = this.mobileInput?.takeLook() || { dx: 0, dy: 0 };
+    if (this.cast.state.fs === "charge" && this.cast.state.selectedTarget) {
+      this.mouse.dx = this.mouse.dy = 0;
+      this.castAdjusting = false;
+      return;
+    }
     let dx = (this.mouse.dx + touch.dx) * sensitivity, dy = (this.mouse.dy + touch.dy) * sensitivity;
     if (adjusting) {
       const amount = Math.hypot(dx, dy), limit = CAST_LOOK_SPEED * Math.max(0, dt);
@@ -1433,7 +1517,7 @@ export class SnejFishingGame {
 
   updateMove(dt) {
     if (!this.terrain) return;
-    if (this.cast.state.fs === "flight" || this.cast.state.fs === "wait") {
+    if (["aim", "charge", "flight", "wait"].includes(this.cast.state.fs)) {
       this.moveAmt = 0;
       this.moveSpeed = 0;
       this.stepTimer = 0;

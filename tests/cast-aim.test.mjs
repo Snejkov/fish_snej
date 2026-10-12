@@ -11,7 +11,7 @@ const context = {
   isWaterAt: (x, z) => z > 1,
   aimRay: { origin: { x: 0, y: 3, z: -4 }, direction: direction(0, -3, 9) }
 };
-const cast = new SnejCastSystem({ rodRange: 8, floatDepth: 0.5 });
+const cast = new SnejCastSystem({ rodRange: 16, floatDepth: 0.5 });
 cast.tick(0, context);
 assert.equal(cast.state.aimValid, true, "Actual downward camera ray must work with positive third-person orbit pitch.");
 assert.ok(Math.abs(cast.state.aimPoint.z - 5) < 1e-9);

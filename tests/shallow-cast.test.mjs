@@ -70,7 +70,7 @@ const ctx = {
 };
 for (const rod of [4, 5, 6]) {
   for (const depth of [0.5, 1, 2]) {
-    for (const meters of [1, 1.5, 2 * rod - depth]) {
+    for (const meters of [1, 1.5, rod - depth]) {
       for (const fps of [30, 60, 144]) {
         const cast = new SnejCastSystem({ rodRange: rod * 2, floatDepth: depth });
         const current = { ...ctx, aimRay: { ...ctx.aimRay, direction: { x: 0, y: -1.67, z: meters } } };
@@ -103,7 +103,7 @@ for (const rod of [4, 5, 6]) {
       let length = 0;
       for (let i = 3; i < positions.length; i += 3) length += Math.hypot(...[0, 1, 2].map((j) => positions[i + j] - positions[i + j - 3]));
       assert.ok(Math.abs(length + follower.actualDepth + follower.bottomSlack - rod) < 0.00003);
-      assert.equal(rig.castRange, rod * 2 - depth, "Bottom contact never increases the configured range.");
+      assert.equal(rig.castRange, rod - depth, "Bottom contact never increases the configured range.");
     }
   }
 }

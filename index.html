@@ -5,17 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>SnejFishing -- Lakeside</title>
     <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=">
-    <link rel="stylesheet" href="./styles.css?v=0.0.5a-hf3">
+    <link rel="stylesheet" href="./styles.css?v=target-cast-1">
     <link rel="stylesheet" href="./styles/build.css?v=0.0.3-hf2.12">
     <link rel="stylesheet" href="./styles/profile.css?v=accounts-1">
     <link rel="stylesheet" href="./styles/multiplayer.css?v=guests-1">
-    <link rel="stylesheet" href="./styles/mobile.css?v=safari-touch-4">
+    <link rel="stylesheet" href="./styles/mobile.css?v=target-cast-1">
     <script type="importmap">
       {
         "imports": {
           "three": "./vendor/three.module.min.js",
-          "./src/game.js?v=0.0.4-hf7": "./src/game.js?v=safari-touch-4",
-          "./src/i18n.js": "./src/i18n.js?v=mobile-1",
+          "./src/game.js?v=0.0.4-hf7": "./src/game.js?v=target-cast-1",
+          "./src/i18n.js": "./src/i18n.js?v=target-cast-1",
+          "./src/floatRig.js?v=0.0.5a-hf4": "./src/floatRig.js?v=target-cast-1",
           "./src/multiplayer/client.js": "./src/multiplayer/client.js?v=guests-1",
           "./src/multiplayer/room.js": "./src/multiplayer/room.js?v=remote-angler-2",
           "./src/gear/inventory.js": "./src/gear/inventory.js?v=0.0.5a-hf8",
@@ -219,7 +220,7 @@
             </div>
             <div class="inventory-rig">
               <label class="field" for="float-depth"><span>Float depth (m)</span><input id="float-depth" type="number" min="0" max="3.75" step="0.05" value="0.5"></label>
-              <div class="profile-row"><span>Cast range</span><strong id="inventory-cast-range">7.5 m</strong></div>
+              <div class="profile-row"><span>Cast range</span><strong id="inventory-cast-range">3.5 m</strong></div>
             </div>
           </section>
           <section class="inventory-browser" aria-label="Available gear">
@@ -304,24 +305,35 @@
           <div id="pos-line">x 0.0, z 0.0</div>
           <div id="depth-line">On land</div>
           <div id="camera-line">Third Person</div>
-          <div id="rod-line">Rod 4 m / Cast 7.5 m</div>
+          <div id="rod-line">Rod 4 m / Cast 3.5 m</div>
           <div id="float-depth-line">Depth 0.5 m / Line 4 m</div>
           <div id="bait-line">Bait: Earthworm x10</div>
         </div>
         <div id="fps" class="hud-box">0 FPS</div>
-        <div id="cast-meter" class="hud-box cast-meter hidden" role="meter" aria-label="Cast distance" aria-describedby="cast-meter-status" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-          <div class="cast-meter-distance">0.0 / 7.5 m</div>
+      </div>
+        <div id="cast-meter" class="hud-box cast-meter hidden" role="meter" aria-label="Cast strength" aria-describedby="cast-meter-status" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div class="cast-meter-label">Cast strength</div>
+          <div class="cast-meter-distance">0.0 / 3.5 m</div>
           <div class="cast-meter-status" id="cast-meter-status"></div>
           <div class="cast-meter-track">
             <div class="cast-meter-tol"></div>
             <div class="cast-meter-fill"></div>
             <div class="cast-meter-target"></div>
+            <div class="cast-meter-cursor"></div>
           </div>
+        </div>
+
+      <div id="cast-actions" class="cast-actions hidden">
+        <div id="cast-instruction" class="cast-instruction" role="status"></div>
+        <div class="cast-action-buttons">
+          <button id="cast-start" type="button">Cast</button>
+          <button id="cast-cancel" type="button" class="hidden">Cancel</button>
         </div>
       </div>
 
       <div id="hint-bar" class="hidden">
         Move WASD &middot; Sprint Shift &middot; Look Mouse &middot;
+        <span class="chip" data-i18n="Cast">Cast</span> [C] &middot;
         <span id="view-chip" class="chip">[V] View: Third Person</span> &middot;
         <span id="build-chip" class="chip">[B] Build (locked)</span> &middot;
         <span class="chip">[P] Profile</span> &middot; Esc Menu &middot; U Toggle HUD

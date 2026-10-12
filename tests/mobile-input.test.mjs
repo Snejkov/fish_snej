@@ -287,6 +287,32 @@ nativeController.destroy();
 nativeEnvironment.document.dispatchEvent(touchEvent("touchmove", [65, 66, 0]));
 assert.equal(nativeCaptureCalls, 0, "Native multi-touch never invokes the unavailable capture API.");
 
+const taps = [];
+let targeting = false;
+const tapController = new SnejMobileInput({ canvas, controls, environment: nativeEnvironment,
+  canInteract: () => true, isTargeting: () => targeting, onTap: (x, y) => taps.push([x, y]) });
+tapController.setActive(true);
+canvas.dispatchEvent(touchEvent("touchstart", [70, 200, 200]));
+nativeEnvironment.document.dispatchEvent(touchEvent("touchend", [70, 200, 200]));
+assert.deepEqual(taps, [], "Left canvas is untouched during ordinary walking.");
+targeting = true;
+canvas.dispatchEvent(touchEvent("touchstart", [71, 200, 200]));
+nativeEnvironment.document.dispatchEvent(touchEvent("touchend", [71, 201, 202]));
+assert.deepEqual(taps, [[201, 202]], "The left half can select water during aiming.");
+lookZone.dispatchEvent(touchEvent("touchstart", [72, 600, 200]));
+nativeEnvironment.document.dispatchEvent(touchEvent("touchmove", [72, 630, 200]));
+nativeEnvironment.document.dispatchEvent(touchEvent("touchmove", [72, 600, 200]));
+nativeEnvironment.document.dispatchEvent(touchEvent("touchend", [72, 600, 200]));
+assert.equal(taps.length, 1, "A camera swipe returning to its origin is not a targeting tap.");
+lookZone.dispatchEvent(touchEvent("touchstart", [73, 600, 200]));
+nativeEnvironment.document.dispatchEvent(touchEvent("touchcancel", [73, 600, 200]));
+assert.equal(taps.length, 1, "Cancelled touches cannot select or stop a cast.");
+lookZone.dispatchEvent(touchEvent("touchstart", [74, 600, 200]));
+nativeEnvironment.document.dispatchEvent(touchEvent("touchend", [74, 600, 200]));
+assert.deepEqual(taps.at(-1), [600, 200]);
+assert.equal(nativeCaptureCalls, 0);
+tapController.destroy();
+
 // Pointer-only devices remain usable even when capture throws.
 const uncapturedController = new SnejMobileInput({ canvas, controls, environment, canInteract: () => true });
 uncapturedController.setActive(true);
@@ -300,6 +326,20 @@ assert.equal(uncapturedController.captures.size, 0);
 assert.equal(uncapturedController.uncaptured.size, 0);
 uncapturedController.destroy();
 [stick, lookZone, cast, run].forEach((target, i) => { target.setPointerCapture = captureMethods[i]; });
+
+const pointerTaps = [];
+const pointerTapController = new SnejMobileInput({ canvas, controls, environment, canInteract: () => true,
+  isTargeting: () => true, onTap: (x, y) => pointerTaps.push([x, y]) });
+pointerTapController.setActive(true);
+canvas.dispatchEvent(pointer("pointerdown", 81, 100, 100));
+canvas.dispatchEvent(pointer("pointermove", 81, 140, 100));
+assert.equal(pointerTapController.state.look.travel, 40, "Captured left-canvas pointers retain swipe tracking.");
+canvas.dispatchEvent(pointer("pointerup", 81, 140, 100));
+assert.deepEqual(pointerTaps, []);
+canvas.dispatchEvent(pointer("pointerdown", 82, 100, 100));
+canvas.dispatchEvent(pointer("pointerup", 82, 101, 100));
+assert.deepEqual(pointerTaps, [[101, 100]]);
+pointerTapController.destroy();
 
 const order = [];
 const document = { fullscreenElement: null };

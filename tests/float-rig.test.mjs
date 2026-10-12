@@ -12,14 +12,14 @@ const lengthOf = (positions) => {
 };
 const context = { surfaceY: () => 0, isWaterAt: () => true, lineObstruction: () => null, playerOrigin: { x: 0, z: 0 } };
 
-assert.deepEqual(rigForRod(5, 0.5), { lineLength: 5, floatDepth: 0.5, maxDepth: 4.75, upperLine: 4.5, castRange: 9.5 });
+assert.deepEqual(rigForRod(5, 0.5), { lineLength: 5, floatDepth: 0.5, maxDepth: 4.75, upperLine: 4.5, castRange: 4.5, rodReach: 9.5 });
 assert.equal(rigForRod(4, -1).floatDepth, 0);
 assert.equal(rigForRod(4, 99).floatDepth, 3.75);
 assert.equal(rigForRod(4, NaN).floatDepth, 0.5);
 for (const rod of [4, 5, 6]) {
   for (const depth of [0, 0.5, 1, 2]) {
     const rig = rigForRod(rod, depth);
-    assert.equal(rig.castRange, rod * 2 - depth);
+    assert.equal(rig.castRange, rod - depth);
     assert.equal(rig.upperLine + rig.floatDepth, rod);
     for (const fps of [30, 60, 144]) {
       const model = new SnejFloatRig();
@@ -32,7 +32,7 @@ for (const rod of [4, 5, 6]) {
         tip.x = Math.sin(frame / fps) * 0.8;
         assert.equal(model.follow(1 / fps, tip, bobber, rig, context), true);
         assert.ok(distance(tip, bobber) <= rig.upperLine + 1e-6);
-        assert.ok(Math.hypot(bobber.x, bobber.z) <= rig.castRange + 1e-6);
+        assert.ok(Math.hypot(bobber.x, bobber.z) <= rig.rodReach + 1e-6);
         assert.equal(model.hook.y, bobber.y - depth);
         assert.equal(writeFixedLine(tip, bobber, rig.upperLine, positions), true);
         assert.ok(Math.abs(lengthOf(positions) + depth - rod) < 0.00003, "The visible polyline and underwater drop must retain the configured total length.");
@@ -76,7 +76,7 @@ for (const rod of [4, 5, 6]) {
       assert.equal(cast.onActionUp(), true);
       for (let i = 0; i < 600 && cast.state.fs === "flight"; i += 1) cast.tick(1 / 60, ctx);
       assert.equal(cast.state.fs, "wait");
-      assert.ok(Math.abs(cast.state.castDist - (rod * 2 - depth) * fraction) < 0.0001);
+      assert.ok(Math.abs(cast.state.castDist - (rod - depth) * fraction) < 0.0001);
       assert.equal(cast.maxLine, rod);
     }
   }
@@ -93,7 +93,7 @@ assert.equal(deep.state.lastRejection, null);
 assert.equal(deep.state.fs, "flight");
 deep.reset();
 assert.equal(deep.setRodRange(10, 0.5), true);
-assert.equal(deep.castRange, 9.5);
+assert.equal(deep.castRange, 4.5);
 deep.onActionDown();
 assert.equal(deep.setRodRange(10, 1), false);
 assert.equal(deep.rig.floatDepth, 0.5);

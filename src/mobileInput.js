@@ -56,7 +56,7 @@ export class MobileInputState {
 
   beginLook(id, x, y) {
     if (this.look || !this.canClaim(id)) return false;
-    this.look = { id, x: finite(x), y: finite(y) };
+    this.look = { id, x: finite(x), y: finite(y), startX: finite(x), startY: finite(y), travel: 0 };
     return true;
   }
 
@@ -66,6 +66,7 @@ export class MobileInputState {
     y = finite(y);
     this.dx += x - this.look.x;
     this.dy += y - this.look.y;
+    this.look.travel = Math.max(this.look.travel, Math.hypot(x - this.look.startX, y - this.look.startY));
     this.look.x = x;
     this.look.y = y;
     return true;
@@ -126,7 +127,7 @@ export async function requestLandscape(environment = globalThis, element = envir
 }
 
 export class SnejMobileInput {
-  constructor({ canvas, controls, canInteract, onCastStart, onCastEnd, onCastCancel, onAvailability, environment = globalThis }) {
+  constructor({ canvas, controls, canInteract, onCastStart, onCastEnd, onCastCancel, onTap, isTargeting, onAvailability, environment = globalThis }) {
     this.canvas = canvas;
     this.controls = controls;
     this.environment = environment;
@@ -134,6 +135,8 @@ export class SnejMobileInput {
     this.onCastStart = onCastStart;
     this.onCastEnd = onCastEnd;
     this.onCastCancel = onCastCancel;
+    this.onTap = onTap;
+    this.isTargeting = isTargeting;
     this.onAvailability = onAvailability;
     this.state = new MobileInputState();
     this.captures = new Map();
@@ -171,7 +174,15 @@ export class SnejMobileInput {
       if (this.state.moveStick(event.pointerId, event.clientX, event.clientY)) this.paintStick();
     });
     this.listen(this.lookZone, "pointerdown", pointerStart(this.beginLook));
+    if (canvas !== this.lookZone) this.listen(canvas, "pointerdown", pointerStart(function(event) {
+      if (this.isTargeting?.()) this.beginLook(event);
+    }));
     this.listen(this.lookZone, "pointermove", (event) => {
+      if (this.state.look?.id !== event.pointerId) return;
+      if (!this.available()) return this.reset();
+      this.state.moveLook(event.pointerId, event.clientX, event.clientY);
+    });
+    if (canvas !== this.lookZone) this.listen(canvas, "pointermove", (event) => {
       if (this.state.look?.id !== event.pointerId) return;
       if (!this.available()) return this.reset();
       this.state.moveLook(event.pointerId, event.clientX, event.clientY);
@@ -188,7 +199,13 @@ export class SnejMobileInput {
         for (const touch of Array.from(event.changedTouches || [])) start.call(this, this.touchPointer(touch, event));
       }, { passive: false });
     }
-    this.listen(canvas, "touchstart", (event) => { if (this.available()) event.preventDefault(); }, { passive: false });
+    this.listen(canvas, "touchstart", (event) => {
+      if (!this.available()) return;
+      event.preventDefault();
+      if (canvas !== this.lookZone && this.useTouchEvents && this.isTargeting?.()) {
+        for (const touch of Array.from(event.changedTouches || [])) this.beginLook(this.touchPointer(touch, event));
+      }
+    }, { passive: false });
     this.listen(environment.document, "touchmove", (event) => {
       if (!this.useTouchEvents) return;
       for (const touch of Array.from(event.changedTouches || [])) {
@@ -219,7 +236,7 @@ export class SnejMobileInput {
         if (this.uncaptured.has(event.pointerId)) this.finish(event, type === "pointercancel");
       }, { capture: true });
     }
-    for (const target of [this.lookZone, this.stick, this.castButton, this.runButton]) {
+    for (const target of [canvas, this.lookZone, this.stick, this.castButton, this.runButton]) {
       for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) {
         this.listen(target, type, (event) => this.finish(event, type !== "pointerup"));
       }
@@ -309,7 +326,7 @@ export class SnejMobileInput {
     if (!this.available(event)) return;
     // Suppress compatibility mouse casts even when an extra finger is ignored.
     event.preventDefault();
-    if (this.state.beginLook(event.pointerId, event.clientX, event.clientY)) this.capture(event, this.lookZone);
+    if (this.state.beginLook(event.pointerId, event.clientX, event.clientY)) this.capture(event, event.currentTarget === this.canvas ? this.canvas : this.lookZone);
   }
 
   beginRun(event) {
@@ -334,10 +351,15 @@ export class SnejMobileInput {
   }
 
   finish(event, cancelled) {
+    const look = this.state.look?.id === event.pointerId ? this.state.look : null;
     const role = this.release(event.pointerId);
     if (role === "stick") this.paintStick();
     if (role === "run") this.paintRun();
     if (role === "look" && cancelled) this.state.takeLook();
+    if (role === "look" && !cancelled && look.travel <= 10
+      && Math.hypot(event.clientX - look.startX, event.clientY - look.startY) <= 10 && this.available()) {
+      this.onTap?.(event.clientX, event.clientY);
+    }
     if (role !== "cast") return;
     this.castButton.classList.remove("pressed");
     if (cancelled || !this.available()) this.onCastCancel?.();

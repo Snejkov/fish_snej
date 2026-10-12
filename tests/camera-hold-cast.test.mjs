@@ -330,3 +330,28 @@ test("authoritative empty-bait rejection overrides a positive client count and c
   assert.equal(game.castApproval, null); assert.equal(game.castTurn, null);
   assert.equal(game.inventory.countOf("bait.earthworm"), 10, "A denial cannot invent a stock adjustment.");
 });
+
+test("the last unbitten bait survives local and online landing, repeated retrieval and another cast", async () => {
+  const originalWindow = globalThis.window; globalThis.window = {};
+  try {
+    for (const online of [false, true]) {
+      const f = fixture("third-person", online), game = f.game;
+      let bait = 1;
+      game.inventory.countOf = () => bait;
+      game.inventory.consumeBait = () => { throw new Error("No bite can consume bait."); };
+      for (let cast = 0; cast < 2; cast += 1) {
+        assert.ok(game.beginHoldCast()); game.updateCast(2.2); assert.ok(game.endHoldCast());
+        if (online) { await flush(); f.approve({ castId: `unbitten_000${cast}` }); await flush(); }
+        for (let i = 0; i < 600 && game.cast.state.fs !== "wait"; i += 1) game.updateCast(1 / 60);
+        await flush(); assert.equal(game.cast.state.fs, "wait"); assert.equal(bait, 1);
+        assert.ok(game.retrieveCast()); assert.equal(game.retrieveCast(), false);
+        assert.equal(game.holdCasting, false); assert.equal(game.cast.state.retrieving, true);
+        for (let i = 0; i < 600 && game.cast.state.fs !== "idle"; i += 1) game.updateCast(1 / 60);
+        assert.equal(game.cast.state.fs, "idle"); assert.equal(bait, 1);
+      }
+      game.cast.state.fs = "wait"; bait = 0;
+      assert.ok(game.retrieveCast(), "Retrieval never requires spare bait or grants historical bait back.");
+      assert.equal(bait, 0);
+    }
+  } finally { globalThis.window = originalWindow; }
+});

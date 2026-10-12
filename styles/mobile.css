@@ -1,4 +1,4 @@
-.mobile-controls[hidden], .mobile-orientation[hidden] { display: none !important; }
+.mobile-controls[hidden], .mobile-orientation[hidden], .mobile-controls [hidden] { display: none !important; }
 .mobile-input-active { touch-action: none; }
 .mobile-input-active,
 .mobile-controls,
@@ -118,6 +118,8 @@
 }
 .mobile-run.pressed { background: rgba(50, 130, 100, 0.8); border-color: #91dac6; }
 .mobile-cast.pressed { background: rgba(126, 156, 56, 0.8); border-color: #bce58c; }
+.mobile-retrieve { width: 160px; border-radius: 36px; }
+.mobile-cast:disabled, .mobile-run:disabled { opacity: 0.5; }
 .mobile-orientation {
   position: fixed;
   z-index: 13;
@@ -160,6 +162,7 @@
 }
 @media (max-height: 430px) {
   .mobile-cast { width: 64px; height: 64px; bottom: max(18px, env(safe-area-inset-bottom)); }
+  .mobile-retrieve { width: 160px; }
   .mobile-run { bottom: max(18px, env(safe-area-inset-bottom)); }
   .mobile-buttons .mobile-control-button { width: 40px; height: 40px; min-height: 40px; }
 }

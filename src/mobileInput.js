@@ -38,7 +38,7 @@ export function movementInput(keys, stick = {}, autoSprint = false) {
 export class MobileInputState {
   constructor() { this.reset(); }
 
-  owns(id) { return this.stick?.id === id || this.look?.id === id || this.castId === id || this.runId === id; }
+  owns(id) { return this.stick?.id === id || this.look?.id === id || this.castId === id || this.runId === id || this.retrieveId === id; }
   canClaim(id) { return (Number.isInteger(id) || (typeof id === "string" && /^touch:-?\d+$/.test(id))) && !this.owns(id); }
 
   beginStick(id, x, y, centerX, centerY, radius) {
@@ -84,6 +84,12 @@ export class MobileInputState {
     return true;
   }
 
+  beginRetrieve(id) {
+    if (this.retrieveId !== null || !this.canClaim(id)) return false;
+    this.retrieveId = id;
+    return true;
+  }
+
   endPointer(id) {
     if (this.stick?.id === id) {
       this.stick = null;
@@ -93,6 +99,7 @@ export class MobileInputState {
     if (this.look?.id === id) { this.look = null; return "look"; }
     if (this.castId === id) { this.castId = null; return "cast"; }
     if (this.runId === id) { this.runId = null; return "run"; }
+    if (this.retrieveId === id) { this.retrieveId = null; return "retrieve"; }
     return null;
   }
 
@@ -106,6 +113,7 @@ export class MobileInputState {
     this.stick = this.look = null;
     this.castId = null;
     this.runId = null;
+    this.retrieveId = null;
     this.axes = joystickAxes(0, 0, 1);
     this.dx = this.dy = 0;
   }
@@ -127,7 +135,7 @@ export async function requestLandscape(environment = globalThis, element = envir
 }
 
 export class SnejMobileInput {
-  constructor({ canvas, controls, canInteract, onCastStart, onCastEnd, onCastCancel, onTap, onAim, onAimCancel, onTargetStart, isTargeting, onAvailability, environment = globalThis }) {
+  constructor({ canvas, controls, canInteract, onCastStart, onCastEnd, onCastCancel, onRetrieve, onTap, onAim, onAimCancel, onTargetStart, isTargeting, onAvailability, environment = globalThis }) {
     this.canvas = canvas;
     this.controls = controls;
     this.environment = environment;
@@ -135,6 +143,7 @@ export class SnejMobileInput {
     this.onCastStart = onCastStart;
     this.onCastEnd = onCastEnd;
     this.onCastCancel = onCastCancel;
+    this.onRetrieve = onRetrieve;
     this.onTap = onTap;
     this.onAim = onAim;
     this.onAimCancel = onAimCancel;
@@ -154,6 +163,7 @@ export class SnejMobileInput {
     this.thumb = controls.querySelector(".mobile-stick-thumb");
     this.castButton = controls.querySelector("[data-mobile-cast]");
     this.runButton = controls.querySelector("[data-mobile-run]");
+    this.retrieveButton = controls.querySelector("[data-mobile-retrieve]");
     this.lookZone = controls.querySelector("[data-mobile-look]") || canvas;
     // A real touch can recover from an inaccurate primary-pointer media query.
     this.listen(environment.document, "pointerdown", (event) => {
@@ -192,8 +202,12 @@ export class SnejMobileInput {
     });
     this.listen(this.castButton, "pointerdown", pointerStart(this.beginCast));
     this.listen(this.runButton, "pointerdown", pointerStart(this.beginRun));
+    this.listen(this.retrieveButton, "pointerdown", pointerStart(this.beginRetrieve));
+    this.listen(this.retrieveButton, "click", (event) => {
+      if (event.detail === 0 && this.available() && !this.retrieveButton.hidden && !this.retrieveButton.disabled) this.onRetrieve?.();
+    });
     for (const [target, start] of [[this.stick, this.beginStick], [this.lookZone, this.beginLook],
-      [this.castButton, this.beginCast], [this.runButton, this.beginRun]]) {
+      [this.castButton, this.beginCast], [this.runButton, this.beginRun], [this.retrieveButton, this.beginRetrieve]]) {
       this.listen(target, "touchstart", (event) => {
         if (!this.useTouchEvents || !this.available()) return;
         // A captured stylus keeps its pointer stream; do not cancel it with duplicate touch events.
@@ -239,7 +253,7 @@ export class SnejMobileInput {
         if (this.uncaptured.has(event.pointerId)) this.finish(event, type === "pointercancel");
       }, { capture: true });
     }
-    for (const target of [canvas, this.lookZone, this.stick, this.castButton, this.runButton]) {
+    for (const target of [canvas, this.lookZone, this.stick, this.castButton, this.runButton, this.retrieveButton]) {
       for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) {
         this.listen(target, type, (event) => this.finish(event, type !== "pointerup"));
       }
@@ -351,15 +365,22 @@ export class SnejMobileInput {
   }
 
   beginRun(event) {
-    if (!this.available(event) || !this.state.beginRun(event.pointerId)) return;
+    if (!this.available(event) || this.runButton.hidden || this.runButton.disabled || !this.state.beginRun(event.pointerId)) return;
     if (this.capture(event, this.runButton)) this.paintRun();
   }
 
   beginCast(event) {
-    if (!this.available(event) || !this.state.beginCast(event.pointerId)) return;
+    if (!this.available(event) || this.castButton.hidden || this.castButton.disabled || !this.state.beginCast(event.pointerId)) return;
     if (!this.capture(event, this.castButton)) return;
     if (this.onCastStart?.() === false) { this.release(event.pointerId); return; }
     this.castButton.classList.add("pressed");
+  }
+
+  beginRetrieve(event) {
+    if (!this.available(event) || !this.retrieveButton || this.retrieveButton.hidden || this.retrieveButton.disabled
+      || !this.state.beginRetrieve(event.pointerId)) return;
+    this.capture(event, this.retrieveButton);
+    this.retrieveButton.classList.add("pressed");
   }
 
   release(id) {
@@ -374,6 +395,11 @@ export class SnejMobileInput {
   finish(event, cancelled) {
     const look = this.state.look?.id === event.pointerId ? this.state.look : null;
     const role = this.release(event.pointerId);
+    if (role === "retrieve") {
+      this.retrieveButton.classList.remove("pressed");
+      if (!cancelled && this.available() && !this.retrieveButton.hidden && !this.retrieveButton.disabled) this.onRetrieve?.();
+      return;
+    }
     if (role === "stick") this.paintStick();
     if (role === "run") this.paintRun();
     if (role === "look" && cancelled) this.state.takeLook();
@@ -412,6 +438,7 @@ export class SnejMobileInput {
     this.paintStick();
     this.paintRun();
     this.castButton.classList.remove("pressed");
+    this.retrieveButton?.classList.remove("pressed");
     if (casting) this.onCastCancel?.();
     if (aiming) this.onAimCancel?.();
   }

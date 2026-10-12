@@ -81,7 +81,7 @@ test("approved cast, exact durable landing, idempotent replay and unchanged econ
     assert.ok(landed.applied); assert.equal(landed.cast.state, "landed"); assert.equal(landed.cast.landedAt, 2000);
     assert.deepEqual(landed.cast.landing, target);
     assert.equal(landed.profile.coins, before.coins);
-    assert.equal(landed.profile.state.inventory.owned[cast.gear.bait], before.state.inventory.owned[cast.gear.bait] - 1);
+    assert.deepEqual(landed.profile, before, "An unbitten cast cannot change bait, coins or any profile state.");
     assert.equal(f.land(cast.castId).applied, false);
     rejects(() => f.land(cast.castId, { ...target, x: 0.01 }), "operation_conflict");
     f.store.close();
@@ -90,7 +90,7 @@ test("approved cast, exact durable landing, idempotent replay and unchanged econ
       const row = reopened.db.prepare("SELECT * FROM casts WHERE cast_id=?").get(cast.castId);
       assert.equal(row.status, "landed"); assert.deepEqual(JSON.parse(row.landing_json), target);
       assert.equal(reopened.profile(f.user.id).coins, before.coins);
-      assert.equal(reopened.profile(f.user.id).state.inventory.owned[cast.gear.bait], 9);
+      assert.equal(reopened.profile(f.user.id).state.inventory.owned[cast.gear.bait], 10);
     } finally { reopened.close(); }
   } finally { if (f.store.db.isOpen) f.store.close(); rmSync(directory, { recursive: true, force: true }); }
 });
@@ -120,6 +120,28 @@ test("no blind landing, identity/session/connection, equipment, range, land, rep
     rejects(() => f.land(replaced.castId), "cast_expired");
     assert.equal(f.store.profile(f.user.id).state.inventory.owned["bait.earthworm"], 10);
     assert.equal(f.store.profile(f.user.id).coins, 100);
+  } finally { f.store.close(); }
+});
+
+test("one remaining bait supports repeated unbitten casts without refunds, duplication or profile writes", () => {
+  const f = fixture();
+  try {
+    const profile = f.store.profile(f.user.id); profile.state.inventory.owned["bait.earthworm"] = 1;
+    f.store.write(f.user.id, profile.state, profile.coins, profile.revision + 1);
+    const before = f.store.profile(f.user.id);
+    for (let i = 0; i < 3; i += 1) {
+      const cast = f.start(`unbitten_000${i}`); f.advance(1000);
+      assert.equal(f.land(cast.castId).applied, true);
+      for (let replay = 0; replay < 3; replay += 1) assert.equal(f.land(cast.castId).applied, false);
+      cancelCast(f.store, f.user.id, f.token, "connection_1", { castId: cast.castId });
+      assert.deepEqual(f.store.profile(f.user.id), before);
+    }
+    const cancelled = f.start("unbitten_cancel");
+    cancelCast(f.store, f.user.id, f.token, "connection_1", { castId: cancelled.castId });
+    rejects(() => f.land(cancelled.castId), "cast_expired");
+    rejects(() => approveCast(f.store, f.user.id, f.token, "connection_1", {
+      requestId: "unbitten_refund", target, refundBait: 100 }), "invalid_request");
+    assert.deepEqual(f.store.profile(f.user.id), before);
   } finally { f.store.close(); }
 });
 
@@ -159,7 +181,7 @@ test("real authenticated HTTP cast lifecycle requires the live lake session and 
     const landed = await adapter.landCast(cast.castId, { ...physics.state.bobber });
     assert.equal(landed.cast.userId, f.user.id); assert.ok(landed.applied);
     assert.ok(Math.hypot(landed.cast.landing.x, landed.cast.landing.z) < 0.00001);
-    assert.equal(adapter.profile.state.inventory.owned["bait.earthworm"], 9);
+    assert.equal(adapter.profile.state.inventory.owned["bait.earthworm"], 10);
     assert.equal((await request("/api/cast/land", { castId: cast.castId, landing: target, reward: 100000 })).status, 400);
     assert.equal((await request("/api/logout", {})).status, 200);
     assert.equal((await request("/api/cast/start", { ...input, requestId: "http_cast_0002" })).status, 401);

@@ -143,7 +143,8 @@ export class SnejUI {
         <button type="button" class="mobile-control-button" data-mobile-action="menu" aria-label="Menu" title="Menu"><span data-i18n-skip>&#9881;</span></button>
       </div>
       <button id="run-button" type="button" class="mobile-control-button mobile-run" data-mobile-run aria-label="Sprint" aria-pressed="false" data-i18n-skip>Run</button>
-      <button type="button" class="mobile-control-button mobile-cast" data-mobile-cast data-i18n="Cast">Cast</button>`;
+      <button type="button" class="mobile-control-button mobile-cast" data-mobile-cast data-i18n="Cast">Cast</button>
+      <button type="button" class="mobile-control-button mobile-cast mobile-retrieve" data-mobile-retrieve data-i18n="Retrieve" hidden>Retrieve</button>`;
     const orientation = document.createElement("div");
     orientation.className = "mobile-orientation";
     orientation.hidden = true;

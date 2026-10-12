@@ -78,6 +78,7 @@ test("actual landing travels to server once; an older failed response cannot ret
     const f = fixture(); f.game.endCastAction(); await flush(); f.approve({ castId: "landing_0001" }); await flush();
     for (let frame = 0; frame < 600 && f.game.cast.state.fs === "flight"; frame += 1) Game.prototype.updateCast.call(f.game, 1 / 60);
     assert.equal(f.game.cast.state.fs, "wait"); assert.equal(f.landed.length, 1);
+    assert.equal(f.game.retrieveCast(), false, "Retrieval waits for the authoritative landing result.");
     assert.equal(f.landed[0].id, "landing_0001");
     assert.ok(Math.hypot(f.landed[0].value.x, f.landed[0].value.z - 5) < 0.00001);
     Game.prototype.updateCast.call(f.game, 1 / 60); assert.equal(f.landed.length, 1);
@@ -86,5 +87,6 @@ test("actual landing travels to server once; an older failed response cannot ret
     f.rejectLanding(); await flush();
     assert.equal(f.game.cast.state.fs, "wait"); assert.equal(f.game.cast.state.retrieving, false);
     assert.equal(f.errors.length, 1);
+    assert.equal(f.game.castLanding, null);
   } finally { globalThis.window = original; }
 });

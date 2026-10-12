@@ -394,6 +394,49 @@ assert.equal(idleReleases.length, 1, "A cancelled ring drag never releases a cas
 idleController.destroy();
 
 const order = [];
+// Retrieve is a distinct once-only tap, not a charged Cast or held Run gesture.
+const retrieveButton = new Element();
+const retrieveQuery = controls.querySelector;
+controls.querySelector = selector => selector === "[data-mobile-retrieve]" ? retrieveButton : retrieveQuery(selector);
+for (const native of [false, true]) {
+  const retrieveEnvironment = native ? nativeEnvironment : environment;
+  let retrieved = 0, castStarts = 0, castEnds = 0;
+  retrieveButton.hidden = false; retrieveButton.disabled = false;
+  const retrieval = new SnejMobileInput({ canvas, controls, environment: retrieveEnvironment, canInteract: () => true,
+    onCastStart: () => { castStarts += 1; return true; }, onCastEnd: () => { castEnds += 1; },
+    onRetrieve: () => { retrieved += 1; retrieveButton.disabled = true; } });
+  retrieval.setActive(true);
+  const send = (type, id, target = retrieveButton) => {
+    if (native) {
+      const eventType = { pointerdown: "touchstart", pointerup: "touchend", pointercancel: "touchcancel" }[type];
+      (type === "pointerdown" ? target : retrieveEnvironment.document).dispatchEvent(touchEvent(eventType, [id]));
+    } else target.dispatchEvent(pointer(type, id));
+  };
+  send("pointerdown", 120); send("pointerdown", 121);
+  send("pointerup", 121); assert.equal(retrieved, 0, "Another finger cannot retrieve the rig.");
+  send("pointerup", 120); send("pointerup", 120);
+  retrieveButton.dispatchEvent(Object.assign(new Event("click"), { detail: 1 }));
+  assert.equal(retrieved, 1); assert.equal(castStarts + castEnds, 0);
+  assert.equal(retrieval.state.retrieveId, null);
+  send("pointerdown", 122); send("pointerup", 122); assert.equal(retrieved, 1);
+  retrieveButton.disabled = false;
+  send("pointerdown", 123); send("pointercancel", 123); assert.equal(retrieved, 1);
+  send("pointerdown", 124); retrieval.reset(); send("pointerup", 124);
+  assert.equal(retrieved, 1); assert.equal(retrieveButton.classes.has("pressed"), false);
+  retrieveButton.hidden = true;
+  send("pointerdown", 125); send("pointerup", 125); assert.equal(retrieved, 1);
+  retrieveButton.hidden = false;
+  retrieveButton.dispatchEvent(Object.assign(new Event("click"), { detail: 0 }));
+  assert.equal(retrieved, 2, "Keyboard/assistive activation retains the same separate action.");
+  cast.hidden = run.hidden = true;
+  send("pointerdown", 126, cast); send("pointerup", 126, cast);
+  send("pointerdown", 127, run); send("pointerup", 127, run);
+  assert.equal(castStarts + castEnds, 0); assert.equal(retrieval.state.runId, null);
+  cast.hidden = run.hidden = false;
+  retrieval.destroy();
+}
+controls.querySelector = retrieveQuery;
+
 const document = { fullscreenElement: null };
 const supported = {
   document,

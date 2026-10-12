@@ -79,9 +79,8 @@ export function landCast(store, userId, token, connectionId, input) {
     if (Math.hypot(landing.x - target.x, landing.z - target.z) > 0.03
       || Math.hypot(landing.x - origin.x, landing.z - origin.z) > equipment.castRange + 1e-6
       || !isCastWater(landing.x, landing.z, equipment.quality)) reject("cast_invalid_target");
-    // Bait is consumed atomically once with the successful landing, never on a replay.
-    profile.state.inventory.owned[equipment.bait] -= 1;
-    store.write(userId, profile.state, profile.coins, profile.revision + 1);
+    // Until bites exist, casting and unbitten retrieval preserve the equipped bait.
+    // No client refund or reward claim can increase inventory quantities.
     store.db.prepare("UPDATE casts SET status='landed',landed_at=?,landing_json=? WHERE cast_id=?")
       .run(store.now(), JSON.stringify(landing), row.cast_id);
     return { applied: true, cast: publicCast(ownedCast(store, userId, token, connectionId, row.cast_id)), profile: store.profile(userId) };

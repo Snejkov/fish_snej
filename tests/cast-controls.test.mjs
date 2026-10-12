@@ -42,10 +42,63 @@ test("Cast instructions and cancellation show only during an active cast session
       assert.equal(document.documentElement.classList.contains("cast-session"), enabled && session);
       assert.equal(mobile.dataset.i18n, "Cast");
       assert.equal(mobile.textContent, t(mobile.dataset.i18n));
-      assert.equal(mobile.disabled, state === "flight");
+      assert.equal(mobile.hidden, state === "wait");
+      assert.equal(mobile.disabled, !enabled || state === "flight");
       assert.equal(Boolean(game.castInstruction.textContent), session);
     }
   } finally { globalThis.document = originalDocument; }
+});
+
+test("Mobile landed and retrieving states expose one Retrieve action and restore Run/Cast only on idle", () => {
+  const originalDocument = globalThis.document;
+  globalThis.document = { documentElement: { classList: classes() } };
+  const mobile = { dataset: {} }, run = {}, retrieve = {}, view = {};
+  const controls = { querySelector: selector => ({ "[data-mobile-cast]": mobile, "[data-mobile-run]": run,
+    "[data-mobile-retrieve]": retrieve, "[data-mobile-action='view']": view })[selector] };
+  const game = { cast: { state: {} }, castActions: { classList: classes() }, castCancelButton: { classList: classes() },
+    castInstruction: {}, ui: { el: { mobileControls: controls } } };
+  try {
+    for (const enabled of [true, false]) for (const [fs, retrieving, pending] of [
+      ["idle", false, false], ["charge", false, false], ["flight", false, false],
+      ["wait", false, true], ["wait", false, false], ["flight", true, false], ["idle", false, false]
+    ]) {
+      game.cast.state = { fs, retrieving }; game.castLanding = pending;
+      Game.prototype.updateCastControls.call(game, enabled);
+      const retrieval = fs === "wait" || retrieving;
+      assert.equal(mobile.hidden, retrieval); assert.equal(run.hidden, retrieval);
+      assert.equal(retrieve.hidden, !retrieval);
+      assert.equal(retrieve.disabled, !enabled || fs !== "wait" || pending);
+    }
+    for (const lang of ["ru", "en"]) {
+      setLanguage(lang, { persist: false });
+      assert.equal(t("Retrieve"), lang === "en" ? "Retrieve" : "\u0412\u044b\u0442\u0430\u0449\u0438\u0442\u044c");
+    }
+  } finally { globalThis.document = originalDocument; setLanguage("ru", { persist: false }); }
+});
+
+test("The turn banner reports only local animation and separates a delayed server response", () => {
+  const originalDocument = globalThis.document;
+  globalThis.document = { documentElement: { classList: classes() } };
+  const game = { cast: { state: { fs: "charge" } }, castActions: { classList: classes() },
+    castCancelButton: { classList: classes() }, castInstruction: {}, ui: { el: {} },
+    castRelease: { approved: false }, castTurn: { duration: 0.65, elapsed: 0 } };
+  try {
+    setLanguage("en", { persist: false });
+    Game.prototype.updateCastControls.call(game, true);
+    assert.equal(game.castInstruction.textContent, "Turning to cast...");
+    game.castTurn.elapsed = 0.65;
+    Game.prototype.updateCastControls.call(game, true);
+    assert.equal(game.castInstruction.textContent, "Waiting for server...");
+    game.castTurn.elapsed = 60;
+    Game.prototype.updateCastControls.call(game, true);
+    assert.equal(game.castInstruction.textContent, "Waiting for server...");
+    game.castRelease.approved = true;
+    Game.prototype.updateCastControls.call(game, true);
+    assert.equal(game.castInstruction.textContent, "");
+    game.castRelease = game.castTurn = null; game.cast.state.fs = "idle";
+    Game.prototype.updateCastControls.call(game, true);
+    assert.equal(game.castInstruction.textContent, "");
+  } finally { globalThis.document = originalDocument; setLanguage("ru", { persist: false }); }
 });
 
 test("Desktop casting updates without requiring a mobile button", () => {

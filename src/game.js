@@ -26,8 +26,8 @@ import { SnejSky } from "./sky.js";
 import { SPAWNS, SPAWN_INITIAL_NAME, SPAWN_NAMES } from "./spawns.js";
 import { SnejTerrain } from "./terrain.js";
 import { SnejTextureManager } from "./textureManager.js";
-import { SnejUI } from "./ui.js?v=shore-cast-2";
-import { SnejMobileInput, movementInput, requestLandscape } from "./mobileInput.js?v=shore-cast-2";
+import { SnejUI } from "./ui.js?v=mobile-retrieve-1";
+import { SnejMobileInput, movementInput, requestLandscape } from "./mobileInput.js?v=mobile-retrieve-1";
 import { SnejWater } from "./water.js?v=0.0.5a-hf3";
 import { clamp, clamp01, damp, lerp, moveDelta, resolveWalkableStart } from "./util.js?v=0.0.3-hf2.12";
 
@@ -241,6 +241,7 @@ export class SnejFishingGame {
       canInteract: () => this.canCast() && !this.ui.rosterOpen,
       onCastStart: () => this.beginHoldCast(),
       onCastEnd: () => this.endHoldCast(),
+      onRetrieve: () => this.retrieveCast(),
       onCastCancel: () => { if (this.holdCasting || this.castApproval) this.cancelCastAction(); },
       onAvailability: (enabled) => document.documentElement.classList.toggle("touch-device", enabled)
     });
@@ -489,6 +490,15 @@ export class SnejFishingGame {
     return false;
   }
 
+  retrieveCast() {
+    // Retrieval needs no spare bait and never starts another charged cast.
+    if (!this.canCast() || this.cast.state.fs !== "wait" || this.castLanding) return false;
+    if (!this.cast.startRetrieve("manual")) return false;
+    this.mobileInput?.reset();
+    this.updateCastControls(true);
+    return true;
+  }
+
   beginHoldCast() {
     if (!this.canCast() || this.castApproval || ["aim", "charge", "flight"].includes(this.cast.state.fs)) return false;
     if (!this.checkCastBait()) return false;
@@ -611,12 +621,20 @@ export class SnejFishingGame {
     const fs = this.cast.state.fs, session = ["aim", "charge"].includes(fs);
     this.castActions.classList.toggle("hidden", !enabled || !session);
     this.castCancelButton.classList.toggle("hidden", !session);
-    const label = "Cast";
+    const label = "Cast", retrieveMode = fs === "wait" || Boolean(this.cast.state.retrieving);
     const mobile = this.ui.el.mobileControls?.querySelector("[data-mobile-cast]");
-    if (mobile) { mobile.dataset.i18n = label; mobile.textContent = t(label); mobile.disabled = fs === "flight"; }
+    if (mobile) { mobile.dataset.i18n = label; mobile.textContent = t(label); mobile.hidden = retrieveMode;
+      mobile.disabled = !enabled || fs === "flight" || Boolean(this.castRelease || this.castApproval); }
+    const run = this.ui.el.mobileControls?.querySelector("[data-mobile-run]");
+    if (run) { run.hidden = retrieveMode; run.disabled = !enabled || session || fs === "flight"; }
+    const retrieve = this.ui.el.mobileControls?.querySelector("[data-mobile-retrieve]");
+    if (retrieve) { retrieve.hidden = !retrieveMode;
+      retrieve.disabled = !enabled || fs !== "wait" || Boolean(this.castLanding); }
     const view = this.ui.el.mobileControls?.querySelector("[data-mobile-action='view']");
     if (view) view.disabled = session;
-    this.castInstruction.textContent = t(session ? this.castRelease ? "Turning to cast..." : this.castContext?.cameraAim
+    const turning = this.castTurn && this.castTurn.elapsed < this.castTurn.duration;
+    const releasedInstruction = turning ? "Turning to cast..." : this.castRelease?.approved ? "" : "Waiting for server...";
+    this.castInstruction.textContent = t(session ? this.castRelease ? releasedInstruction : this.castContext?.cameraAim
       ? "Hold to increase range. Aim with the camera, then release." : this.castContext?.holdCast
       ? "Hold to increase range. Release to cast forward." : "Move the circle, then click or lift your finger to cast." : "");
     document.documentElement.classList.toggle("cast-session", enabled && session);
@@ -1546,18 +1564,23 @@ export class SnejFishingGame {
     }
     if (previous === "flight" && state.fs === "wait") {
       this.stats.recordCast(true);
-      const consumed = this.server?.enabled ? this.inventory.countOf(this.inventory.state.equipped.bait) > 0 : this.inventory.consumeBait();
+      // With no bite mechanic yet, the attached bait survives landing and retrieval.
+      const hasBait = this.inventory.countOf(this.inventory.state.equipped.bait) > 0;
       if (this.server?.enabled) {
         const ticket = this.activeServerCast;
         this.activeServerCast = null;
         const landing = { ...state.bobber };
         const epoch = this.castEpoch;
         if (!ticket) this.cast.startRetrieve("bait");
-        else this.server.landCast(ticket.castId, landing).catch(error => {
-          // Do not alter a newer cast when an older response finishes late.
-          if (this.castEpoch === epoch && this.cast.state.fs === "wait") this.cast.startRetrieve("bait");
-          this.handleAccountError(error);
-        });
+        else {
+          const pending = { epoch }; this.castLanding = pending;
+          this.updateCastControls?.(enabled);
+          this.server.landCast(ticket.castId, landing).catch(error => {
+            // Do not alter a newer cast when an older response finishes late.
+            if (this.castEpoch === epoch && this.cast.state.fs === "wait") this.cast.startRetrieve("bait");
+            this.handleAccountError(error);
+          }).finally(() => { if (this.castLanding === pending) this.castLanding = null; });
+        }
       }
       this.ui.refreshInventory();
       this.ui.refreshProfile();
@@ -1573,7 +1596,7 @@ export class SnejFishingGame {
         const effect = this.water.particles.children[i];
         if (!effect.userData.vel) effect.position.y = surface + 0.035;
       }
-      this.ui.showToast(consumed ? this.toastForCast(state) : "No bait.");
+      this.ui.showToast(hasBait ? this.toastForCast(state) : "No bait.");
       this.save();
       if (window.__snejDebug) console.debug("Cast startle preview", {
         radius: lerp(STARTLE_R[0], STARTLE_R[1] + state.castPower * 2, 1 - state.castAcc),

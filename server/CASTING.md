@@ -19,8 +19,10 @@ the local flight starts. Static/offline hosting keeps local casting.
 
 The additive SQLite `casts` table stores the server-owned ID, user, session
 hash, connection, origin, target, gear/depth, approval time, actual reported
-landing and server landing time. Successful landing consumes one bait in the
-same transaction. Exact retries are idempotent; changed retries are rejected.
+landing and server landing time. With no bite mechanic in this stage, a
+successful landing and retrieval preserve the equipped bait quantity.
+There is no client refund/grant operation and no retroactive stock refill.
+Exact retries are idempotent; changed retries are rejected.
 No catch or money is awarded by this contract. Existing profiles and balances
 are preserved. Guest nickname persistence has its existing browser/session
 limitations; this change does not add permanent account registration.
@@ -56,6 +58,10 @@ touch/pen compatibility events cannot begin or end a desktop mouse cast.
 Compatibility suppression refreshes on touch end/cancel too, including a
 long-held Safari touch; known physical mouse events remain independent.
 Mobile/tablet users hold the mobile-only Cast button, then release to cast;
+after landing, Run and Cast are replaced by one Retrieve button. Retrieval
+is a single tap, works with the last bait, and does not charge another cast.
+It is disabled while landing confirmation or retrieval is in progress;
+Run and Cast return when the float reaches the rod. PC controls are unchanged.
 ordinary screen swipes still look around. Strength grows monotonically to
 the maximum in about 2.08 seconds (20 percent faster accumulation) and stays
 there without automatically throwing.
@@ -71,7 +77,10 @@ Too-short releases report insufficient strength rather than blaming open water.
 
 Release freezes the target, power and flight pitch. The character smoothly
 turns by the shortest angle over 0.16 to 0.65 seconds; the flight waits for
-both that turn and server approval. Other players receive this visual facing,
+both that turn and server approval. Turning is entirely client-side. The
+turning instruction ends when that animation finishes, even without approval;
+any remaining network wait is explicitly labeled Waiting for server.
+Other players receive this visual facing,
 not the independent aiming camera angle. Later camera changes cannot retarget
 the throw. Prediction uses the future turned grip; the final physical throw
 uses that same aligned grip and exact endpoint. Touch cancellation, blur,

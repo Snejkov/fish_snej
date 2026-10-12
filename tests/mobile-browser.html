@@ -45,10 +45,20 @@
     });
     const pointer = (target, type, id, x, y) => target.dispatchEvent(new win.PointerEvent(type,
       { pointerType: "touch", pointerId: id, clientX: x, clientY: y, bubbles: true, cancelable: true }));
-    const before = { yaw: game.yaw, pitch: game.pitch, pos: game.pos.clone(), autoSprint: game.settings.autoSprint };
+    const before = { yaw: game.yaw, pitch: game.pitch, pos: game.pos.clone(), autoSprint: game.settings.autoSprint,
+      environment: game.mobileInput.environment, touchSeen: game.mobileInput.touchSeen };
     try {
       check(game.mode === "playing" && game.mobileInput.enabled, "Enter the game first");
       game.mobileInput.setActive(true);
+      // Exercise a detection miss through real DOM propagation, not only forced coarse queries.
+      game.mobileInput.environment = { document: win.document, navigator: { maxTouchPoints: 5 }, matchMedia: () => ({ matches: false }) };
+      game.mobileInput.touchSeen = false;
+      game.mobileInput.refreshAvailability();
+      check(!game.mobileInput.enabled && controls.hidden, "Detection miss not reproduced");
+      pointer(game.canvas, "pointerdown", 100, 330, 180);
+      check(game.mobileInput.enabled && !controls.hidden && game.mobileInput.state.look?.id === 100, "First touch did not recover controls");
+      pointer(game.canvas, "pointercancel", 100, 330, 180);
+      game.mobileInput.environment = before.environment;
       const rect = stick.getBoundingClientRect(), x = rect.left + rect.width / 2, y = rect.top + rect.height / 2;
       pointer(stick, "pointerdown", 101, x, y);
       pointer(stick, "pointermove", 101, x, y + 22);
@@ -68,12 +78,15 @@
       check(game.mobileInput.state.castId === 103, "Cast finger not captured");
       pointer(cast, "pointercancel", 103, 770, 330);
       check(game.cast.state.fs !== "flight" && game.mobileInput.state.castId === null, "Cancel released a cast");
-      report.textContent = "PASS: emulated move + swipe + cancellation";
+      report.textContent = "PASS: emulated touch recovery + move + swipe + cancellation";
       runButton.hidden = true;
     } catch (error) {
       report.textContent = "FAIL: " + error.message;
     } finally {
       game.mobileInput.reset();
+      game.mobileInput.environment = before.environment;
+      game.mobileInput.touchSeen = before.touchSeen;
+      game.mobileInput.refreshAvailability();
       game.pos.copy(before.pos); game.yaw = before.yaw; game.pitch = before.pitch; game.settings.autoSprint = before.autoSprint;
       targets.forEach((target, i) => ["setPointerCapture", "hasPointerCapture", "releasePointerCapture"].forEach((key, j) => { target[key] = originals[i][j]; }));
     }

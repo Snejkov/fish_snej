@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Remote angler rendering fixture</title>
+<style>
+  html,body{margin:0;height:100%;background:#26372f;color:#fff;font:14px system-ui}
+  canvas{display:block;width:100%;height:100%}
+  aside{position:fixed;top:12px;left:12px;padding:12px;background:#17251de6;border-radius:6px}
+  button{padding:10px;margin:8px 6px 0 0}output{display:block;margin-top:8px}
+</style>
+<script type="importmap">{"imports":{"three":"../vendor/three.module.min.js"}}</script>
+<canvas id="view" aria-label="Two remote players rendered using the existing skinned angler"></canvas>
+<aside>
+  <strong>Two independent remote anglers</strong><br>
+  Existing local skin and rig, no capsules or new assets.<br>
+  <button id="walk">Walk and turn</button><button id="check">Check models</button>
+  <output id="result">Ready</output>
+</aside>
+<script type="module">
+  import * as THREE from "three";
+  import { SnejRemotePlayerRoom } from "../src/multiplayer/room.js?v=remote-angler-1";
+  const canvas = document.getElementById("view");
+  const renderer = new THREE.WebGLRenderer({canvas,antialias:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x87b7b2);
+  const camera = new THREE.PerspectiveCamera(45,1,0.05,50);
+  camera.position.set(-3,2.8,5); camera.lookAt(0,0.9,0);
+  scene.add(new THREE.HemisphereLight(0xffffff,0x39412c,2.2));
+  const sun = new THREE.DirectionalLight(0xfff7df,2); sun.position.set(3,5,4); scene.add(sun);
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(20,20),new THREE.MeshStandardMaterial({color:0x668565,roughness:1}));
+  ground.rotation.x=-Math.PI/2; ground.position.y=-0.01; scene.add(ground);
+  scene.add(new THREE.GridHelper(12,12,0x536c52,0x739570));
+  const room = new SnejRemotePlayerRoom(); scene.add(room.group);
+  const packet = (clientId,x,z,yaw=0) => ({clientId,presence:{id:clientId==="a"?1:2,name:clientId,rank:"player",x,y:0,z,yaw}});
+  room.applyPresence(packet("a",-0.8,0)); room.applyPresence(packet("b",0.8,0));
+  let walking=false,time=0,last=performance.now();
+  document.getElementById("walk").onclick=()=>{walking=!walking;document.getElementById("walk").textContent=walking?"Stop walking":"Walk and turn";};
+  document.getElementById("check").onclick=()=>{
+    const peers=[...room.players.values()];
+    const solid=peers.every(p=>p.angler.model.meshes.length>20&&p.angler.model.meshes.every(m=>m.isSkinnedMesh&&m.visible&&!m.material.transparent));
+    const independent=peers[0].angler.skeleton!==peers[1].angler.skeleton;
+    document.getElementById("result").textContent=solid&&independent?"PASS: two solid skins with independent rigs":"FAIL: model visibility or independent rig";
+  };
+  function resize(){renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}
+  addEventListener("resize",resize);resize();
+  function frame(now){
+    const dt=Math.min(0.05,(now-last)/1000);last=now;
+    if(walking){time+=dt;room.applyPresence(packet("b",0.8+Math.sin(time)*0.65,Math.cos(time)*0.35,time));}
+    room.update(dt);renderer.render(scene,camera);requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  addEventListener("pagehide",()=>{room.clear();renderer.dispose();});
+</script>
+</html>

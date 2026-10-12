@@ -152,6 +152,36 @@ controller.destroy();
 stick.dispatchEvent(pointer("pointerdown", 23, 66, 31));
 near(controller.state.axes.mz, 0, "Destroyed controls have no remaining input listeners.");
 
+const fallbackEnvironment = Object.assign(new EventTarget(), capabilities(false, false, 5), { document: new EventTarget() });
+const fallback = new SnejMobileInput({ canvas, controls, environment: fallbackEnvironment, canInteract: () => true });
+fallback.setActive(true);
+assert.equal(fallback.enabled, false);
+assert.equal(controls.hidden, true);
+const mouse = new Event("pointerdown");
+Object.defineProperty(mouse, "pointerType", { value: "mouse" });
+fallbackEnvironment.document.dispatchEvent(mouse);
+assert.equal(fallback.enabled, false, "Desktop mouse input must not activate touch controls.");
+const firstTouch = pointer("pointerdown", 31, 200, 200);
+fallbackEnvironment.document.dispatchEvent(firstTouch);
+canvas.dispatchEvent(firstTouch);
+assert.equal(fallback.enabled, true, "Actual touch recovers a false-negative coarse-pointer query.");
+assert.equal(controls.hidden, false);
+assert.equal(fallback.state.look.id, 31, "Capture-phase detection enables the same canvas touch.");
+fallback.refreshAvailability();
+assert.equal(fallback.enabled, true, "Later media changes cannot erase observed touch input.");
+canvas.dispatchEvent(pointer("pointercancel", 31));
+fallback.setActive(false);
+assert.equal(controls.hidden, true, "Touch detection cannot reveal controls over menus.");
+fallback.setActive(true);
+stick.dispatchEvent(pointer("pointerdown", 32, 66, 31));
+near(fallback.movement().mz, 1);
+fallbackEnvironment.dispatchEvent(new Event("blur"));
+near(fallback.movement().mz, 0, "Fallback controls retain lifecycle cancellation.");
+fallback.destroy();
+fallback.touchSeen = false;
+fallbackEnvironment.document.dispatchEvent(pointer("pointerdown", 33));
+assert.equal(fallback.touchSeen, false, "Destroy removes the document capture listener too.");
+
 const order = [];
 const document = { fullscreenElement: null };
 const supported = {

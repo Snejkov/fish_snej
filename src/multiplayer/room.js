@@ -1,16 +1,14 @@
 import * as THREE from "three";
+import { SnejAngler } from "../angler.js?v=0.0.5a-hf6";
 
-function makeRemoteModel() {
-  const group = new THREE.Group();
-  const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x70b7d6, roughness: 0.75, transparent: true });
-  const skinMaterial = new THREE.MeshStandardMaterial({ color: 0xcaa47e, roughness: 0.7, transparent: true });
-  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.18, 1.18, 5, 10), bodyMaterial);
-  torso.position.y = 0.96;
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 9), skinMaterial);
-  head.position.y = 1.55;
-  group.add(torso, head);
-  group.userData.materials = [bodyMaterial, skinMaterial];
-  return group;
+function materialsOf(model) {
+  const materials = new Set();
+  model.traverse((part) => {
+    for (const material of Array.isArray(part.material) ? part.material : [part.material]) {
+      if (material) materials.add(material);
+    }
+  });
+  return [...materials];
 }
 
 export class SnejRemotePlayerRoom {
@@ -21,26 +19,34 @@ export class SnejRemotePlayerRoom {
   }
 
   applyPresence(message) {
-    const id = message.clientId;
-    const data = message.presence;
+    const id = message?.clientId;
+    const data = message?.presence;
     if (!id || !data || !Number.isFinite(data.x) || !Number.isFinite(data.z)) return;
+    const y = data.y ?? 0, yaw = data.yaw ?? 0;
+    if (!Number.isFinite(y) || !Number.isFinite(yaw)) return;
     let player = this.players.get(id);
     if (!player) {
+      // Each peer reuses the local model with its own skeleton and animation mixer.
+      const angler = new SnejAngler();
       player = {
-        model: makeRemoteModel(),
-        target: new THREE.Vector3(data.x, data.y || 0, data.z),
-        yaw: data.yaw || 0,
+        angler,
+        model: angler.group,
+        previousPosition: new THREE.Vector3(),
+        target: new THREE.Vector3(data.x, y, data.z),
+        yaw,
         id: Number(data.id) || 0,
         name: String(data.name || "Player"),
         rank: String(data.rank || "player"),
         lastSeen: performance.now()
       };
       player.model.position.copy(player.target);
+      player.model.rotation.y = player.yaw;
+      player.model.userData.materials = materialsOf(player.model);
       this.players.set(id, player);
       this.group.add(player.model);
     }
-    player.target.set(data.x, data.y || 0, data.z);
-    player.yaw = data.yaw || 0;
+    player.target.set(data.x, y, data.z);
+    player.yaw = yaw;
     player.id = Number(data.id) || player.id;
     player.name = String(data.name || player.name);
     player.rank = String(data.rank || player.rank);
@@ -51,7 +57,12 @@ export class SnejRemotePlayerRoom {
     const player = this.players.get(id);
     if (!player) return;
     this.group.remove(player.model);
-    player.model.traverse((part) => { if (part.geometry) part.geometry.dispose(); });
+    player.angler.mixer.stopAllAction();
+    player.angler.mixer.uncacheRoot(player.angler.rig);
+    player.angler.skeleton.dispose();
+    const geometries = new Set();
+    player.model.traverse((part) => { if (part.geometry) geometries.add(part.geometry); });
+    for (const geometry of geometries) geometry.dispose();
     for (const material of player.model.userData.materials) material.dispose();
     this.players.delete(id);
   }
@@ -68,11 +79,22 @@ export class SnejRemotePlayerRoom {
   }
 
   update(dt) {
+    dt = Number.isFinite(dt) ? Math.max(0, dt) : 0;
+    const alpha = 1 - Math.exp(-12 * dt);
     // Membership ends with a server leave or transport loss, never with a paused animation.
     for (const player of this.players.values()) {
-      const alpha = 1 - Math.exp(-12 * dt);
+      player.previousPosition.copy(player.model.position);
       player.model.position.lerp(player.target, alpha);
-      player.model.rotation.y += (player.yaw - player.model.rotation.y) * alpha;
+      const turn = player.yaw - player.model.rotation.y;
+      player.model.rotation.y += Math.atan2(Math.sin(turn), Math.cos(turn)) * alpha;
+      const directionX = player.model.position.x - player.previousPosition.x;
+      const directionZ = player.model.position.z - player.previousPosition.z;
+      player.angler.update(dt, {
+        state: "playing",
+        speed: dt > 0 ? Math.min(9, Math.hypot(directionX, directionZ) / dt) : 0,
+        directionX, directionZ,
+        cameraMode: "third-person", viewBlend: 1, depth: 0
+      });
     }
   }
 }

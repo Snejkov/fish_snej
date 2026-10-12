@@ -131,9 +131,16 @@ export class SnejMobileInput {
     this.listeners = [];
     this.active = false;
     this.enabled = false;
+    this.touchSeen = false;
     this.stick = controls.querySelector(".mobile-stick");
     this.thumb = controls.querySelector(".mobile-stick-thumb");
     this.castButton = controls.querySelector("[data-mobile-cast]");
+    // A real touch can recover from an inaccurate primary-pointer media query.
+    this.listen(environment.document, "pointerdown", (event) => {
+      if (event.pointerType !== "touch" || this.touchSeen) return;
+      this.touchSeen = true;
+      this.refreshAvailability();
+    }, { capture: true });
     this.listen(this.stick, "pointerdown", (event) => this.beginStick(event));
     this.listen(this.stick, "pointermove", (event) => {
       if (!this.available()) return this.reset();
@@ -162,14 +169,14 @@ export class SnejMobileInput {
     this.refreshAvailability();
   }
 
-  listen(target, type, handler) {
+  listen(target, type, handler, options) {
     if (!target?.addEventListener) return;
-    target.addEventListener(type, handler);
-    this.listeners.push(() => target.removeEventListener(type, handler));
+    target.addEventListener(type, handler, options);
+    this.listeners.push(() => target.removeEventListener(type, handler, options));
   }
 
   refreshAvailability() {
-    const enabled = touchControlsAvailable(this.environment);
+    const enabled = this.touchSeen || touchControlsAvailable(this.environment);
     if (enabled !== this.enabled) this.reset();
     this.enabled = enabled;
     this.controls.hidden = !enabled || !this.active;

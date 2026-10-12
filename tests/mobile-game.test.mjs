@@ -26,6 +26,9 @@ function movingGame(axes, autoSprint = false, keys = []) {
 for (const [axes, auto, keys, distance] of [
   [{ mx: 0, mz: 0.5 }, false, [], 0.2],
   [{ mx: 0, mz: 0.5 }, true, [], 0.34],
+  [{ mx: 0, mz: 0.5, sprint: true }, false, [], 0.34],
+  [{ mx: 0, mz: 1, sprint: true }, false, [], 0.68],
+  [{ mx: 0, mz: 0, sprint: true }, false, [], 0],
   [{ mx: 0, mz: 0 }, false, ["KeyW"], 0.4],
   [{ mx: 0, mz: 0 }, false, ["KeyW", "ShiftLeft"], 0.68],
   [{ mx: 0, mz: 0 }, true, [], 0]

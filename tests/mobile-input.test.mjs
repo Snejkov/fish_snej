@@ -12,6 +12,9 @@ assert.equal(touchControlsAvailable(capabilities(true, true, 5)), true);
 assert.equal(touchControlsAvailable(capabilities(false, true, 10)), true, "An attached mouse does not remove tablet controls.");
 assert.equal(touchControlsAvailable(capabilities(false, false, 10)), false, "Touch points alone must not replace a fine-pointer desktop interface.");
 assert.equal(touchControlsAvailable({}), false);
+assert.equal(touchControlsAvailable({ navigator: { maxTouchPoints: 5 }, matchMedia: (query) => ({ matches: query === "(hover: none)" }) }), true,
+  "A touch-only device remains discoverable when coarse-pointer queries are inaccurate.");
+assert.equal(touchControlsAvailable({ navigator: { maxTouchPoints: 0 }, matchMedia: () => ({ matches: true }) }), true);
 
 const centered = joystickAxes(0, 0, 50);
 assert.deepEqual(centered, { mx: 0, mz: 0, x: 0, y: 0 });
@@ -72,6 +75,9 @@ assert.equal(movementInput(new Set(["KeyW", "ShiftRight"])).sprint, true);
 assert.equal(movementInput(new Set(["KeyW"]), {}, true).sprint, true);
 assert.equal(movementInput(new Set(), slow, true).sprint, true, "Auto sprint applies to analog movement.");
 assert.equal(movementInput(new Set(), slow, false).sprint, false);
+assert.equal(movementInput(new Set(), { ...slow, sprint: true }).sprint, true);
+assert.equal(movementInput(new Set(), { sprint: true }).sprint, false, "Run alone does not move the character.");
+assert.equal(movementInput(new Set(["KeyW"]), { sprint: true }).sprint, true, "Touch Run can accompany keyboard movement on hybrids.");
 assert.equal(movementInput(new Set(["ShiftLeft"]), {}, true).sprint, false, "No input means no sprint.");
 assert.equal(movementInput(new Set(["KeyW", "KeyS"]), {}, true).sprint, false, "Opposite keys cancel automatic running.");
 near(movementInput(new Set(), slow, true).magnitude, 0.5);
@@ -94,8 +100,8 @@ class Element extends EventTarget {
   hasPointerCapture(id) { return this.captured.has(id); }
   releasePointerCapture(id) { this.captured.delete(id); this.dispatchEvent(pointer("lostpointercapture", id)); }
 }
-const canvas = new Element(), controls = new Element(), stick = new Element(), thumb = new Element(), cast = new Element();
-controls.querySelector = (selector) => ({ ".mobile-stick": stick, ".mobile-stick-thumb": thumb, "[data-mobile-cast]": cast })[selector];
+const canvas = new Element(), controls = new Element(), stick = new Element(), thumb = new Element(), cast = new Element(), run = new Element();
+controls.querySelector = (selector) => ({ ".mobile-stick": stick, ".mobile-stick-thumb": thumb, "[data-mobile-cast]": cast, "[data-mobile-run]": run })[selector];
 const environment = Object.assign(new EventTarget(), capabilities(true, true, 5), { document: new EventTarget() });
 let interactive = true;
 const actions = [];
@@ -105,6 +111,12 @@ controller.setActive(true);
 assert.equal(controls.hidden, false);
 stick.dispatchEvent(pointer("pointerdown", 10, 66, 31));
 near(controller.movement().mz, 1);
+run.dispatchEvent(pointer("pointerdown", 9));
+assert.equal(controller.movement().sprint, true);
+run.dispatchEvent(pointer("pointerdown", 8));
+run.dispatchEvent(pointer("pointerup", 8));
+assert.equal(controller.movement().sprint, true, "Another finger cannot release held Run.");
+assert.equal(controller.state.beginLook(9, 20, 30), false, "Run finger cannot also control the camera.");
 canvas.dispatchEvent(pointer("pointerdown", 11, 20, 200));
 canvas.dispatchEvent(pointer("pointermove", 11, 30, 205));
 const extraTouch = pointer("pointerdown", 12, 300, 200);
@@ -112,6 +124,10 @@ canvas.dispatchEvent(extraTouch);
 assert.equal(extraTouch.defaultPrevented, true, "Extra touch must not fall through to mouse casting.");
 assert.deepEqual(controller.takeLook(), { dx: 10, dy: 5 });
 near(controller.movement().mz, 1);
+run.dispatchEvent(pointer("lostpointercapture", 9));
+assert.equal(controller.movement().sprint, false, "Lost Run capture clears sprint without cancelling movement.");
+near(controller.movement().mz, 1);
+run.dispatchEvent(pointer("pointerdown", 19));
 canvas.dispatchEvent(pointer("pointerup", 11));
 near(controller.movement().mz, 1);
 cast.dispatchEvent(pointer("pointerdown", 12));
@@ -130,7 +146,8 @@ canvas.dispatchEvent(pointer("pointermove", 14, 420, 210));
 cast.dispatchEvent(pointer("pointerdown", 15));
 controller.setActive(false);
 assert.equal(controls.hidden, true);
-assert.equal(stick.captured.size + canvas.captured.size + cast.captured.size, 0);
+assert.equal(stick.captured.size + canvas.captured.size + cast.captured.size + run.captured.size, 0);
+assert.equal(controller.state.runId, null);
 assert.deepEqual(controller.takeLook(), { dx: 0, dy: 0 });
 near(controller.movement().mz, 0);
 assert.equal(actions.at(-1), "cancel");
@@ -180,7 +197,27 @@ near(fallback.movement().mz, 0, "Fallback controls retain lifecycle cancellation
 fallback.destroy();
 fallback.touchSeen = false;
 fallbackEnvironment.document.dispatchEvent(pointer("pointerdown", 33));
+fallbackEnvironment.document.dispatchEvent(new Event("touchstart"));
 assert.equal(fallback.touchSeen, false, "Destroy removes the document capture listener too.");
+
+const lookZone = new Element();
+const originalQuery = controls.querySelector;
+controls.querySelector = (selector) => selector === "[data-mobile-look]" ? lookZone : originalQuery(selector);
+const safariFallback = new SnejMobileInput({ canvas, controls, environment: fallbackEnvironment, canInteract: () => true });
+safariFallback.setActive(true);
+fallbackEnvironment.document.dispatchEvent(new Event("touchstart"));
+assert.equal(safariFallback.enabled, true, "Safari touchstart recovers controls before pointer interaction.");
+lookZone.dispatchEvent(pointer("pointerdown", 40, 200, 200));
+lookZone.dispatchEvent(pointer("pointermove", 40, 210, 195));
+assert.deepEqual(safariFallback.takeLook(), { dx: 10, dy: -5 });
+canvas.dispatchEvent(pointer("pointerdown", 41, 20, 200));
+assert.equal(safariFallback.state.look.id, 40, "The separate look zone leaves canvas placement listeners untouched.");
+run.dispatchEvent(pointer("pointerdown", 42));
+lookZone.dispatchEvent(pointer("pointercancel", 40));
+assert.equal(safariFallback.movement().sprint, true, "Camera cancellation does not release Run.");
+run.dispatchEvent(pointer("pointercancel", 42));
+assert.equal(safariFallback.movement().sprint, false);
+safariFallback.destroy();
 
 const order = [];
 const document = { fullscreenElement: null };

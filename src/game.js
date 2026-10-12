@@ -24,8 +24,8 @@ import { SnejSky } from "./sky.js";
 import { SPAWNS, SPAWN_INITIAL_NAME, SPAWN_NAMES } from "./spawns.js";
 import { SnejTerrain } from "./terrain.js";
 import { SnejTextureManager } from "./textureManager.js";
-import { SnejUI } from "./ui.js?v=mobile-1";
-import { SnejMobileInput, movementInput, requestLandscape } from "./mobileInput.js?v=mobile-2";
+import { SnejUI } from "./ui.js?v=joystick-3";
+import { SnejMobileInput, movementInput, requestLandscape } from "./mobileInput.js?v=joystick-3";
 import { SnejWater } from "./water.js?v=0.0.5a-hf3";
 import { clamp, clamp01, damp, lerp, moveDelta, resolveWalkableStart } from "./util.js?v=0.0.3-hf2.12";
 
@@ -395,21 +395,26 @@ export class SnejFishingGame {
       if (this.mode === "playing" && this.ui.buildOpen) this.placementSystem.handlePointerMove(event);
     });
     window.addEventListener("pointerup", () => this.placementSystem.handlePointerUp());
-    this.canvas.addEventListener("mousedown", (event) => {
-      if (event.button === 0 && !this.isTouchCompatibilityEvent(event)) this.beginCastAction();
-    });
+    for (const surface of [this.canvas, this.ui.el.mobileLook]) {
+      surface.addEventListener("pointerdown", (event) => {
+        if (["touch", "pen"].includes(event.pointerType)) this.lastTouchCanvas = performance.now();
+      });
+      surface.addEventListener("touchstart", () => { this.lastTouchCanvas = performance.now(); }, { passive: true });
+      surface.addEventListener("mousedown", (event) => {
+        if (event.button === 0 && !this.isTouchCompatibilityEvent(event)) this.beginCastAction();
+      });
+      surface.addEventListener("click", (event) => {
+        if (this.isTouchCompatibilityEvent(event) || !this.canCast()) return;
+        this.audio.resume();
+        this.canvas.requestPointerLock();
+      });
+    }
     window.addEventListener("mouseup", (event) => {
       if (event.button === 0 && !this.isTouchCompatibilityEvent(event)) this.endCastAction();
     });
     window.addEventListener("blur", () => {
       this.cast.cancelCharge();
       this.castMeter.classList.add("hidden");
-    });
-    this.canvas.addEventListener("click", (event) => {
-      if (this.isTouchCompatibilityEvent(event)) return;
-      if (!this.canCast()) return;
-      this.audio.resume();
-      this.canvas.requestPointerLock();
     });
     document.addEventListener("pointerlockchange", () => {
       if (document.pointerLockElement === this.canvas) this.audio.resume();

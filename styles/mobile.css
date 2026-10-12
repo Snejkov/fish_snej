@@ -1,6 +1,8 @@
 .mobile-controls[hidden], .mobile-orientation[hidden] { display: none !important; }
 .mobile-input-active { touch-action: none; }
 .mobile-controls {
+  --stick-size: 120px;
+  --stick-knob: 56px;
   position: fixed;
   inset: 0;
   z-index: 12;
@@ -8,12 +10,19 @@
   user-select: none;
   -webkit-user-select: none;
 }
+.mobile-look {
+  position: absolute;
+  inset: 0 0 0 50%;
+  pointer-events: auto;
+  touch-action: none;
+}
 .mobile-stick {
   position: absolute;
+  z-index: 1;
   left: max(18px, env(safe-area-inset-left));
   bottom: max(18px, env(safe-area-inset-bottom));
-  width: 132px;
-  height: 132px;
+  width: var(--stick-size);
+  height: var(--stick-size);
   padding: 0;
   border: 1px solid rgba(225, 239, 234, 0.45);
   border-radius: 50%;
@@ -30,10 +39,10 @@
 }
 .mobile-stick-thumb {
   position: absolute;
-  top: calc(50% - 25px);
-  left: calc(50% - 25px);
-  width: 50px;
-  height: 50px;
+  top: calc(50% - var(--stick-knob) / 2);
+  left: calc(50% - var(--stick-knob) / 2);
+  width: var(--stick-knob);
+  height: var(--stick-knob);
   border: 1px solid rgba(239, 247, 242, 0.65);
   border-radius: 50%;
   background: rgba(216, 238, 221, 0.35);
@@ -43,6 +52,7 @@
 .mobile-stick.pressed { border-color: #91dac6; }
 .mobile-buttons {
   position: absolute;
+  z-index: 1;
   top: max(12px, env(safe-area-inset-top));
   right: max(12px, env(safe-area-inset-right));
   display: flex;
@@ -65,6 +75,7 @@
 }
 .mobile-cast {
   position: absolute;
+  z-index: 1;
   right: max(22px, env(safe-area-inset-right));
   bottom: max(28px, env(safe-area-inset-bottom));
   width: 72px;
@@ -76,6 +87,19 @@
   pointer-events: auto;
   touch-action: none;
 }
+.mobile-run {
+  position: absolute;
+  z-index: 1;
+  right: calc(max(22px, env(safe-area-inset-right)) + 88px);
+  bottom: max(28px, env(safe-area-inset-bottom));
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  font-size: 14px;
+  pointer-events: auto;
+  touch-action: none;
+}
+.mobile-run.pressed { background: rgba(50, 130, 100, 0.8); border-color: #91dac6; }
 .mobile-cast.pressed { background: rgba(126, 156, 56, 0.8); border-color: #bce58c; }
 .mobile-orientation {
   position: fixed;
@@ -115,7 +139,7 @@
   .mobile-orientation { display: none; }
 }
 @media (max-height: 430px) {
-  .mobile-stick { width: 112px; height: 112px; }
   .mobile-cast { width: 64px; height: 64px; bottom: max(18px, env(safe-area-inset-bottom)); }
-  .mobile-control-button:not(.mobile-cast) { width: 40px; height: 40px; min-height: 40px; }
+  .mobile-run { bottom: max(18px, env(safe-area-inset-bottom)); }
+  .mobile-buttons .mobile-control-button { width: 40px; height: 40px; min-height: 40px; }
 }

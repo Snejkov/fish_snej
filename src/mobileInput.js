@@ -4,7 +4,8 @@ const limit = (value, low, high) => Math.min(high, Math.max(low, value));
 export function touchControlsAvailable(environment = globalThis) {
   const coarse = environment.matchMedia?.("(pointer: coarse)").matches;
   const anyCoarse = environment.matchMedia?.("(any-pointer: coarse)").matches;
-  return Boolean(coarse || (anyCoarse && environment.navigator?.maxTouchPoints > 0));
+  const noHover = environment.matchMedia?.("(hover: none)").matches;
+  return Boolean(coarse || ((anyCoarse || noHover) && environment.navigator?.maxTouchPoints > 0));
 }
 
 export function joystickAxes(dx, dy, radius, deadZone = 0.12) {
@@ -31,13 +32,13 @@ export function movementInput(keys, stick = {}, autoSprint = false) {
   const has = (code) => keys?.has(code) ? 1 : 0;
   const axes = combinedMovement(has("KeyD") - has("KeyA"), has("KeyW") - has("KeyS"), stick);
   const magnitude = Math.hypot(axes.mx, axes.mz);
-  return { ...axes, magnitude, sprint: magnitude > 0 && (autoSprint === true || Boolean(has("ShiftLeft") || has("ShiftRight"))) };
+  return { ...axes, magnitude, sprint: magnitude > 0 && (autoSprint === true || stick.sprint === true || Boolean(has("ShiftLeft") || has("ShiftRight"))) };
 }
 
 export class MobileInputState {
   constructor() { this.reset(); }
 
-  owns(id) { return this.stick?.id === id || this.look?.id === id || this.castId === id; }
+  owns(id) { return this.stick?.id === id || this.look?.id === id || this.castId === id || this.runId === id; }
   canClaim(id) { return Number.isInteger(id) && id >= 0 && !this.owns(id); }
 
   beginStick(id, x, y, centerX, centerY, radius) {
@@ -76,6 +77,12 @@ export class MobileInputState {
     return true;
   }
 
+  beginRun(id) {
+    if (this.runId !== null || !this.canClaim(id)) return false;
+    this.runId = id;
+    return true;
+  }
+
   endPointer(id) {
     if (this.stick?.id === id) {
       this.stick = null;
@@ -84,6 +91,7 @@ export class MobileInputState {
     }
     if (this.look?.id === id) { this.look = null; return "look"; }
     if (this.castId === id) { this.castId = null; return "cast"; }
+    if (this.runId === id) { this.runId = null; return "run"; }
     return null;
   }
 
@@ -96,6 +104,7 @@ export class MobileInputState {
   reset() {
     this.stick = this.look = null;
     this.castId = null;
+    this.runId = null;
     this.axes = joystickAxes(0, 0, 1);
     this.dx = this.dy = 0;
   }
@@ -135,25 +144,34 @@ export class SnejMobileInput {
     this.stick = controls.querySelector(".mobile-stick");
     this.thumb = controls.querySelector(".mobile-stick-thumb");
     this.castButton = controls.querySelector("[data-mobile-cast]");
+    this.runButton = controls.querySelector("[data-mobile-run]");
+    this.lookZone = controls.querySelector("[data-mobile-look]") || canvas;
     // A real touch can recover from an inaccurate primary-pointer media query.
     this.listen(environment.document, "pointerdown", (event) => {
       if (event.pointerType !== "touch" || this.touchSeen) return;
       this.touchSeen = true;
       this.refreshAvailability();
     }, { capture: true });
+    // Safari touch-start detection also works when pointer media queries miss the device.
+    this.listen(environment.document, "touchstart", () => {
+      if (this.touchSeen) return;
+      this.touchSeen = true;
+      this.refreshAvailability();
+    }, { capture: true, passive: true });
     this.listen(this.stick, "pointerdown", (event) => this.beginStick(event));
     this.listen(this.stick, "pointermove", (event) => {
       if (!this.available()) return this.reset();
       if (this.state.moveStick(event.pointerId, event.clientX, event.clientY)) this.paintStick();
     });
-    this.listen(canvas, "pointerdown", (event) => this.beginLook(event));
-    this.listen(canvas, "pointermove", (event) => {
+    this.listen(this.lookZone, "pointerdown", (event) => this.beginLook(event));
+    this.listen(this.lookZone, "pointermove", (event) => {
       if (this.state.look?.id !== event.pointerId) return;
       if (!this.available()) return this.reset();
       this.state.moveLook(event.pointerId, event.clientX, event.clientY);
     });
     this.listen(this.castButton, "pointerdown", (event) => this.beginCast(event));
-    for (const target of [canvas, this.stick, this.castButton]) {
+    this.listen(this.runButton, "pointerdown", (event) => this.beginRun(event));
+    for (const target of [this.lookZone, this.stick, this.castButton, this.runButton]) {
       for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) {
         this.listen(target, type, (event) => this.finish(event, type !== "pointerup"));
       }
@@ -163,7 +181,7 @@ export class SnejMobileInput {
     this.listen(environment.document, "visibilitychange", () => {
       if (environment.document.hidden) this.reset();
     });
-    for (const query of ["(pointer: coarse)", "(any-pointer: coarse)"]) {
+    for (const query of ["(pointer: coarse)", "(any-pointer: coarse)", "(hover: none)"]) {
       this.listen(environment.matchMedia?.(query), "change", () => this.refreshAvailability());
     }
     this.refreshAvailability();
@@ -181,6 +199,7 @@ export class SnejMobileInput {
     this.enabled = enabled;
     this.controls.hidden = !enabled || !this.active;
     this.canvas.classList.toggle("mobile-input-active", enabled && this.active);
+    this.environment.document?.body?.classList.toggle("touch-active", enabled);
     this.onAvailability?.(enabled);
   }
 
@@ -218,7 +237,12 @@ export class SnejMobileInput {
     if (!this.available(event)) return;
     // Suppress compatibility mouse casts even when an extra finger is ignored.
     event.preventDefault();
-    if (this.state.beginLook(event.pointerId, event.clientX, event.clientY)) this.capture(event, this.canvas);
+    if (this.state.beginLook(event.pointerId, event.clientX, event.clientY)) this.capture(event, this.lookZone);
+  }
+
+  beginRun(event) {
+    if (!this.available(event) || !this.state.beginRun(event.pointerId)) return;
+    if (this.capture(event, this.runButton)) this.paintRun();
   }
 
   beginCast(event) {
@@ -239,6 +263,7 @@ export class SnejMobileInput {
   finish(event, cancelled) {
     const role = this.release(event.pointerId);
     if (role === "stick") this.paintStick();
+    if (role === "run") this.paintRun();
     if (role === "look" && cancelled) this.state.takeLook();
     if (role !== "cast") return;
     this.castButton.classList.remove("pressed");
@@ -247,8 +272,15 @@ export class SnejMobileInput {
   }
 
   paintStick() {
+    this.thumb.style.transition = this.state.stick ? "none" : "transform 120ms ease-out";
     this.thumb.style.transform = `translate(${this.state.axes.x}px, ${this.state.axes.y}px)`;
     this.stick.classList.toggle("pressed", Boolean(this.state.stick));
+  }
+
+  paintRun() {
+    const held = this.state.runId !== null;
+    this.runButton?.classList.toggle("pressed", held);
+    this.runButton?.setAttribute?.("aria-pressed", String(held));
   }
 
   reset() {
@@ -259,6 +291,7 @@ export class SnejMobileInput {
     }
     this.captures.clear();
     this.paintStick();
+    this.paintRun();
     this.castButton.classList.remove("pressed");
     if (casting) this.onCastCancel?.();
   }
@@ -270,7 +303,7 @@ export class SnejMobileInput {
   }
 
   movement() {
-    if (this.available()) return this.state.axes;
+    if (this.available()) return { ...this.state.axes, sprint: this.state.runId !== null };
     this.reset();
     return { mx: 0, mz: 0 };
   }

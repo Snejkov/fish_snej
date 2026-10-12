@@ -129,6 +129,7 @@ export class SnejUI {
     controls.className = "mobile-controls";
     controls.hidden = true;
     controls.innerHTML = `
+      <div id="touch-look" class="mobile-look" data-mobile-look aria-hidden="true"></div>
       <button type="button" class="mobile-stick" aria-label="Movement joystick" title="Movement joystick"><span class="mobile-stick-thumb"></span></button>
       <div class="mobile-buttons">
         <button type="button" class="mobile-control-button" data-mobile-action="roster" aria-label="Players" title="Players"><span data-i18n-skip>&#9776;</span></button>
@@ -137,6 +138,7 @@ export class SnejUI {
         <button type="button" class="mobile-control-button" data-mobile-action="fullscreen" aria-label="Fullscreen" title="Fullscreen"><span data-i18n-skip>&#9974;</span></button>
         <button type="button" class="mobile-control-button" data-mobile-action="menu" aria-label="Menu" title="Menu"><span data-i18n-skip>&#9881;</span></button>
       </div>
+      <button id="run-button" type="button" class="mobile-control-button mobile-run" data-mobile-run aria-label="Sprint" aria-pressed="false" data-i18n-skip>Run</button>
       <button type="button" class="mobile-control-button mobile-cast" data-mobile-cast data-i18n="Cast">Cast</button>`;
     const orientation = document.createElement("div");
     orientation.className = "mobile-orientation";
@@ -144,6 +146,7 @@ export class SnejUI {
     orientation.innerHTML = `<span data-i18n="Rotate your device to landscape.">Rotate your device to landscape.</span><button type="button" class="mobile-control-button" aria-label="Fullscreen" title="Fullscreen"><span data-i18n-skip>&#9974;</span></button>`;
     document.getElementById("app").append(controls, orientation);
     this.el.mobileControls = controls;
+    this.el.mobileLook = controls.querySelector("[data-mobile-look]");
     this.el.mobileOrientation = orientation;
     controls.addEventListener("click", (event) => {
       const action = event.target.closest("[data-mobile-action]")?.dataset.mobileAction;

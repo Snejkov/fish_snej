@@ -5,8 +5,8 @@
 <title>Mobile layout fixture (emulated capabilities)</title>
 <style>html,body{margin:0;height:100%;background:#111}iframe{display:block;width:100%;height:100%;border:0}</style>
 <iframe id="fixture" title="Game with emulated coarse-pointer capabilities"></iframe>
-<button id="run-checks" style="position:fixed;bottom:8px;left:50%;transform:translateX(-50%)">Run emulated input checks</button>
-<output id="check-result" style="position:fixed;bottom:40px;left:50%;transform:translateX(-50%);background:#111;color:white"></output>
+<button id="run-checks" style="position:fixed;z-index:100;bottom:150px;left:50%;transform:translateX(-50%)">Run emulated input checks</button>
+<output id="check-result" style="position:fixed;z-index:100;bottom:150px;left:12px;right:12px;background:#111;color:white"></output>
 <script type="module">
   // Test-only capability emulation; production detection does not read URL flags.
   const page = new DOMParser().parseFromString(await (await fetch("../index.html")).text(), "text/html");
@@ -33,7 +33,9 @@
     const controls = game.ui.el.mobileControls;
     const stick = controls.querySelector(".mobile-stick");
     const cast = controls.querySelector("[data-mobile-cast]");
-    const targets = [stick, game.canvas, cast];
+    const run = controls.querySelector("[data-mobile-run]");
+    const look = controls.querySelector("[data-mobile-look]");
+    const targets = [stick, look, cast, run];
     const originals = targets.map((target) => [target.setPointerCapture, target.hasPointerCapture, target.releasePointerCapture]);
     const check = (condition, message) => { if (!condition) throw new Error(message); };
     // Synthetic pointers cannot acquire native capture; emulate capture only for this fixture.
@@ -56,29 +58,41 @@
       game.mobileInput.refreshAvailability();
       check(!game.mobileInput.enabled && controls.hidden, "Detection miss not reproduced");
       pointer(game.canvas, "pointerdown", 100, 330, 180);
+      check(game.mobileInput.state.look === null, "Left canvas stole camera input");
+      pointer(look, "pointerdown", 100, 600, 180);
       check(game.mobileInput.enabled && !controls.hidden && game.mobileInput.state.look?.id === 100, "First touch did not recover controls");
-      pointer(game.canvas, "pointercancel", 100, 330, 180);
+      pointer(look, "pointercancel", 100, 600, 180);
       game.mobileInput.environment = before.environment;
       const rect = stick.getBoundingClientRect(), x = rect.left + rect.width / 2, y = rect.top + rect.height / 2;
       pointer(stick, "pointerdown", 101, x, y);
       pointer(stick, "pointermove", 101, x, y + 22);
-      pointer(game.canvas, "pointerdown", 102, 330, 180);
-      pointer(game.canvas, "pointermove", 102, 370, 190);
+      const lookRect = look.getBoundingClientRect(), lookX = lookRect.left + lookRect.width / 2;
+      check(win.document.elementFromPoint(x, y)?.closest(".mobile-stick") === stick, "Joystick hit area is covered");
+      const runRect = run.getBoundingClientRect();
+      check(win.document.elementFromPoint(runRect.left + 36, runRect.top + 36) === run, "Run hit area is covered");
+      check(win.document.elementFromPoint(lookX, 180) === look, "Look area is covered");
+      pointer(look, "pointerdown", 102, lookX, 180);
+      pointer(look, "pointermove", 102, lookX + 40, 190);
       check(game.mobileInput.state.axes.mz < 0, "Joystick not active");
       game.updateLook(1 / 60);
       check(game.yaw !== before.yaw, "Swipe did not turn camera");
-      game.settings.autoSprint = true;
+      game.settings.autoSprint = false;
+      pointer(run, "pointerdown", 104, runRect.left + 36, runRect.top + 36);
+      check(game.mobileInput.movement().sprint, "Run button did not activate sprint");
       game.updateMove(0.1);
       check(game.pos.distanceTo(before.pos) > 0, "Joystick did not move character");
-      pointer(game.canvas, "pointerup", 102, 370, 190);
+      pointer(look, "pointerup", 102, lookX + 40, 190);
       check(game.mobileInput.state.axes.mz < 0, "Look release cancelled movement");
+      check(game.mobileInput.movement().sprint, "Look release cancelled Run");
+      pointer(run, "pointercancel", 104, runRect.left + 36, runRect.top + 36);
+      check(!game.mobileInput.movement().sprint && game.mobileInput.state.axes.mz < 0, "Run release did not preserve walking");
       pointer(stick, "pointercancel", 101, x, y);
       check(game.mobileInput.state.axes.mz === 0, "Movement cancellation stuck");
       pointer(cast, "pointerdown", 103, 770, 330);
       check(game.mobileInput.state.castId === 103, "Cast finger not captured");
       pointer(cast, "pointercancel", 103, 770, 330);
       check(game.cast.state.fs !== "flight" && game.mobileInput.state.castId === null, "Cancel released a cast");
-      report.textContent = "PASS: emulated touch recovery + move + swipe + cancellation";
+      report.textContent = "PASS: touch detection + joystick + Run + right swipe + cancellation";
       runButton.hidden = true;
     } catch (error) {
       report.textContent = "FAIL: " + error.message;

@@ -8,6 +8,7 @@ registerHooks({
   }
 });
 const { SnejRemotePlayerRoom } = await import("../src/multiplayer/room.js");
+const THREE = await import("three");
 const room = new SnejRemotePlayerRoom();
 const presence = (clientId, x, z, yaw = 0) => ({ clientId, presence: { id: clientId === "a" ? 6 : 7, name: `SkinQA_${clientId}`, rank: "player", x, y: 0, z, yaw } });
 room.applyPresence(presence("a", 0, 0, Math.PI - 0.01));
@@ -53,6 +54,18 @@ for (const invalid of [{ y: Infinity }, { y: "0" }, { yaw: Infinity }, { yaw: "0
   assert.equal(a.yaw, validYaw);
 }
 assert.equal(room.players.size, 2);
+
+const observer = new THREE.PerspectiveCamera();
+observer.position.copy(a.model.position).add(new THREE.Vector3(0, 1.6, 0));
+room.update(0, observer);
+assert.equal(a.model.visible, false, "A camera inside a co-located peer must not render its face around the screen.");
+assert.equal(b.model.visible, true, "Other nearby players retain their complete third-person model.");
+observer.position.z += 4;
+room.update(0, observer);
+assert.equal(a.model.visible, true, "Leaving the overlapping body restores the full skin.");
+assert.equal(b.model.visible, true);
+room.update(0);
+assert.equal(a.model.visible, true);
 
 const materials = a.model.userData.materials;
 assert.equal(materials.length, new Set(materials).size);

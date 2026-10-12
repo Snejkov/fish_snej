@@ -16,6 +16,7 @@ export class SnejRemotePlayerRoom {
     this.group = new THREE.Group();
     this.group.name = "remote-players";
     this.players = new Map();
+    this.observerPosition = new THREE.Vector3();
   }
 
   applyPresence(message) {
@@ -78,9 +79,10 @@ export class SnejRemotePlayerRoom {
       .sort((a, b) => a.id - b.id);
   }
 
-  update(dt) {
+  update(dt, observerCamera) {
     dt = Number.isFinite(dt) ? Math.max(0, dt) : 0;
     const alpha = 1 - Math.exp(-12 * dt);
+    if (observerCamera) observerCamera.getWorldPosition(this.observerPosition);
     // Membership ends with a server leave or transport loss, never with a paused animation.
     for (const player of this.players.values()) {
       player.previousPosition.copy(player.model.position);
@@ -95,6 +97,11 @@ export class SnejRemotePlayerRoom {
         directionX, directionZ,
         cameraMode: "third-person", viewBlend: 1, depth: 0
       });
+      // Shared spawn points must not put another player's face inside the camera.
+      const dx = this.observerPosition.x - player.model.position.x;
+      const dz = this.observerPosition.z - player.model.position.z;
+      const eyeHeight = this.observerPosition.y - player.model.position.y;
+      player.model.visible = !observerCamera || dx * dx + dz * dz >= 0.16 || eyeHeight < 0 || eyeHeight > 1.95;
     }
   }
 }

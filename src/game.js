@@ -1074,7 +1074,7 @@ export class SnejFishingGame {
     }
     this.updateFloatRig(this.canCast() ? sceneDt : 0);
     this.updateCastVisuals();
-    this.remoteRoom.update(dt);
+    this.remoteRoom.update(dt, this.camera);
     this.updateMultiplayer(dt);
     this.ui.updateHUD(this, dt);
     this.lastSave += dt;

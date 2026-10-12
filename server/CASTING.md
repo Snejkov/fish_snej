@@ -41,15 +41,17 @@ PC holds the left mouse button (or optional C) to charge, then releases to cast.
 physical Backquote key toggles free cursor and pointer-lock camera look.
 Mobile/tablet users hold the mobile-only Cast button, then release to cast;
 ordinary screen swipes still look around. Strength grows monotonically to
-the maximum in 2.5 seconds and stays there without automatically throwing.
+the maximum in about 2.08 seconds (20 percent faster accumulation) and stays
+there without automatically throwing.
 Casting follows the rendered camera ray projected to the water plane, then
 measures the charged distance from the player along that direction. This
 accounts for third-person orbit parallax; camera pitch is not copied from
 the orbit controls. The ring previews the charged endpoint and is not draggable.
 Looking around remains available during the hold without immediately turning
 the character. A camera ray that cannot meet water is invalid, not silently
-clamped. Strength appears as an accessible, four-pixel top line with safe-area
-insets, not a centered card.
+clamped. Strength appears as an accessible, slim framed bar centered at the top,
+20 percent of viewport width, with a safe-area inset and no bulky text/card.
+Too-short releases report insufficient strength rather than blaming open water.
 
 Release freezes the target, power and flight pitch. The character smoothly
 turns by the shortest angle over 0.16 to 0.65 seconds; the flight waits for

@@ -11,7 +11,7 @@ const context = {
 const make = () => new SnejCastSystem({ rodRange: 60, getCastOrigin: () => ({ x: 0, y: 3, z: 0.55 }) });
 for (const [name, expected] of Object.entries({
   GRAVITY: 9.8, CAST_HEADROOM: 1.07, CAST_SPEED_MIN: 0.5, CAST_TOL: 0.06,
-  CAST_MISS: 0.30, CHARGE_RATE: 0.4, FLIGHT_TIME_SCALE: 0.65,
+  CAST_MISS: 0.30, CHARGE_RATE: 0.48, FLIGHT_TIME_SCALE: 0.65,
   SPLASH_BASE: 16, SPLASH_MIN: 4, SPLASH_SCALE: 0.55, WAKE_BOB_AMP: 0.012, WAKE_BOB_FREQ: 1.6
 })) assert.equal(cast[name], expected, name);
 assert.deepEqual(cast.STARTLE_R, [1, 3.2]);
@@ -43,7 +43,7 @@ assert.equal(charge.onActionDown(), true);
 assert.equal(charge.onActionDown(), false);
 let elapsed = 0;
 while (charge.state.chargeDir === 1) { charge.tick(1 / 60, context); elapsed += 1 / 60; }
-assert.ok(Math.abs(elapsed - 2.5) < 0.02, "Full distance charge must take 2.5 seconds.");
+assert.ok(Math.abs(elapsed - 2.5 / 1.2) < 0.02, "Full distance charge must accumulate 20 percent faster.");
 charge.cancelCharge();
 charge.onActionDown();
 charge.tick(2 / cast.CHARGE_RATE, context);

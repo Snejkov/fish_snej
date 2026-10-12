@@ -170,3 +170,28 @@ test("upward camera and dry/blocked preview do not get silently clamped to a val
     assert.equal(game.cameraMode, "third-person");
   } finally { globalThis.document = previousDocument; }
 });
+
+test("a quick release reports insufficient strength instead of blaming open water", () => {
+  const previousDocument = globalThis.document; globalThis.document = {};
+  try {
+    const { game } = fixture("first-person"), messages = [];
+    game.ui.showToast = text => messages.push(text);
+    assert.ok(game.beginHoldCast()); game.updateCast(0.1);
+    assert.equal(game.cast.state.canRelease, false);
+    assert.equal(game.cast.state.releaseBlock, "range");
+    assert.equal(game.endHoldCast(), false); assert.equal(game.cast.state.fs, "idle");
+    assert.deepEqual(messages, ["Charge a longer cast."]);
+    assert.ok(game.beginHoldCast()); game.updateCast(2.5);
+    assert.equal(game.cast.state.canRelease, true); assert.equal(game.endHoldCast(), true);
+  } finally { globalThis.document = previousDocument; }
+});
+
+test("held strength accumulates 20 percent faster without changing the range or auto-releasing", () => {
+  const { game } = fixture("first-person");
+  game.beginHoldCast(); game.updateCast(1);
+  assert.ok(Math.abs(game.cast.state.charge - 0.48) < 1e-9);
+  assert.equal(game.cast.castRange, 7.5);
+  game.updateCast(2.5 / 1.2 - 1 + 1e-9);
+  assert.equal(game.cast.state.charge, 1); assert.equal(game.cast.state.fs, "charge");
+  game.updateCast(10); assert.equal(game.cast.state.charge, 1); assert.equal(game.cast.state.fs, "charge");
+});

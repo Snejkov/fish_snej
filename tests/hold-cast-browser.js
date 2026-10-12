@@ -109,7 +109,9 @@ button.onclick = () => {
     check(Math.hypot(game.cast.state.aimPoint.x - oldAim.x, game.cast.state.aimPoint.z - oldAim.z) > 0.01, "Held camera input did not move the preview");
     check(game.castFacing === oldFacing && game.cameraMode === "third-person", "Aiming snapped the character or view");
     const bar = game.castMeter.getBoundingClientRect(), barStyle = win.getComputedStyle(game.castMeter);
-    check(bar.height <= 5 && bar.top <= 6 && barStyle.paddingTop === "0px", "Strength was not a thin top line");
+    check(bar.height <= 8 && bar.top <= 6 && Math.abs(bar.width / win.innerWidth - 0.2) < 0.002
+      && Math.abs(bar.left + bar.width / 2 - win.innerWidth / 2) < 1
+      && barStyle.borderTopWidth === "1px", "Strength was not a compact centered top frame");
     check(game.cast.state.canRelease, "Small camera adjustment blocked the test cast");
     const chosen = { ...game.cast.state.predictedLanding };
     lift(false); check(game.cast.state.fs === "charge" && game.castTurn, "Release skipped the smooth turn");
@@ -142,7 +144,7 @@ button.onclick = () => {
     game.yaw = savedYaw; game.angler.group.rotation.y = savedYaw; game.angler.group.updateMatrixWorld(true);
     game.updateCamera(10); game.cast.reset(); game.updateCast(0);
     press(); game.updateCast(2.5);
-    report.textContent = "PASS: camera aim / smooth turn / frozen target / exact landing / top line / hold cap / cancel";
+    report.textContent = "PASS: camera aim / smooth turn / frozen target / exact landing / compact top frame / hold cap / cancel";
     button.hidden = true;
   } catch (error) { report.textContent = "FAIL: " + error.message; }
 };

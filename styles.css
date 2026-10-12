@@ -465,17 +465,18 @@ legend {
   position: fixed;
   z-index: 30;
   pointer-events: none;
-  left: max(12px, env(safe-area-inset-left));
-  right: max(12px, env(safe-area-inset-right));
+  left: 50%;
+  right: auto;
   top: calc(env(safe-area-inset-top, 0px) + 4px);
   bottom: auto;
-  transform: none;
-  width: auto;
-  height: 4px;
-  padding: 0;
-  border: 0;
-  border-radius: 2px;
-  background: transparent;
+  transform: translateX(-50%);
+  box-sizing: border-box;
+  width: 20vw;
+  height: 8px;
+  padding: 1px;
+  border: 1px solid rgba(220, 239, 228, 0.55);
+  border-radius: 3px;
+  background: rgba(10, 23, 19, 0.8);
   box-shadow: none;
   backdrop-filter: none;
 }

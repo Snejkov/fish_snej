@@ -9,7 +9,7 @@ import { SnejAudio, DEFAULT_AMBIENT_VOLUME, AMBIENT_DEFAULTS_VERSION, migrateAmb
 import {
   SnejCastSystem, SPLASH_BASE, SPLASH_MIN, SPLASH_SCALE,
   STARTLE_R, STARTLE_SEC, WAKE_BOB_AMP, WAKE_BOB_FREQ
-} from "./castSystem.js?v=camera-cast-1";
+} from "./castSystem.js?v=cast-meter-2";
 import { DEFAULT_FLOAT_DEPTH, FLOAT_RETRIEVE_FRACTION, SnejFloatRig, limitLineEnd, writeFixedLine } from "./floatRig.js?v=shore-cast-2";
 import { SnejDesktopCursor, editableTarget } from "./desktopCursor.js?v=shore-cast-2";
 import { fishingMeters, fishingWorld } from "./fishingUnits.js?v=shore-cast-2";

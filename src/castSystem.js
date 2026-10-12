@@ -8,7 +8,7 @@ const CAST_HEADROOM = 1.07;
 const CAST_SPEED_MIN = 0.5;
 const CAST_TOL = 0.06;
 const CAST_MISS = 0.30;
-const CHARGE_RATE = 0.4;
+const CHARGE_RATE = 0.48;
 const SPLASH_BASE = 16;
 const SPLASH_MIN = 4;
 const SPLASH_SCALE = 0.55;
@@ -239,8 +239,9 @@ export class SnejCastSystem {
   releaseReason(power, landing) {
     this.predictLanding(power, landing);
     const state = this.state;
-    if (!state.aimValid) return state.aimOutOfReach ? "reach" : "water";
+    if (!state.aimValid && state.aimOutOfReach) return "reach";
     if (power * this.castRange < state.minCastDist - 1e-8) return "range";
+    if (!state.aimValid) return "water";
     return landing.obstruction || (!landing.water ? "water" : null);
   }
 

@@ -36,21 +36,28 @@
     const run = controls.querySelector("[data-mobile-run]");
     const look = controls.querySelector("[data-mobile-look]");
     const targets = [stick, look, cast, run];
-    const originals = targets.map((target) => [target.setPointerCapture, target.hasPointerCapture, target.releasePointerCapture]);
+    const originals = targets.map((target) => target.setPointerCapture);
     const check = (condition, message) => { if (!condition) throw new Error(message); };
-    // Synthetic pointers cannot acquire native capture; emulate capture only for this fixture.
-    targets.forEach((target) => {
-      const held = new Set();
-      target.setPointerCapture = (id) => held.add(id);
-      target.hasPointerCapture = (id) => held.has(id);
-      target.releasePointerCapture = (id) => held.delete(id);
-    });
-    const pointer = (target, type, id, x, y) => target.dispatchEvent(new win.PointerEvent(type,
-      { pointerType: "touch", pointerId: id, clientX: x, clientY: y, bubbles: true, cancelable: true }));
+    // Reject capture instead of mocking successful capture: native touch must not need it.
+    targets.forEach((target) => { target.setPointerCapture = () => { throw new Error("Capture unavailable in this test"); }; });
+    const nativeTouch = game.mobileInput.useTouchEvents;
+    const heldTouches = new Map();
+    const pointer = (target, type, id, x = 0, y = 0) => {
+      if (!nativeTouch) return target.dispatchEvent(new win.PointerEvent(type,
+        { pointerType: "touch", pointerId: id, clientX: x, clientY: y, bubbles: true, cancelable: true }));
+      const touch = new win.Touch({ identifier: id, target: heldTouches.get(id)?.target || target, clientX: x, clientY: y });
+      if (type === "pointerup" || type === "pointercancel") heldTouches.delete(id);
+      else heldTouches.set(id, touch);
+      const event = new win.TouchEvent(({ pointerdown: "touchstart", pointermove: "touchmove", pointerup: "touchend", pointercancel: "touchcancel" })[type],
+        { changedTouches: [touch], touches: Array.from(heldTouches.values()), bubbles: true, cancelable: true });
+      target.dispatchEvent(event);
+      return !event.defaultPrevented;
+    };
     const before = { yaw: game.yaw, pitch: game.pitch, pos: game.pos.clone(), autoSprint: game.settings.autoSprint,
       environment: game.mobileInput.environment, touchSeen: game.mobileInput.touchSeen };
     try {
       check(game.mode === "playing" && game.mobileInput.enabled, "Enter the game first");
+      check(nativeTouch, "Native touch backend was not selected");
       game.mobileInput.setActive(true);
       // Exercise a detection miss through real DOM propagation, not only forced coarse queries.
       game.mobileInput.environment = { document: win.document, navigator: { maxTouchPoints: 5 }, matchMedia: () => ({ matches: false }) };
@@ -59,11 +66,19 @@
       check(!game.mobileInput.enabled && controls.hidden, "Detection miss not reproduced");
       pointer(game.canvas, "pointerdown", 100, 330, 180);
       check(game.mobileInput.state.look === null, "Left canvas stole camera input");
+      pointer(game.canvas, "pointercancel", 100);
       pointer(look, "pointerdown", 100, 600, 180);
-      check(game.mobileInput.enabled && !controls.hidden && game.mobileInput.state.look?.id === 100, "First touch did not recover controls");
+      check(game.mobileInput.enabled && !controls.hidden && game.mobileInput.state.look?.id === (nativeTouch ? "touch:100" : 100), "First touch did not recover controls");
       pointer(look, "pointercancel", 100, 600, 180);
       game.mobileInput.environment = before.environment;
       const rect = stick.getBoundingClientRect(), x = rect.left + rect.width / 2, y = rect.top + rect.height / 2;
+      for (const type of ["selectstart", "contextmenu"]) {
+        const menuEvent = new win.Event(type, { bubbles: true, cancelable: true });
+        stick.dispatchEvent(menuEvent);
+        check(menuEvent.defaultPrevented, "Native selection/callout was not blocked");
+      }
+      check(win.getComputedStyle(stick).webkitUserSelect === "none", "Stick text remains selectable");
+      check(win.getComputedStyle(win.document.getElementById("loadout-name")).webkitUserSelect !== "none", "Menu text input lost selection");
       pointer(stick, "pointerdown", 101, x, y);
       pointer(stick, "pointermove", 101, x, y + 22);
       const lookRect = look.getBoundingClientRect(), lookX = lookRect.left + lookRect.width / 2;
@@ -89,10 +104,10 @@
       pointer(stick, "pointercancel", 101, x, y);
       check(game.mobileInput.state.axes.mz === 0, "Movement cancellation stuck");
       pointer(cast, "pointerdown", 103, 770, 330);
-      check(game.mobileInput.state.castId === 103, "Cast finger not captured");
+      check(game.mobileInput.state.castId === (nativeTouch ? "touch:103" : 103), "Cast finger not owned");
       pointer(cast, "pointercancel", 103, 770, 330);
       check(game.cast.state.fs !== "flight" && game.mobileInput.state.castId === null, "Cancel released a cast");
-      report.textContent = "PASS: touch detection + joystick + Run + right swipe + cancellation";
+      report.textContent = "PASS: native touch + no capture + move/Run/look + no selection";
       runButton.hidden = true;
     } catch (error) {
       report.textContent = "FAIL: " + error.message;
@@ -102,7 +117,8 @@
       game.mobileInput.touchSeen = before.touchSeen;
       game.mobileInput.refreshAvailability();
       game.pos.copy(before.pos); game.yaw = before.yaw; game.pitch = before.pitch; game.settings.autoSprint = before.autoSprint;
-      targets.forEach((target, i) => ["setPointerCapture", "hasPointerCapture", "releasePointerCapture"].forEach((key, j) => { target[key] = originals[i][j]; }));
+      heldTouches.clear();
+      targets.forEach((target, i) => { target.setPointerCapture = originals[i]; });
     }
   };
 </script>

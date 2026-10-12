@@ -1,5 +1,19 @@
 .mobile-controls[hidden], .mobile-orientation[hidden] { display: none !important; }
 .mobile-input-active { touch-action: none; }
+.mobile-input-active,
+.mobile-controls,
+.mobile-controls *,
+.touch-device #hud,
+.touch-device #hud * {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.mobile-stick, .mobile-run, .mobile-cast {
+  -webkit-appearance: none;
+  appearance: none;
+}
 .mobile-controls {
   --stick-size: 120px;
   --stick-knob: 56px;

@@ -39,7 +39,7 @@ export class MobileInputState {
   constructor() { this.reset(); }
 
   owns(id) { return this.stick?.id === id || this.look?.id === id || this.castId === id || this.runId === id; }
-  canClaim(id) { return Number.isInteger(id) && id >= 0 && !this.owns(id); }
+  canClaim(id) { return (Number.isInteger(id) || (typeof id === "string" && /^touch:-?\d+$/.test(id))) && !this.owns(id); }
 
   beginStick(id, x, y, centerX, centerY, radius) {
     if (this.stick || !this.canClaim(id)) return false;
@@ -137,10 +137,13 @@ export class SnejMobileInput {
     this.onAvailability = onAvailability;
     this.state = new MobileInputState();
     this.captures = new Map();
+    this.uncaptured = new Set();
     this.listeners = [];
     this.active = false;
     this.enabled = false;
     this.touchSeen = false;
+    this.useTouchEvents = "ontouchstart" in environment
+      || (typeof environment.TouchEvent === "function" && environment.navigator?.maxTouchPoints > 0);
     this.stick = controls.querySelector(".mobile-stick");
     this.thumb = controls.querySelector(".mobile-stick-thumb");
     this.castButton = controls.querySelector("[data-mobile-cast]");
@@ -158,19 +161,64 @@ export class SnejMobileInput {
       this.touchSeen = true;
       this.refreshAvailability();
     }, { capture: true, passive: true });
-    this.listen(this.stick, "pointerdown", (event) => this.beginStick(event));
+    const pointerStart = (start) => (event) => {
+      if (this.useTouchEvents && event.pointerType === "touch") return;
+      start.call(this, event);
+    };
+    this.listen(this.stick, "pointerdown", pointerStart(this.beginStick));
     this.listen(this.stick, "pointermove", (event) => {
       if (!this.available()) return this.reset();
       if (this.state.moveStick(event.pointerId, event.clientX, event.clientY)) this.paintStick();
     });
-    this.listen(this.lookZone, "pointerdown", (event) => this.beginLook(event));
+    this.listen(this.lookZone, "pointerdown", pointerStart(this.beginLook));
     this.listen(this.lookZone, "pointermove", (event) => {
       if (this.state.look?.id !== event.pointerId) return;
       if (!this.available()) return this.reset();
       this.state.moveLook(event.pointerId, event.clientX, event.clientY);
     });
-    this.listen(this.castButton, "pointerdown", (event) => this.beginCast(event));
-    this.listen(this.runButton, "pointerdown", (event) => this.beginRun(event));
+    this.listen(this.castButton, "pointerdown", pointerStart(this.beginCast));
+    this.listen(this.runButton, "pointerdown", pointerStart(this.beginRun));
+    for (const [target, start] of [[this.stick, this.beginStick], [this.lookZone, this.beginLook],
+      [this.castButton, this.beginCast], [this.runButton, this.beginRun]]) {
+      this.listen(target, "touchstart", (event) => {
+        if (!this.useTouchEvents || !this.available()) return;
+        // A captured stylus keeps its pointer stream; do not cancel it with duplicate touch events.
+        if (Array.from(this.captures).some(([id, owner]) => typeof id === "number" && owner === target)) return;
+        event.preventDefault();
+        for (const touch of Array.from(event.changedTouches || [])) start.call(this, this.touchPointer(touch, event));
+      }, { passive: false });
+    }
+    this.listen(canvas, "touchstart", (event) => { if (this.available()) event.preventDefault(); }, { passive: false });
+    this.listen(environment.document, "touchmove", (event) => {
+      if (!this.useTouchEvents) return;
+      for (const touch of Array.from(event.changedTouches || [])) {
+        const pointer = this.touchPointer(touch, event);
+        if (!this.state.owns(pointer.pointerId)) continue;
+        if (!this.available()) { this.reset(); return; }
+        event.preventDefault();
+        this.movePointer(pointer);
+      }
+    }, { capture: true, passive: false });
+    for (const type of ["touchend", "touchcancel"]) {
+      this.listen(environment.document, type, (event) => {
+        if (!this.useTouchEvents) return;
+        for (const touch of Array.from(event.changedTouches || [])) {
+          const pointer = this.touchPointer(touch, event);
+          if (!this.state.owns(pointer.pointerId)) continue;
+          event.preventDefault();
+          this.finish(pointer, type === "touchcancel");
+        }
+      }, { capture: true, passive: false });
+    }
+    // A failed capture must not discard input; document listeners retain ownership.
+    this.listen(environment.document, "pointermove", (event) => {
+      if (this.uncaptured.has(event.pointerId)) this.movePointer(event);
+    }, { capture: true });
+    for (const type of ["pointerup", "pointercancel"]) {
+      this.listen(environment.document, type, (event) => {
+        if (this.uncaptured.has(event.pointerId)) this.finish(event, type === "pointercancel");
+      }, { capture: true });
+    }
     for (const target of [this.lookZone, this.stick, this.castButton, this.runButton]) {
       for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) {
         this.listen(target, type, (event) => this.finish(event, type !== "pointerup"));
@@ -181,6 +229,11 @@ export class SnejMobileInput {
     this.listen(environment.document, "visibilitychange", () => {
       if (environment.document.hidden) this.reset();
     });
+    for (const target of [canvas, controls]) {
+      for (const type of ["contextmenu", "selectstart"]) {
+        this.listen(target, type, (event) => { if (this.available()) event.preventDefault(); });
+      }
+    }
     for (const query of ["(pointer: coarse)", "(any-pointer: coarse)", "(hover: none)"]) {
       this.listen(environment.matchMedia?.(query), "change", () => this.refreshAvailability());
     }
@@ -218,11 +271,30 @@ export class SnejMobileInput {
   }
 
   capture(event, target) {
-    try { target.setPointerCapture(event.pointerId); }
-    catch { this.state.endPointer(event.pointerId); return false; }
+    if (!event.nativeTouch) {
+      try { target.setPointerCapture(event.pointerId); }
+      catch { this.uncaptured.add(event.pointerId); }
+    }
     this.captures.set(event.pointerId, target);
     event.preventDefault();
     return true;
+  }
+
+  touchPointer(touch, event) {
+    return { pointerId: `touch:${touch.identifier}`, pointerType: "touch", nativeTouch: true,
+      clientX: touch.clientX, clientY: touch.clientY, preventDefault: () => event.preventDefault() };
+  }
+
+  movePointer(event) {
+    if (!this.available()) return this.reset();
+    if (this.state.moveStick(event.pointerId, event.clientX, event.clientY)) this.paintStick();
+    this.state.moveLook(event.pointerId, event.clientX, event.clientY);
+  }
+
+  releaseCapture(id, target) {
+    if (typeof id !== "number") return;
+    try { if (target?.hasPointerCapture(id)) target.releasePointerCapture(id); }
+    catch { /* The browser may have already revoked this pointer. */ }
   }
 
   beginStick(event) {
@@ -256,7 +328,8 @@ export class SnejMobileInput {
     const role = this.state.endPointer(id);
     const target = this.captures.get(id);
     this.captures.delete(id);
-    if (target?.hasPointerCapture(id)) target.releasePointerCapture(id);
+    this.uncaptured.delete(id);
+    this.releaseCapture(id, target);
     return role;
   }
 
@@ -287,9 +360,10 @@ export class SnejMobileInput {
     const casting = this.state.castId !== null;
     this.state.reset();
     for (const [id, target] of this.captures) {
-      if (target.hasPointerCapture(id)) target.releasePointerCapture(id);
+      this.releaseCapture(id, target);
     }
     this.captures.clear();
+    this.uncaptured.clear();
     this.paintStick();
     this.paintRun();
     this.castButton.classList.remove("pressed");

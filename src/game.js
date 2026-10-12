@@ -25,7 +25,7 @@ import { SPAWNS, SPAWN_INITIAL_NAME, SPAWN_NAMES } from "./spawns.js";
 import { SnejTerrain } from "./terrain.js";
 import { SnejTextureManager } from "./textureManager.js";
 import { SnejUI } from "./ui.js?v=joystick-3";
-import { SnejMobileInput, movementInput, requestLandscape } from "./mobileInput.js?v=joystick-3";
+import { SnejMobileInput, movementInput, requestLandscape } from "./mobileInput.js?v=safari-touch-4";
 import { SnejWater } from "./water.js?v=0.0.5a-hf3";
 import { clamp, clamp01, damp, lerp, moveDelta, resolveWalkableStart } from "./util.js?v=0.0.3-hf2.12";
 

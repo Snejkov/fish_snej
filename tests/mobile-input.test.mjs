@@ -219,6 +219,88 @@ run.dispatchEvent(pointer("pointercancel", 42));
 assert.equal(safariFallback.movement().sprint, false);
 safariFallback.destroy();
 
+// Native touch handling does not require pointer capture or trust its availability.
+const touchEvent = (type, ...touches) => Object.assign(new Event(type, { cancelable: true }), {
+  changedTouches: touches.map(([identifier, clientX = 0, clientY = 0]) => ({ identifier, clientX, clientY }))
+});
+const nativeEnvironment = Object.assign(new EventTarget(), capabilities(true, true, 5), {
+  document: new EventTarget(), ontouchstart: null
+});
+let nativeCaptureCalls = 0;
+const captureMethods = [stick, lookZone, cast, run].map((target) => target.setPointerCapture);
+[stick, lookZone, cast, run].forEach((target) => {
+  target.setPointerCapture = () => { nativeCaptureCalls += 1; throw new Error("Capture unavailable"); };
+});
+const nativeActions = [];
+const nativeController = new SnejMobileInput({ canvas, controls, environment: nativeEnvironment,
+  canInteract: () => interactive, onCastStart: () => { nativeActions.push("start"); return true; },
+  onCastEnd: () => nativeActions.push("end"), onCastCancel: () => nativeActions.push("cancel") });
+nativeController.setActive(true);
+assert.equal(nativeController.useTouchEvents, true);
+stick.dispatchEvent(pointer("pointerdown", 60, 66, 31));
+near(nativeController.movement().mz, 0, "Native touch and compatibility pointer events cannot start duplicate gestures.");
+const touchDown = touchEvent("touchstart", [60, 66, 31]);
+stick.dispatchEvent(touchDown);
+assert.equal(touchDown.defaultPrevented, true, "Active touchstart suppresses Safari selection and callouts.");
+near(nativeController.movement().mz, 1);
+lookZone.dispatchEvent(touchEvent("touchstart", [-8, 600, 200]));
+run.dispatchEvent(touchEvent("touchstart", [62]));
+const outsideMove = touchEvent("touchmove", [60, -300, -400], [-8, 630, 195]);
+nativeEnvironment.document.dispatchEvent(outsideMove);
+assert.equal(outsideMove.defaultPrevented, true);
+assert.deepEqual(nativeController.takeLook(), { dx: 30, dy: -5 });
+near(Math.hypot(nativeController.movement().mx, nativeController.movement().mz), 1);
+assert.equal(nativeController.movement().sprint, true);
+nativeEnvironment.document.dispatchEvent(touchEvent("touchend", [-8]));
+assert.equal(nativeController.movement().sprint, true);
+nativeEnvironment.document.dispatchEvent(touchEvent("touchcancel", [62]));
+assert.equal(nativeController.movement().sprint, false);
+near(Math.hypot(nativeController.movement().mx, nativeController.movement().mz), 1);
+nativeEnvironment.document.dispatchEvent(touchEvent("touchend", [60]));
+near(nativeController.movement().mz, 0);
+cast.dispatchEvent(pointer("pointerdown", 63));
+assert.deepEqual(nativeActions, []);
+cast.dispatchEvent(touchEvent("touchstart", [63]));
+cast.dispatchEvent(pointer("pointerup", 63));
+nativeEnvironment.document.dispatchEvent(touchEvent("touchend", [63]));
+assert.deepEqual(nativeActions, ["start", "end"], "Pointer + touch compatibility events release exactly one cast.");
+cast.dispatchEvent(touchEvent("touchstart", [64]));
+nativeEnvironment.document.dispatchEvent(touchEvent("touchcancel", [64]));
+assert.equal(nativeActions.at(-1), "cancel");
+const unrelatedInput = touchEvent("touchmove", [999]);
+nativeEnvironment.document.dispatchEvent(unrelatedInput);
+assert.equal(unrelatedInput.defaultPrevented, false, "Unowned input is not globally cancelled.");
+for (const type of ["contextmenu", "selectstart"]) {
+  const nativeMenu = new Event(type, { cancelable: true });
+  controls.dispatchEvent(nativeMenu);
+  assert.equal(nativeMenu.defaultPrevented, true);
+}
+stick.dispatchEvent(touchEvent("touchstart", [65, 66, 31]));
+nativeEnvironment.dispatchEvent(new Event("blur"));
+near(nativeController.movement().mz, 0);
+assert.equal(nativeController.captures.size, 0);
+nativeController.setActive(false);
+const menuTouch = touchEvent("touchstart", [66, 66, 31]);
+stick.dispatchEvent(menuTouch);
+assert.equal(menuTouch.defaultPrevented, false, "Paused UI is not trapped by the game gesture suppressor.");
+nativeController.destroy();
+nativeEnvironment.document.dispatchEvent(touchEvent("touchmove", [65, 66, 0]));
+assert.equal(nativeCaptureCalls, 0, "Native multi-touch never invokes the unavailable capture API.");
+
+// Pointer-only devices remain usable even when capture throws.
+const uncapturedController = new SnejMobileInput({ canvas, controls, environment, canInteract: () => true });
+uncapturedController.setActive(true);
+stick.dispatchEvent(pointer("pointerdown", -14, 66, 31));
+near(uncapturedController.movement().mz, 1);
+environment.document.dispatchEvent(pointer("pointermove", -14, 66, 1000));
+near(uncapturedController.movement().mz, -1);
+environment.document.dispatchEvent(pointer("pointerup", -14));
+near(uncapturedController.movement().mz, 0);
+assert.equal(uncapturedController.captures.size, 0);
+assert.equal(uncapturedController.uncaptured.size, 0);
+uncapturedController.destroy();
+[stick, lookZone, cast, run].forEach((target, i) => { target.setPointerCapture = captureMethods[i]; });
+
 const order = [];
 const document = { fullscreenElement: null };
 const supported = {

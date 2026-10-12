@@ -25,6 +25,14 @@ No catch or money is awarded by this contract. Existing profiles and balances
 are preserved. Guest nickname persistence has its existing browser/session
 limitations; this change does not add permanent account registration.
 
+Missing, unowned, invalid or depleted bait returns `bait_unavailable` and
+displays `No bait.`. Other missing/incompatible gear returns
+`cast_gear_unavailable`; only a missing/current-session lake connection uses
+`cast_unavailable` and asks the player to reconnect. The client rejects a
+known empty bait stack before charging/releasing, but the server still checks
+its own inventory both at approval and landing. No denial refills bait or
+changes coins, equipment or profile progress.
+
 ## Units and presentation
 
 World/network/physics coordinates and existing saved depths are unchanged.

@@ -11,6 +11,7 @@ const { SnejAngler } = await import("../src/angler.js");
 const { SnejCastSystem } = await import("../src/castSystem.js");
 const { makePresence } = await import("../src/multiplayer/presence.js");
 const { SnejDesktopCursor } = await import("../src/desktopCursor.js");
+const { AccountError } = await import("../src/serverClient.js");
 const flush = async () => { for (let i = 0; i < 15; i += 1) await Promise.resolve(); };
 const classes = () => ({ toggle() {}, add() {}, contains() { return false; } });
 
@@ -288,4 +289,44 @@ test("a long touch refreshes compatibility suppression on release without disabl
     game.canvas.emit("mousedown", mouse());
     assert.equal(game.cast.state.fs, "charge"); assert.equal(counts().captures, 1);
   });
+});
+
+test("missing or depleted bait stops both cast entry paths with plain feedback and no inventory changes", () => {
+  for (const view of ["first-person", "third-person"]) for (const online of [false, true]) for (const bait of [null, "bait.earthworm"]) {
+    const { game } = fixture(view, online), messages = [];
+    game.inventory.state.equipped.bait = bait; game.inventory.countOf = () => 0;
+    const before = structuredClone(game.inventory.state);
+    game.ui.showToast = message => messages.push(message);
+    game.server.save = () => { throw new Error("Empty bait cannot send a profile or cast request."); };
+    assert.equal(game.beginHoldCast(), false); assert.equal(game.beginCastAction(), false);
+    assert.deepEqual(messages, ["No bait.", "No bait."]);
+    assert.equal(game.cast.state.fs, "idle"); assert.equal(game.cameraMode, view);
+    assert.deepEqual(game.inventory.state, before);
+  }
+});
+
+test("bait depleted during a hold cancels before flight without changing the view or requesting approval", () => {
+  for (const view of ["first-person", "third-person"]) for (const online of [false, true]) {
+    const { game } = fixture(view, online), messages = [];
+    let quantity = 1;
+    game.inventory.countOf = () => quantity; game.ui.showToast = message => messages.push(message);
+    game.server.save = () => { throw new Error("Empty bait cannot request approval."); };
+    assert.ok(game.beginHoldCast()); game.updateCast(2.2); quantity = 0;
+    assert.equal(game.endHoldCast(), false); assert.equal(game.cast.state.fs, "idle");
+    assert.equal(game.holdCasting, false); assert.equal(game.castTurn, null);
+    assert.equal(game.cameraMode, view); assert.deepEqual(messages, ["No bait."]);
+    assert.equal(quantity, 0);
+  }
+});
+
+test("authoritative empty-bait rejection overrides a positive client count and clears the pending cast", async () => {
+  const { game } = fixture("third-person", true), messages = [];
+  game.ui.showToast = message => messages.push(message);
+  game.handleAccountError = Game.prototype.handleAccountError.bind(game);
+  game.server.beginCast = async () => { throw new AccountError("bait_unavailable", 409); };
+  assert.ok(game.beginHoldCast()); game.updateCast(2.2); assert.ok(game.endHoldCast()); await flush();
+  assert.deepEqual(messages, ["No bait."]);
+  assert.equal(game.cast.state.fs, "idle"); assert.equal(game.cameraMode, "third-person");
+  assert.equal(game.castApproval, null); assert.equal(game.castTurn, null);
+  assert.equal(game.inventory.countOf("bait.earthworm"), 10, "A denial cannot invent a stock adjustment.");
 });

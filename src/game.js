@@ -14,7 +14,7 @@ import { DEFAULT_FLOAT_DEPTH, FLOAT_RETRIEVE_FRACTION, SnejFloatRig, limitLineEn
 import { SnejDesktopCursor, editableTarget } from "./desktopCursor.js?v=shore-cast-2";
 import { fishingMeters, fishingWorld } from "./fishingUnits.js?v=shore-cast-2";
 import { SnejAuth, SNEJKOV_ID, SNEJKOV_NAME } from "./auth.js";
-import { SnejServerClient, editableProfile } from "./serverClient.js?v=shore-cast-2";
+import { SnejServerClient, editableProfile } from "./serverClient.js?v=cast-bait-error-1";
 import { DEFAULT_LANGUAGE, normalizeLanguage, setLanguage, t, translateText, errorMessage } from "./i18n.js";
 import { resolveLake } from "./lakeValidator.js";
 import { SNEJ_FIXED_SEED, WORLD_SIZE, WATER_REGION } from "./lake.js";
@@ -481,8 +481,17 @@ export class SnejFishingGame {
     if (this.mobileInput?.enabled) void requestLandscape();
   }
 
+  checkCastBait() {
+    // Early feedback never replaces the server's own inventory checks.
+    if (!this.inventory || this.inventory.countOf(this.inventory.state.equipped.bait) > 0) return true;
+    this.audio.deny();
+    this.ui.showToast("No bait.");
+    return false;
+  }
+
   beginHoldCast() {
     if (!this.canCast() || this.castApproval || ["aim", "charge", "flight"].includes(this.cast.state.fs)) return false;
+    if (!this.checkCastBait()) return false;
     const direction = this.angler.rig?.getWorldDirection(new THREE.Vector3());
     this.castHeading = direction ? Math.atan2(direction.x, direction.z) : this.yaw + (this.angler.heading || 0);
     if (this.castContext?.cameraAim) this.castFacing = this.castHeading;
@@ -517,6 +526,7 @@ export class SnejFishingGame {
     if (!this.canCast()) return false;
     if (["aim", "charge"].includes(this.cast.state.fs)) return this.endCastAction();
     if (this.cast.state.fs === "flight") return false;
+    if (!this.checkCastBait()) return false;
     if (!this.castWaterNearby()) { this.ui.showToast("Move closer to the water."); return false; }
     this.audio.resume();
     this.updateCast(0);
@@ -616,6 +626,7 @@ export class SnejFishingGame {
     if (this.castApproval) return false;
     if (!["aim", "charge"].includes(this.cast.state.fs)) return false;
     if (!this.canCast()) { this.cancelCastAction(); return false; }
+    if (!this.checkCastBait()) { this.cancelCastAction(); return false; }
     this.updateCast(0);
     if (this.castContext?.holdCast && this.castContext.cameraAim) return this.prepareCameraCast();
     if (this.cast.state.fs === "aim") {
@@ -1562,7 +1573,7 @@ export class SnejFishingGame {
         const effect = this.water.particles.children[i];
         if (!effect.userData.vel) effect.position.y = surface + 0.035;
       }
-      this.ui.showToast(consumed ? this.toastForCast(state) : "Out of bait. Reel in and re-equip.");
+      this.ui.showToast(consumed ? this.toastForCast(state) : "No bait.");
       this.save();
       if (window.__snejDebug) console.debug("Cast startle preview", {
         radius: lerp(STARTLE_R[0], STARTLE_R[1] + state.castPower * 2, 1 - state.castAcc),

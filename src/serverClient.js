@@ -12,11 +12,12 @@ export const ACCOUNT_ERRORS = Object.freeze({
   authentication_required: "Please sign in again.", unauthorized: "Please sign in again.",
   session_expired: "Please sign in again.", insufficient_coins: "Not enough coins.",
   login_required: "Please sign in again.", already_owned: "Already owned.",
-  item_not_owned: "Item is not owned.", out_of_bait: "Out of bait. Reel in and re-equip.",
+  item_not_owned: "Item is not owned.", out_of_bait: "No bait.",
   revision_conflict: "Your profile changed. Please try again.", depth_out_of_range: "Invalid float depth.",
-  bait_unavailable: "Out of bait. Reel in and re-equip.", name_unavailable: "This name is already taken.",
+  bait_unavailable: "No bait.", name_unavailable: "This name is already taken.",
   network_error: "Connection failed", server_error: "Server unavailable. Please try again.",
   cast_unavailable: "Reconnect to the lake before casting.", cast_invalid_target: "Invalid cast target.",
+  cast_gear_unavailable: "Check your equipped fishing gear.",
   cast_expired: "Cast expired. Please cast again.", cast_conflict: "Cast changed. Please cast again."
 });
 export class AccountError extends Error {

@@ -34,6 +34,39 @@ function fixture(path = ":memory:") {
 }
 const rejects = (fn, code) => assert.throws(fn, error => error.code === code);
 
+test("missing, invalid and depleted bait differ from other gear errors without granting stock or changing progress", () => {
+  for (const [change, code] of [
+    [inventory => { inventory.equipped.bait = null; }, "bait_unavailable"],
+    [inventory => { inventory.equipped.bait = inventory.equipped.rod; }, "bait_unavailable"],
+    [inventory => { delete inventory.owned[inventory.equipped.bait]; }, "bait_unavailable"],
+    [inventory => { inventory.owned[inventory.equipped.bait] = 0; }, "bait_unavailable"],
+    [inventory => { inventory.equipped.rod = null; }, "cast_gear_unavailable"],
+    [inventory => { inventory.owned[inventory.equipped.line] = 0; }, "cast_gear_unavailable"],
+    [inventory => { inventory.equipped.hook = inventory.equipped.bait; }, "cast_gear_unavailable"],
+    [inventory => { inventory.equipped.lure = "lure.test"; }, "cast_gear_unavailable"]
+  ]) {
+    const f = fixture();
+    try {
+      const profile = f.store.profile(f.user.id); change(profile.state.inventory);
+      f.store.write(f.user.id, profile.state, profile.coins, profile.revision + 1);
+      const before = f.store.profile(f.user.id);
+      rejects(() => f.start(), code);
+      assert.deepEqual(f.store.profile(f.user.id), before);
+      assert.equal(f.store.db.prepare("SELECT count(*) AS total FROM casts").get().total, 0);
+    } finally { f.store.close(); }
+  }
+  const f = fixture();
+  try {
+    const cast = f.start(); f.advance(1000);
+    const profile = f.store.profile(f.user.id); profile.state.inventory.owned[cast.gear.bait] = 0;
+    f.store.write(f.user.id, profile.state, profile.coins, profile.revision + 1);
+    const before = f.store.profile(f.user.id);
+    rejects(() => f.land(cast.castId), "bait_unavailable");
+    assert.deepEqual(f.store.profile(f.user.id), before);
+    assert.equal(f.store.db.prepare("SELECT status FROM casts WHERE cast_id=?").get(cast.castId).status, "approved");
+  } finally { f.store.close(); }
+});
+
 test("approved cast, exact durable landing, idempotent replay and unchanged economy", () => {
   const directory = mkdtempSync(join(tmpdir(), "snej-cast-test-")), path = join(directory, "game.sqlite");
   const f = fixture(path);
@@ -99,12 +132,21 @@ test("real authenticated HTTP cast lifecycle requires the live lake session and 
   const request = (path, value) => fetch(url + path, { method: "POST", headers, body: JSON.stringify(value) });
   const input = { requestId: "http_cast_0001", target };
   try {
-    assert.equal((await request("/api/cast/start", input)).status, 409);
+    const disconnected = await request("/api/cast/start", input);
+    assert.equal(disconnected.status, 409); assert.equal((await disconnected.json()).error, "cast_unavailable");
     const socket = new WebSocket(url.replace("http:", "ws:") + "/ws", { headers });
     await once(socket, "message");
     const adapter = new SnejServerClient({ fetcher: (path, options) => fetch(url + path, {
       ...options, headers: { ...headers, ...options.headers } }), requestId: () => input.requestId });
     adapter.enabled = true; adapter.accept(f.store.profile(f.user.id), "restore");
+    const empty = f.store.profile(f.user.id); empty.state.inventory.owned["bait.earthworm"] = 0;
+    f.store.write(f.user.id, empty.state, empty.coins, empty.revision + 1);
+    await assert.rejects(adapter.beginCast(target), error => error.code === "bait_unavailable" && error.message === "No bait.");
+    assert.equal(f.store.profile(f.user.id).state.inventory.owned["bait.earthworm"], 0);
+    assert.equal(f.store.profile(f.user.id).coins, empty.coins);
+    assert.equal(f.store.db.prepare("SELECT count(*) AS total FROM casts").get().total, 0);
+    const restored = f.store.profile(f.user.id); restored.state.inventory.owned["bait.earthworm"] = 10;
+    f.store.write(f.user.id, restored.state, restored.coins, restored.revision + 1);
     const cast = await adapter.beginCast(target);
     const physics = new SnejCastSystem({ rodRange: 8, floatDepth: 0.5, getCastOrigin: () => ({ x: -5, y: 1.4, z: 0 }) });
     const ctx = { strictTarget: true, pos: origin, yaw: Math.PI / 2, pitch: -0.4,

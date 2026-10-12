@@ -13,11 +13,13 @@ function point(value) {
 }
 function gear(profile) {
   const { inventory, settings } = profile.state;
-  for (const slot of ["rod", "line", "hook", "bait"]) {
+  const bait = findItem(inventory.equipped.bait);
+  if (!bait || bait.kind !== "bait" || !(inventory.owned[bait.id] > 0)) reject("bait_unavailable", 409);
+  for (const slot of ["rod", "line", "hook"]) {
     const item = findItem(inventory.equipped[slot]);
-    if (!item || item.kind !== slot || !(inventory.owned[item.id] > 0)) reject("cast_unavailable", 409);
+    if (!item || item.kind !== slot || !(inventory.owned[item.id] > 0)) reject("cast_gear_unavailable", 409);
   }
-  if (inventory.equipped.lure !== null) reject("cast_unavailable", 409);
+  if (inventory.equipped.lure !== null) reject("cast_gear_unavailable", 409);
   const rod = findItem(inventory.equipped.rod), rig = rigForRod(rod.length, settings.floatDepth);
   if (rig.floatDepth !== settings.floatDepth) reject("depth_out_of_range");
   return { ...inventory.equipped, rodLength: rod.length, lineLength: rig.lineLength,

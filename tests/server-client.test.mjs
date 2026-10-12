@@ -1,11 +1,35 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { SnejServerClient, editableProfile, profileDifference, createOperationId } from "../src/serverClient.js";
+import { SnejServerClient, AccountError, editableProfile, profileDifference, createOperationId } from "../src/serverClient.js";
+import { setLanguage, t } from "../src/i18n.js";
 
 const profile = (revision = 1) => ({ user: { id: 2, name: "LakeTester", role: "player" }, revision, coins: 100,
   state: { settings: { lang: "ru", volume: 0.7, bgm: 0, sens: 1, quality: "mid", shadow: true, floatDepth: 0.5, autoSprint: false },
     inventory: { owned: { bait: 0 }, equipped: { bait: "bait" }, clothing: {}, loadouts: [] } } });
 const response = (value, status = 200) => ({ ok: status === 200, status, json: async () => value });
+
+test("bait, gear and lake-connection errors have distinct RU/EN feedback without retrying or altering inventory", async () => {
+  const cases = [
+    ["bait_unavailable", "No bait.", "\u041d\u0435\u0442 \u043d\u0430\u0436\u0438\u0432\u043a\u0438."],
+    ["out_of_bait", "No bait.", "\u041d\u0435\u0442 \u043d\u0430\u0436\u0438\u0432\u043a\u0438."],
+    ["cast_gear_unavailable", "Check your equipped fishing gear.", "\u041f\u0440\u043e\u0432\u0435\u0440\u044c\u0442\u0435 \u0432\u044b\u0431\u0440\u0430\u043d\u043d\u0443\u044e \u043e\u0441\u043d\u0430\u0441\u0442\u043a\u0443."],
+    ["cast_unavailable", "Reconnect to the lake before casting.", "\u041f\u0435\u0440\u0435\u043f\u043e\u0434\u043a\u043b\u044e\u0447\u0438\u0442\u0435\u0441\u044c \u043a \u043e\u0437\u0435\u0440\u0443 \u043f\u0435\u0440\u0435\u0434 \u0437\u0430\u0431\u0440\u043e\u0441\u043e\u043c."]
+  ];
+  try {
+    for (const [code, english, russian] of cases) {
+      let requests = 0;
+      const client = new SnejServerClient({ fetcher: async () => { requests += 1; return response({ error: code }, 409); } });
+      client.accept(profile(), "restore"); const before = structuredClone(client.profile);
+      await assert.rejects(client.beginCast({ x: 1, y: 0, z: 2 }), error => {
+        assert.ok(error instanceof AccountError); assert.equal(error.code, code); assert.equal(error.message, english);
+        setLanguage("en", { persist: false }); assert.equal(t(error.message), english);
+        setLanguage("ru", { persist: false }); assert.equal(t(error.message), russian);
+        return true;
+      });
+      assert.equal(requests, 1); assert.deepEqual(client.profile, before);
+    }
+  } finally { setLanguage("ru", { persist: false }); }
+});
 
 test("cast adapter retries the same intent and landing IDs after a lost response", async () => {
   const calls = []; let lostStart = true, lostLand = true;

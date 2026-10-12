@@ -51,6 +51,8 @@ export class SnejRemotePlayerRoom {
     const player = this.players.get(id);
     if (!player) return;
     this.group.remove(player.model);
+    player.model.traverse((part) => { if (part.geometry) part.geometry.dispose(); });
+    for (const material of player.model.userData.materials) material.dispose();
     this.players.delete(id);
   }
 
@@ -66,18 +68,11 @@ export class SnejRemotePlayerRoom {
   }
 
   update(dt) {
-    const now = performance.now();
-    for (const [id, player] of this.players) {
-      const age = (now - player.lastSeen) / 1000;
-      if (age > 5) {
-        this.remove(id);
-        continue;
-      }
+    // Membership ends with a server leave or transport loss, never with a paused animation.
+    for (const player of this.players.values()) {
       const alpha = 1 - Math.exp(-12 * dt);
       player.model.position.lerp(player.target, alpha);
       player.model.rotation.y += (player.yaw - player.model.rotation.y) * alpha;
-      const opacity = age <= 2 ? 1 : Math.max(0, 1 - (age - 2) / 3);
-      for (const material of player.model.userData.materials) material.opacity = opacity;
     }
   }
 }

@@ -1,0 +1,7 @@
+node_modules/
+*.sqlite
+*.sqlite-*
+*.db
+*.db-*
+trusted-owner*.json
+package-lock.local.json

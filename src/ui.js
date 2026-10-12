@@ -18,6 +18,7 @@ export class SnejUI {
     this.hudVisible = true;
     this.buildOpen = false;
     this.profileOpen = false;
+    this.rosterOpen = false;
     this.inventoryOpen = false;
     this.profileTab = "profile";
     this.currentInventoryCategory = "all";
@@ -112,7 +113,7 @@ export class SnejUI {
       this.updateHUD(this.game, 0);
       this.refreshFloatDepthLine();
       this.refreshInventory();
-      this.validateNameField(this.el.registrationName, this.el.registrationValidation, this.el.register);
+      this.validateRegistration();
       if (this.modalOpen) this.validateNameField(this.el.identityName, this.el.identityValidation, this.el.identitySave);
       if (this.networkStatusSource) this.el.networkStatus.textContent = translateText(this.networkStatusSource);
       if (this.toastSource) this.el.toast.textContent = translateText(this.toastSource);
@@ -231,11 +232,8 @@ export class SnejUI {
   }
 
   bind() {
-    this.el.registrationName.addEventListener("input", () => this.validateNameField(
-      this.el.registrationName,
-      this.el.registrationValidation,
-      this.el.register
-    ));
+    this.el.registrationName.addEventListener("input", () => this.validateRegistration());
+    document.getElementById("roster-close").addEventListener("click", () => this.toggleRoster(false));
     this.el.registrationName.addEventListener("keydown", (event) => {
       if (event.key === "Enter" && !this.el.register.disabled) this.register();
     });
@@ -397,8 +395,25 @@ export class SnejUI {
     }
   }
 
-  register() {
-    const result = this.game.registerPlayer(this.el.registrationName.value);
+  configureAccount(enabled) {
+    this.accountMode = enabled;
+    document.getElementById("local-profile-copy").textContent = t(enabled ? "Choose a nickname." : "Choose a display name. This profile stays on this browser and will be shown when you return.");
+    document.getElementById("local-profile-eyebrow").classList.toggle("hidden", enabled);
+    this.el.registration.querySelector("h1").textContent = t(enabled ? "Enter Snej Lake" : "Create Your Profile");
+    this.el.register.textContent = t(enabled ? "Enter Snej Lake" : "Create Profile");
+    document.getElementById("change-name").classList.toggle("hidden", enabled);
+    this.el.online.classList.toggle("hidden", enabled || !this.game.mpEnabled);
+    this.validateRegistration();
+  }
+
+  validateRegistration() {
+    this.validateNameField(this.el.registrationName, this.el.registrationValidation, this.el.register);
+    if (this.game.serverBusy) this.el.register.disabled = true;
+  }
+
+  async register() {
+    const result = await this.game.authenticatePlayer(this.el.registrationName.value);
+    this.validateRegistration();
     if (!result.ok) this.showToast(result.message);
   }
 
@@ -512,7 +527,7 @@ export class SnejUI {
   toggleHUD() {
     if (this.game.mode !== "playing") return;
     this.hudVisible = !this.hudVisible;
-    this.el.hud.classList.toggle("hidden", !this.hudVisible || this.profileOpen || this.buildOpen || this.inventoryOpen);
+    this.el.hud.classList.toggle("hidden", !this.hudVisible || this.profileOpen || this.buildOpen || this.inventoryOpen || this.rosterOpen);
   }
 
   toggleProfile() {
@@ -522,6 +537,7 @@ export class SnejUI {
   }
 
   async openProfile() {
+    this.toggleRoster(false);
     if (this.inventoryOpen) this.closeInventory();
     if (this.buildOpen) await this.discardBuild();
     this.profileOpen = true;
@@ -780,18 +796,31 @@ export class SnejUI {
 
   updatePeerList(peers) {
     this.el.peerSection.classList.toggle("hidden", !this.game.multiplayer?.connected);
+    const roster = document.getElementById("roster-players");
     this.el.peerList.replaceChildren();
+    roster.replaceChildren();
+    document.getElementById("roster-count").textContent = String(peers.length);
+    document.getElementById("roster-status").textContent = t(this.game.multiplayer?.connected ? "Online" : "Offline");
     for (const peer of peers) {
       const row = document.createElement("div");
       row.className = "peer-row";
       const label = document.createElement("span");
       label.textContent = `[#${peer.id}] ${peer.name}`;
+      label.dataset.i18nSkip = "true";
       const badge = document.createElement("span");
       badge.className = `rank-badge rank-${peer.rank}`;
       badge.textContent = `[${t(peer.rank)}]`;
       row.append(label, badge);
       this.el.peerList.appendChild(row);
+      roster.appendChild(row.cloneNode(true));
     }
+  }
+
+  toggleRoster(show = !this.rosterOpen) {
+    this.rosterOpen = Boolean(show);
+    document.getElementById("online-roster").classList.toggle("hidden", !this.rosterOpen);
+    this.el.hud?.classList.toggle("hidden", this.rosterOpen || !this.hudVisible || this.profileOpen || this.buildOpen || this.inventoryOpen || this.game.mode === "title");
+    if (this.rosterOpen) this.game.refreshPeerList();
   }
 
   showToast(text) {
@@ -834,6 +863,7 @@ export class SnejUI {
   }
 
   async toggleInventory() {
+    this.toggleRoster(false);
     if (!this.game.identity || this.modalOpen || this.game.mode !== "playing") return;
     if (this.inventoryOpen) return this.closeInventory();
     if (this.profileOpen) this.closeProfile();
@@ -901,8 +931,8 @@ export class SnejUI {
     for (const slot of this.el.equipmentSlots.querySelectorAll("[data-slot]")) slot.classList.remove("drop-ready", "drop-target");
   }
 
-  inventoryAction(action, id) {
-    const result = action === "buy" ? this.game.inventory.buy(id) : this.game.equipGear(id);
+  async inventoryAction(action, id) {
+    const result = await (action === "buy" ? this.game.buyGear(id) : this.game.equipGear(id));
     if (result.ok) {
       this.refreshInventory();
       this.refreshProfile();

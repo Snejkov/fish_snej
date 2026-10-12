@@ -12,6 +12,7 @@ import {
 } from "./castSystem.js?v=0.0.5a-hf7";
 import { DEFAULT_FLOAT_DEPTH, FLOAT_RETRIEVE_FRACTION, SnejFloatRig, limitLineEnd, writeFixedLine } from "./floatRig.js?v=0.0.5a-hf4";
 import { SnejAuth, SNEJKOV_ID, SNEJKOV_NAME } from "./auth.js";
+import { SnejServerClient, editableProfile } from "./serverClient.js?v=guests-1";
 import { DEFAULT_LANGUAGE, normalizeLanguage, setLanguage, t, translateText, errorMessage } from "./i18n.js";
 import { resolveLake } from "./lakeValidator.js";
 import { SNEJ_FIXED_SEED, WORLD_SIZE, WATER_REGION } from "./lake.js";
@@ -23,7 +24,7 @@ import { SnejSky } from "./sky.js";
 import { SPAWNS, SPAWN_INITIAL_NAME, SPAWN_NAMES } from "./spawns.js";
 import { SnejTerrain } from "./terrain.js";
 import { SnejTextureManager } from "./textureManager.js";
-import { SnejUI } from "./ui.js?v=ru-en-1";
+import { SnejUI } from "./ui.js?v=guests-1";
 import { SnejWater } from "./water.js?v=0.0.5a-hf3";
 import { clamp, clamp01, damp, lerp, moveDelta, resolveWalkableStart } from "./util.js?v=0.0.3-hf2.12";
 
@@ -46,6 +47,7 @@ const DEFAULT_SETTINGS = {
   sens: 1.0,
   quality: "mid",
   shadow: true,
+  autoSprint: false,
   randomLake: false,
   rodLength: 4,
   floatDepth: DEFAULT_FLOAT_DEPTH,
@@ -61,6 +63,10 @@ export class SnejFishingGame {
     this.identity = null;
     this.nextLocalId = 1;
     this.currentRank = "player";
+    this.server = new SnejServerClient({ onProfile: (profile, kind) => this.applyServerProfile(profile, kind) });
+    this.serverBusy = false;
+    this.serverReady = null;
+    this.serverDetectionFailed = false;
     this.hasProgress = false;
     this.seed = SNEJ_FIXED_SEED;
     this.worldClock = new SnejWorldClock();
@@ -175,7 +181,10 @@ export class SnejFishingGame {
     this.multiplayer = new SnejMultiplayerClient({
       onStatus: (status) => {
         this.ui.setNetworkStatus(status);
+        if (["Offline", "Connection failed", "Connecting"].includes(status)) this.remoteRoom.clear();
         this.refreshPeerList();
+        if (this.server.enabled && ["Offline", "Connection failed"].includes(status)
+          && ["playing", "connecting"].includes(this.mode) && !this.intentionalDisconnect) this.pause();
       },
       onPresence: (message) => {
         this.remoteRoom.applyPresence(message);
@@ -187,7 +196,17 @@ export class SnejFishingGame {
       },
       onPlacements: (placements) => this.applyRemotePlacements(placements),
       onIdentityAssigned: (assignment) => this.handleIdentityAssignment(assignment),
-      onChat: () => {}
+      onChat: () => {},
+      onWelcome: (message) => {
+        if (!this.server.enabled) return;
+        this.server.accept(message.profile, "refresh");
+        const p = message.profile.state.position;
+        this.applyStart(p, { mode: p.view, pitch: p.pitch });
+        this.remoteRoom.clear();
+        if (this.mode === "connecting") this.mode = "playing";
+      },
+      onRevision: (revision) => this.server.noteRevision(revision),
+      onSessionEnded: () => this.handleAccountError({ status: 401, message: "Please sign in again." })
     });
     if (options.bootstrapSnejkov || this.identity?.name === SNEJKOV_NAME || this.identity?.id === SNEJKOV_ID) {
       this.bootstrapDeveloperIdentity();
@@ -199,6 +218,108 @@ export class SnejFishingGame {
     if (this.identity) this.ui.showTitle(true);
     else this.ui.showRegistration(true);
     requestAnimationFrame((time) => this.frame(time));
+    this.serverReady = this.initializeAccount();
+  }
+
+  async initializeAccount() {
+    try {
+      const enabled = await this.server.probe();
+      this.serverDetectionFailed = false;
+      this.multiplayer.authenticated = enabled;
+      this.ui.configureAccount(enabled);
+      if (enabled && !this.server.profile) {
+        this.identity = null;
+        this.currentRank = "player";
+        this.hasProgress = false;
+        this.ui.showRegistration(true);
+      }
+      if (enabled && this.server.profile) this.ui.showTitle(true);
+      return true;
+    } catch (error) {
+      this.serverDetectionFailed = true;
+      this.ui.configureAccount(true);
+      this.ui.showRegistration(true);
+      this.ui.showToast(error.message);
+      return false;
+    }
+  }
+
+  applyServerProfile(profile, kind) {
+    const state = profile.state;
+    if (kind === "restore") {
+      this.identity = { ...profile.user, nextLocalId: profile.user.id + 1 };
+      this.playerName = profile.user.name;
+      this.currentRank = profile.user.role;
+      this.inventory = new SnejInventory();
+      // Authoritative accounts must not receive the local migration's starter-item defaults.
+      this.inventory.state = { ...JSON.parse(JSON.stringify(state.inventory)), coins: profile.coins };
+      this.catchLog = new SnejCatchLog({ entries: state.catchLog });
+      this.stats = new SnejStats(state.stats);
+      this.settings = { ...DEFAULT_SETTINGS, ...state.settings };
+      setLanguage(this.settings.lang, { persist: false });
+      if (this.audio) this.audio.settings = this.settings;
+      if (this.angler) this.applyRod(this.inventory.equippedRod());
+      if (this.lake) this.applyStart(state.position, { mode: state.position.view, pitch: state.position.pitch });
+      this.hasProgress = true;
+      this.ui?.showRegistration(false);
+    } else {
+      // Pending browser settings/sets stay local until their queued save succeeds.
+      this.inventory.state.coins = profile.coins;
+      this.inventory.state.owned = { ...state.inventory.owned };
+      if (kind === "command") {
+        this.inventory.state.equipped = { ...state.inventory.equipped };
+        if (this.settings.rodLength !== this.inventory.equippedRod().length) this.applyRod(this.inventory.equippedRod());
+      }
+    }
+    this.ui?.syncSettings();
+    this.ui?.updateProfile();
+    this.ui?.refreshInventory();
+  }
+
+  async authenticatePlayer(name) {
+    if (this.serverBusy) return { ok: false, message: "Please try again shortly." };
+    this.serverBusy = true;
+    try {
+      await this.serverReady;
+      if (this.serverDetectionFailed && !await this.initializeAccount()) return { ok: false, message: "Connection failed" };
+      if (!this.server.enabled) return this.registerPlayer(name);
+      await this.server.enterGuest(name.trim());
+      this.ui.showTitle(true);
+      await this.enterServerLake();
+      return { ok: true };
+    } catch (error) { return { ok: false, message: error.message }; }
+    finally { this.serverBusy = false; }
+  }
+
+  async serverCommand(action, itemId) {
+    if (this.serverBusy || !this.server.profile) return { ok: false, message: "Please try again shortly." };
+    this.serverBusy = true;
+    try {
+      await this.server.command(action, itemId);
+      return { ok: true, message: action === "buy" ? "Purchased." : action === "equip" ? "Equipped" : "Bait used." };
+    } catch (error) { this.handleAccountError(error); return { ok: false, message: error.message }; }
+    finally { this.serverBusy = false; }
+  }
+
+  buyGear(itemId) { return this.server.enabled ? this.serverCommand("buy", itemId) : this.inventory.buy(itemId); }
+
+  handleAccountError(error) {
+    if (error.status === 401) {
+      this.disconnectMultiplayer();
+      this.server.profile = null;
+      this.identity = null;
+      this.currentRank = "player";
+      this.hasProgress = false;
+      this.mode = "title";
+      this.cast.reset();
+      this.keys.clear();
+      if (this.ui.inventoryOpen) this.ui.closeInventory();
+      if (this.ui.profileOpen) this.ui.closeProfile();
+      this.ui.showPause(false);
+      this.ui.showRegistration(true);
+      if (document.pointerLockElement) document.exitPointerLock();
+    }
+    this.ui.showToast(error.message);
   }
 
   installEvents() {
@@ -214,7 +335,12 @@ export class SnejFishingGame {
     window.addEventListener("keydown", (event) => {
       const tag = event.target?.tagName;
       if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") return;
-      if (event.code === "Tab" && !this.ui.inventoryOpen && !this.ui.profileOpen && !this.ui.modalOpen) event.preventDefault();
+      if (event.code === "Tab" && !this.ui.inventoryOpen && !this.ui.profileOpen && !this.ui.modalOpen && this.identity
+        && ["playing", "paused", "connecting"].includes(this.mode)) {
+        event.preventDefault();
+        if (!event.repeat) this.ui.toggleRoster();
+        return;
+      }
       if (event.code === "KeyP" && !event.repeat && this.identity) {
         this.ui.toggleProfile();
         return;
@@ -233,7 +359,8 @@ export class SnejFishingGame {
         return;
       }
       if (event.code === "Escape") {
-        if (this.ui.modalOpen) this.ui.closeNameModal();
+        if (this.ui.rosterOpen) this.ui.toggleRoster(false);
+        else if (this.ui.modalOpen) this.ui.closeNameModal();
         else if (this.ui.inventoryOpen) this.ui.closeInventory();
         else if (this.ui.buildOpen) this.ui.discardBuild();
         else if (this.ui.profileOpen) this.ui.closeProfile();
@@ -370,6 +497,7 @@ export class SnejFishingGame {
   }
 
   registerPlayer(name) {
+    if (this.server.enabled || this.serverDetectionFailed) return { ok: false, message: "Please sign in again." };
     try {
       const validation = this.auth.validateName(name);
       if (!validation.valid) throw new Error(validation.message);
@@ -395,6 +523,7 @@ export class SnejFishingGame {
   }
 
   bootstrapDeveloperIdentity() {
+    if (this.server.enabled) return;
     const isSnejkov = this.identity?.id === SNEJKOV_ID && this.identity?.name === SNEJKOV_NAME;
     if (!isSnejkov) this.identity = this.auth.createSnejkovIdentity(this.nextLocalId);
     this.nextLocalId = Math.max(SNEJKOV_ID + 1, this.nextLocalId, this.identity.nextLocalId);
@@ -416,6 +545,7 @@ export class SnejFishingGame {
   }
 
   changePlayerName(name) {
+    if (this.server.enabled) return { ok: false, message: "Account names cannot be changed." };
     try {
       this.identity = this.auth.rename(this.identity, name);
       this.playerName = this.identity.name;
@@ -427,7 +557,15 @@ export class SnejFishingGame {
     }
   }
 
-  signOut() {
+  async signOut() {
+    if (this.server.enabled) {
+      try {
+        await this.server.logout();
+        this.disconnectMultiplayer();
+        location.reload();
+      } catch (error) { this.handleAccountError(error); }
+      return;
+    }
     this.nextLocalId = Math.max(this.nextLocalId, Number(this.identity?.nextLocalId) || 1);
     this.disconnectMultiplayer();
     this.identity = null;
@@ -440,6 +578,7 @@ export class SnejFishingGame {
   }
 
   handleIdentityAssignment(assignment) {
+    if (this.server.enabled) return;
     if (!assignment) return;
     if (Number(assignment.id) === 0 && assignment.reason === "duplicate") {
       this.identity = this.auth.rollNewId(this.identity, this.nextLocalId);
@@ -462,11 +601,14 @@ export class SnejFishingGame {
   }
 
   refreshDerivedRank() {
-    this.currentRank = this.auth.rankForId(this.identity?.id);
+    this.currentRank = this.server.enabled ? this.server.profile?.user.role || "player" : this.auth.rankForId(this.identity?.id);
     this.ui?.updateProfile();
   }
 
   async newGame(options = {}) {
+    await this.serverReady;
+    if (this.serverDetectionFailed) return this.ui.showToast("Connection failed");
+    if (this.server.enabled) return this.enterServerLake();
     this.audio.resume();
     if (!options.keepConnection) this.disconnectMultiplayer();
     this.buildWorld();
@@ -481,6 +623,9 @@ export class SnejFishingGame {
   }
 
   async continueGame() {
+    await this.serverReady;
+    if (this.serverDetectionFailed) return this.ui.showToast("Connection failed");
+    if (this.server.enabled) return this.enterServerLake();
     this.audio.resume();
     this.disconnectMultiplayer();
     const save = this.loadSave();
@@ -507,6 +652,7 @@ export class SnejFishingGame {
   }
 
   async startOnline(room) {
+    if (this.server.enabled) return this.enterServerLake();
     this.lastRoom = String(room || "snej-1").trim().slice(0, 32) || "snej-1";
     await this.newGame({ keepConnection: true });
     this.multiplayer.connect(this.lastRoom, this.identity, this.currentRank);
@@ -514,6 +660,7 @@ export class SnejFishingGame {
   }
 
   async newLake() {
+    if (this.server.enabled) return this.enterServerLake();
     const placements = this.placementSystem.serializeCommitted();
     this.buildWorld();
     this.applyStart(this.lake.start, { mode: this.cameraMode, pitch: this.pitch });
@@ -524,6 +671,7 @@ export class SnejFishingGame {
   }
 
   quitToTitle() {
+    this.save();
     this.cast.reset();
     this.castMeter.classList.add("hidden");
     if (this.ui.buildOpen) this.ui.discardBuild();
@@ -550,8 +698,27 @@ export class SnejFishingGame {
 
   resume() {
     this.audio.resume();
-    this.mode = "playing";
+    this.mode = this.server.enabled && !this.multiplayer.connected ? "connecting" : "playing";
+    if (this.mode === "connecting") this.multiplayer.connect("snej-1", this.identity, this.currentRank);
     this.ui.showPause(false);
+  }
+
+  async enterServerLake() {
+    if (!this.server.profile) { this.ui.showRegistration(true); return; }
+    try {
+      await this.server.pending;
+      const profile = await this.server.request("/api/profile");
+      this.disconnectMultiplayer();
+      this.buildWorld();
+      this.server.accept(profile, "restore");
+      this.mode = "connecting";
+      this.audio.resume();
+      this.ui.showTitle(false);
+      this.ui.showPause(false);
+      if (!this.multiplayer.connect("snej-1", this.identity, this.currentRank)) {
+        this.mode = "paused"; this.ui.showPause(true);
+      }
+    } catch (error) { this.handleAccountError(error); }
   }
 
   applyStart(position, view = {}) {
@@ -689,6 +856,14 @@ export class SnejFishingGame {
   }
 
   save() {
+    if (this.server?.enabled) {
+      if (!this.server.profile) return;
+      const desired = editableProfile(this);
+      this.server.save(desired).catch((error) => this.handleAccountError(error));
+      this.ui?.refreshContinue();
+      return;
+    }
+    if (this.serverDetectionFailed) return;
     if (this.identity) this.nextLocalId = Math.max(this.nextLocalId, this.identity.nextLocalId);
     this.settings.rodLength = this.inventory.equippedRod().length;
     this.stats.stampSeen();
@@ -701,6 +876,7 @@ export class SnejFishingGame {
         sens: this.settings.sens,
         quality: this.settings.quality,
         shadow: this.settings.shadow,
+        autoSprint: this.settings.autoSprint === true,
         randomLake: false,
         rodLength: this.settings.rodLength,
         floatDepth: this.settings.floatDepth,
@@ -773,8 +949,11 @@ export class SnejFishingGame {
   }
 
   disconnectMultiplayer() {
+    this.intentionalDisconnect = true;
     this.multiplayer?.disconnect();
+    this.intentionalDisconnect = false;
     this.remoteRoom.clear();
+    this.ui?.toggleRoster(false);
     this.refreshPeerList();
   }
 
@@ -875,7 +1054,8 @@ export class SnejFishingGame {
   }
 
   canCast() {
-    return this.mode === "playing" && !this.ui.buildOpen && !this.ui.profileOpen && !this.ui.inventoryOpen && !this.ui.modalOpen;
+    return this.mode === "playing" && (!this.server?.enabled || (this.multiplayer.connected && !this.serverBusy))
+      && !this.ui.buildOpen && !this.ui.profileOpen && !this.ui.inventoryOpen && !this.ui.modalOpen;
   }
 
   applyRod(rod) {
@@ -905,6 +1085,7 @@ export class SnejFishingGame {
     if (this.cast.state.fs === "charge" || this.cast.state.fs === "flight") {
       return { ok: false, message: "Equipment is locked during the cast." };
     }
+    if (this.server.enabled) return this.serverCommand("equip", itemId);
     const result = this.inventory.equip(itemId);
     if (!result.ok) return result;
     this.applyRod(this.inventory.equippedRod());
@@ -1011,7 +1192,10 @@ export class SnejFishingGame {
     }
     if (previous === "flight" && state.fs === "wait") {
       this.stats.recordCast(true);
-      const consumed = this.inventory.consumeBait();
+      const consumed = this.server?.enabled ? this.inventory.countOf(this.inventory.state.equipped.bait) > 0 : this.inventory.consumeBait();
+      if (this.server?.enabled) this.serverCommand("consume-bait", this.inventory.state.equipped.bait).then((result) => {
+        if (!result.ok) { this.cast.startRetrieve("bait"); this.ui.showToast(result.message); }
+      });
       this.ui.refreshInventory();
       this.ui.refreshProfile();
       const soft = 1 - state.castAcc * SPLASH_SCALE;

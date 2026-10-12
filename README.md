@@ -1,4 +1,4 @@
-# SnejFishing v0.0.05a-hf8 Stage 5A
+# SnejFishing v0.0.05a-guests1 Stage 5A
 
 Stage 5A is a browser-only Three.js lakeside sandbox with local rod casting, per-profile inventory, gear purchases, equipment slots, and profile statistics. It preserves the animated 24-bone angler, hand-attached carry props, profile launcher, waterbody selection, validated Snej Lake, safe spawns, static opaque water, corrected movement, one-meter wading, first-person and third-person cameras, developer Build Mode, synthesized audio, and optional raw WebSocket multiplayer scaffold. There are no fish, bites, fights, catch rewards, or lure swimming in this stage.
 
@@ -135,6 +135,20 @@ New registrations start at `initial`. When a configured or saved spawn is deeper
 The fixed map seed is `0x534E454A`. The lake is resolved through the 16-check validator. Water is opaque and its shader surface is static; terrain collision prevents the player from entering water deeper than `1.0` world unit.
 
 ## Multiplayer Scaffold
+
+The optional `server/` guest demo replaces the scaffold when its health endpoint
+advertises `entry:guest`. Entry asks for a nickname only, never a password.
+Server-issued IDs and guest sessions isolate profiles; choosing a nickname
+cannot claim owner ID 1 or developer permissions. Two independent browser
+sessions in `snej-1` receive real connected-player presence. `Tab` toggles the
+live player roster, including paused players; actual disconnects remove peers.
+Settings, named gear sets, purchases, equipped items, and position use the
+durable guest database, not the existing browser-local owner's save. Losing a
+guest cookie does not allow profile recovery by nickname. New gameplay stats
+remain session-local until an authoritative cast/activity recorder is added.
+See `server/README.md` and `server/GUEST_DEPLOYMENT.md` for verification scope,
+isolated operation and rollback. Public guest HTTP is not private-account login;
+account endpoints are disabled. No owner import or currency grant is applied.
 
 Add `?mp=1` to show Online. A normal localhost preview reports an offline scaffold, so solo play has no server dependency. Add `?mp=1&mpconnect=1` when a compatible `/ws` endpoint is available.
 

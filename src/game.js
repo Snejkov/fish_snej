@@ -24,7 +24,8 @@ import { SnejSky } from "./sky.js";
 import { SPAWNS, SPAWN_INITIAL_NAME, SPAWN_NAMES } from "./spawns.js";
 import { SnejTerrain } from "./terrain.js";
 import { SnejTextureManager } from "./textureManager.js";
-import { SnejUI } from "./ui.js?v=guests-1";
+import { SnejUI } from "./ui.js?v=mobile-1";
+import { SnejMobileInput, movementInput, requestLandscape } from "./mobileInput.js?v=mobile-1";
 import { SnejWater } from "./water.js?v=0.0.5a-hf3";
 import { clamp, clamp01, damp, lerp, moveDelta, resolveWalkableStart } from "./util.js?v=0.0.3-hf2.12";
 
@@ -214,6 +215,14 @@ export class SnejFishingGame {
     this.buildWorld();
     this.applyStart(this.lake.start, { mode: "third-person", pitch: -0.12 });
     this.installEvents();
+    this.mobileInput = new SnejMobileInput({
+      canvas: this.canvas, controls: this.ui.el.mobileControls,
+      canInteract: () => this.canCast() && !this.ui.rosterOpen,
+      onCastStart: () => this.beginCastAction(),
+      onCastEnd: () => this.endCastAction(),
+      onCastCancel: () => this.cancelCastAction(),
+      onAvailability: (enabled) => document.documentElement.classList.toggle("touch-device", enabled)
+    });
     this.resize();
     if (this.identity) this.ui.showTitle(true);
     else this.ui.showRegistration(true);
@@ -379,6 +388,7 @@ export class SnejFishingGame {
       }
     });
     this.canvas.addEventListener("pointerdown", (event) => {
+      if (["touch", "pen"].includes(event.pointerType)) this.lastTouchCanvas = performance.now();
       if (this.mode === "playing" && this.ui.buildOpen) this.placementSystem.handlePointerDown(event);
     });
     this.canvas.addEventListener("pointermove", (event) => {
@@ -386,39 +396,17 @@ export class SnejFishingGame {
     });
     window.addEventListener("pointerup", () => this.placementSystem.handlePointerUp());
     this.canvas.addEventListener("mousedown", (event) => {
-      if (event.button !== 0 || !this.canCast()) return;
-      this.audio.resume();
-      // Starting another cast clears the previous float and its fixed rig.
-      if (this.cast.state.fs === "wait") this.cast.reset();
-      this.updateCast(0);
-      if (this.cast.onActionDown()) {
-        this.ui.el.toast.classList.add("hidden");
-        this.audio.charge();
-        this.updateCast(0);
-      }
+      if (event.button === 0 && !this.isTouchCompatibilityEvent(event)) this.beginCastAction();
     });
     window.addEventListener("mouseup", (event) => {
-      if (event.button !== 0 || this.cast.state.fs !== "charge") return;
-      if (!this.canCast()) {
-        this.cast.cancelCharge();
-        this.updateCast(0);
-        return;
-      }
-      this.updateCast(0);
-      if (this.cast.onActionUp()) {
-        this.audio.cast(this.cast.state.castPower);
-      } else if (this.cast.state.lastRejection) {
-        this.audio.deny();
-        this.ui.showToast(this.toastForCastRejection(this.cast.state.lastRejection));
-      }
-      this.updateCast(0);
-      this.updateCastVisuals();
+      if (event.button === 0 && !this.isTouchCompatibilityEvent(event)) this.endCastAction();
     });
     window.addEventListener("blur", () => {
       this.cast.cancelCharge();
       this.castMeter.classList.add("hidden");
     });
-    this.canvas.addEventListener("click", () => {
+    this.canvas.addEventListener("click", (event) => {
+      if (this.isTouchCompatibilityEvent(event)) return;
       if (!this.canCast()) return;
       this.audio.resume();
       this.canvas.requestPointerLock();
@@ -426,6 +414,46 @@ export class SnejFishingGame {
     document.addEventListener("pointerlockchange", () => {
       if (document.pointerLockElement === this.canvas) this.audio.resume();
     });
+  }
+
+  isTouchCompatibilityEvent(event) {
+    return ["touch", "pen"].includes(event.pointerType) || event.sourceCapabilities?.firesTouchEvents
+      || (this.lastTouchCanvas != null && performance.now() - this.lastTouchCanvas < 800);
+  }
+
+  requestMobileLandscape() {
+    if (this.mobileInput?.enabled) void requestLandscape();
+  }
+
+  beginCastAction() {
+    if (!this.canCast()) return false;
+    this.audio.resume();
+    // Starting another cast clears the previous float and its fixed rig.
+    if (this.cast.state.fs === "wait") this.cast.reset();
+    this.updateCast(0);
+    if (!this.cast.onActionDown()) return false;
+    this.ui.el.toast.classList.add("hidden");
+    this.audio.charge();
+    this.updateCast(0);
+    return true;
+  }
+
+  endCastAction() {
+    if (this.cast.state.fs !== "charge") return;
+    if (!this.canCast()) { this.cancelCastAction(); return; }
+    this.updateCast(0);
+    if (this.cast.onActionUp()) this.audio.cast(this.cast.state.castPower);
+    else if (this.cast.state.lastRejection) {
+      this.audio.deny();
+      this.ui.showToast(this.toastForCastRejection(this.cast.state.lastRejection));
+    }
+    this.updateCast(0);
+    this.updateCastVisuals();
+  }
+
+  cancelCastAction() {
+    this.cast.cancelCharge();
+    this.updateCast(0);
   }
 
   resize() {
@@ -989,6 +1017,9 @@ export class SnejFishingGame {
   }
 
   update(dt) {
+    const mobileActive = this.canCast() && !this.ui.rosterOpen;
+    this.mobileInput?.setActive(mobileActive);
+    if (this.ui.el?.mobileOrientation) this.ui.el.mobileOrientation.hidden = !this.mobileInput?.enabled || !mobileActive;
     this.worldClock.refresh();
     this.state.clock = this.worldClock.hour();
     const paused = this.mode === "paused" || this.mode === "title";
@@ -1381,7 +1412,8 @@ export class SnejFishingGame {
   updateLook(dt = 1 / 60) {
     const adjusting = this.cast.state.fs === "flight" || this.cast.state.fs === "wait";
     const sensitivity = this.settings.sens * 0.0022 * (adjusting ? CAST_LOOK_SCALE : 1);
-    let dx = this.mouse.dx * sensitivity, dy = this.mouse.dy * sensitivity;
+    const touch = this.mobileInput?.takeLook() || { dx: 0, dy: 0 };
+    let dx = (this.mouse.dx + touch.dx) * sensitivity, dy = (this.mouse.dy + touch.dy) * sensitivity;
     if (adjusting) {
       const amount = Math.hypot(dx, dy), limit = CAST_LOOK_SPEED * Math.max(0, dt);
       if (amount > limit) { dx *= limit / amount; dy *= limit / amount; }
@@ -1402,25 +1434,14 @@ export class SnejFishingGame {
       this.stepTimer = 0;
       return;
     }
-    let mx = 0;
-    let mz = 0;
-    if (this.keys.has("KeyW")) mz += 1;
-    if (this.keys.has("KeyS")) mz -= 1;
-    if (this.keys.has("KeyA")) mx -= 1;
-    if (this.keys.has("KeyD")) mx += 1;
-    const inputLength = Math.hypot(mx, mz);
-    const moving = inputLength > 0;
-    if (moving) {
-      mx /= inputLength;
-      mz /= inputLength;
-    }
+    const { mx, mz, magnitude, sprint } = movementInput(this.keys, this.mobileInput?.movement(), this.settings.autoSprint);
+    const moving = magnitude > 0;
     const depth = this.terrain.depthAt(this.pos.x, this.pos.z);
-    const sprint = this.keys.has("ShiftLeft") || this.keys.has("ShiftRight");
     const baseSpeed = sprint ? 6.8 : 4.0;
     const wadeCap = lerp(4.0, 1.6, clamp01(depth / 1.2));
     const speed = depth > 0.05 ? Math.min(baseSpeed, wadeCap) : baseSpeed;
-    this.moveAmt = damp(this.moveAmt, moving ? 1 : 0, moving ? 16 : 10, dt);
-    this.moveSpeed = damp(this.moveSpeed, moving ? speed : 0, moving ? 14 : 9, dt);
+    this.moveAmt = damp(this.moveAmt, magnitude, moving ? 16 : 10, dt);
+    this.moveSpeed = damp(this.moveSpeed, speed * magnitude, moving ? 14 : 9, dt);
     if (!moving) {
       this.stepTimer = 0;
       this.snapToGround();
@@ -1453,7 +1474,7 @@ export class SnejFishingGame {
     }
     this.snapToGround();
     const newDepth = this.terrain.depthAt(this.pos.x, this.pos.z);
-    const interval = 0.55 / Math.max(0.5, speed);
+    const interval = 0.55 / Math.max(0.5, speed * magnitude);
     this.stepTimer += dt;
     if (this.stepTimer >= interval) {
       this.stepTimer = 0;

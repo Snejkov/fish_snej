@@ -20,6 +20,7 @@ Russian is the default. Select Russian or English during registration or later i
 
 - `W/A/S/D`: move and strafe.
 - `Shift`: sprint.
+- Settings: `Run without holding Shift` enables automatic sprint while moving; it defaults to off and is saved with the profile.
 - Mouse: look after clicking the canvas.
 - Hold left mouse: charge a cast; release to throw. A new hold after water landing clears the previous bobber and starts another cast.
 - `V`: switch between first-person and third-person view.
@@ -30,6 +31,10 @@ Russian is the default. Select Russian or English during registration or later i
 - `U`: toggle the HUD.
 
 The third-person camera distance is always `4.6`. The mouse wheel is not captured by the game and works normally in scrollable UI.
+
+Touch/coarse-pointer devices automatically show a circular left movement joystick, a hold/release cast button, and menu, inventory, camera, players and fullscreen controls. Joystick displacement retains analog walking strength. An ordinary swipe on the canvas turns the camera independently of the movement finger. Opening menus, cancellation, lost capture, blur and resize reset held touch input. Keyboard and mouse remain available on hybrid devices. Touch-action is restricted to the game canvas and touch controls; drawers remain scrollable.
+
+Landscape is requested from an entry/fullscreen user gesture when fullscreen and orientation-lock APIs are available. Unsupported or denied locks show a portrait rotate-device notice; the game does not force CSS rotation. Automated tests simulate independent pointer roles and actual game movement/camera integration, but do not substitute for physical-device multi-touch and orientation testing.
 
 The development build always uses bright noon (12:00) for both the scene and game clock, regardless of device/server dates, pause, or tab inactivity. `DEFAULT_WORLD_CLOCK_MODE` in `src/game/clock.js` is `"development-day"`; this mode performs no server-time requests. Moscow mode is retained for later activation at the owner's request, through this default or `worldClock.setMode("moscow")`, but is not enabled by normal gameplay or saved settings. Movement, casting, clouds, water effects, and playtime keep their existing frame timing and pause behavior.
 

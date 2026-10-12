@@ -1,0 +1,121 @@
+.mobile-controls[hidden], .mobile-orientation[hidden] { display: none !important; }
+.mobile-input-active { touch-action: none; }
+.mobile-controls {
+  position: fixed;
+  inset: 0;
+  z-index: 12;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.mobile-stick {
+  position: absolute;
+  left: max(18px, env(safe-area-inset-left));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  width: 132px;
+  height: 132px;
+  padding: 0;
+  border: 1px solid rgba(225, 239, 234, 0.45);
+  border-radius: 50%;
+  background: rgba(16, 30, 25, 0.36);
+  pointer-events: auto;
+  touch-action: none;
+}
+.mobile-stick::before {
+  position: absolute;
+  inset: 16px;
+  border: 1px solid rgba(225, 239, 234, 0.15);
+  border-radius: 50%;
+  content: "";
+}
+.mobile-stick-thumb {
+  position: absolute;
+  top: calc(50% - 25px);
+  left: calc(50% - 25px);
+  width: 50px;
+  height: 50px;
+  border: 1px solid rgba(239, 247, 242, 0.65);
+  border-radius: 50%;
+  background: rgba(216, 238, 221, 0.35);
+  pointer-events: none;
+  will-change: transform;
+}
+.mobile-stick.pressed { border-color: #91dac6; }
+.mobile-buttons {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
+  display: flex;
+  gap: 8px;
+  pointer-events: auto;
+}
+.mobile-control-button {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgba(225, 239, 234, 0.45);
+  border-radius: 6px;
+  background: rgba(16, 30, 25, 0.7);
+  color: #eff6f1;
+  font-size: 20px;
+  touch-action: manipulation;
+}
+.mobile-cast {
+  position: absolute;
+  right: max(22px, env(safe-area-inset-right));
+  bottom: max(28px, env(safe-area-inset-bottom));
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border-color: rgba(245, 207, 107, 0.75);
+  color: #f5cf6b;
+  font-size: 13px;
+  pointer-events: auto;
+  touch-action: none;
+}
+.mobile-cast.pressed { background: rgba(126, 156, 56, 0.8); border-color: #bce58c; }
+.mobile-orientation {
+  position: fixed;
+  z-index: 13;
+  top: max(68px, env(safe-area-inset-top));
+  left: max(12px, env(safe-area-inset-left));
+  right: max(12px, env(safe-area-inset-right));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid rgba(225, 239, 234, 0.24);
+  border-radius: 4px;
+  background: rgba(16, 30, 25, 0.88);
+  color: #e5eee8;
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: center;
+}
+.mobile-orientation .mobile-control-button { flex: 0 0 36px; width: 36px; height: 36px; min-height: 36px; }
+.touch-device #hint-bar, .touch-device #fps { display: none; }
+.touch-device #hud { inset: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
+.touch-device #readout { top: 52px; min-width: 0; max-width: 250px; font-size: 11px; padding: 4px 6px; }
+.touch-device .cast-meter { bottom: max(24px, env(safe-area-inset-bottom)); width: min(240px, calc(100% - 290px)); }
+.touch-device .screen { padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); overflow: auto; }
+.touch-device .screen > .panel { max-height: calc(100dvh - 24px); overflow-y: auto; margin: auto; }
+.touch-device .field { grid-template-columns: minmax(0, 1fr) minmax(80px, 140px); }
+.touch-device .field span { min-width: 0; overflow-wrap: anywhere; }
+.touch-device .mobile-control-button { box-shadow: none; }
+.touch-device .mobile-cast { overflow-wrap: anywhere; line-height: 1.2; padding: 4px; }
+@media (orientation: portrait) {
+  .touch-device #readout { top: 110px; }
+  .touch-device .cast-meter { bottom: 165px; width: min(240px, calc(100% - 32px)); }
+}
+@media (orientation: landscape) {
+  .mobile-orientation { display: none; }
+}
+@media (max-height: 430px) {
+  .mobile-stick { width: 112px; height: 112px; }
+  .mobile-cast { width: 64px; height: 64px; bottom: max(18px, env(safe-area-inset-bottom)); }
+  .mobile-control-button:not(.mobile-cast) { width: 40px; height: 40px; min-height: 40px; }
+}

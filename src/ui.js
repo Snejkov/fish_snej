@@ -94,6 +94,7 @@ export class SnejUI {
       toast: document.getElementById("toast")
     };
     this.ensureInventoryPanel();
+    this.ensureMobileControls();
     this.ensureLanguagePicker();
     this.bind();
     this.renderSettings(document.getElementById("title-settings"));
@@ -121,6 +122,40 @@ export class SnejUI {
       applyTranslations(document);
     });
     applyTranslations(document);
+  }
+
+  ensureMobileControls() {
+    const controls = document.createElement("div");
+    controls.className = "mobile-controls";
+    controls.hidden = true;
+    controls.innerHTML = `
+      <button type="button" class="mobile-stick" aria-label="Movement joystick" title="Movement joystick"><span class="mobile-stick-thumb"></span></button>
+      <div class="mobile-buttons">
+        <button type="button" class="mobile-control-button" data-mobile-action="roster" aria-label="Players" title="Players"><span data-i18n-skip>&#9776;</span></button>
+        <button type="button" class="mobile-control-button" data-mobile-action="inventory" aria-label="Inventory" title="Inventory"><span data-i18n-skip>&#9638;</span></button>
+        <button type="button" class="mobile-control-button" data-mobile-action="view" aria-label="Camera view" title="Camera view"><span data-i18n-skip>&#8634;</span></button>
+        <button type="button" class="mobile-control-button" data-mobile-action="fullscreen" aria-label="Fullscreen" title="Fullscreen"><span data-i18n-skip>&#9974;</span></button>
+        <button type="button" class="mobile-control-button" data-mobile-action="menu" aria-label="Menu" title="Menu"><span data-i18n-skip>&#9881;</span></button>
+      </div>
+      <button type="button" class="mobile-control-button mobile-cast" data-mobile-cast data-i18n="Cast">Cast</button>`;
+    const orientation = document.createElement("div");
+    orientation.className = "mobile-orientation";
+    orientation.hidden = true;
+    orientation.innerHTML = `<span data-i18n="Rotate your device to landscape.">Rotate your device to landscape.</span><button type="button" class="mobile-control-button" aria-label="Fullscreen" title="Fullscreen"><span data-i18n-skip>&#9974;</span></button>`;
+    document.getElementById("app").append(controls, orientation);
+    this.el.mobileControls = controls;
+    this.el.mobileOrientation = orientation;
+    controls.addEventListener("click", (event) => {
+      const action = event.target.closest("[data-mobile-action]")?.dataset.mobileAction;
+      if (!action || this.game.mode !== "playing") return;
+      this.game.mobileInput?.reset();
+      if (action === "menu") this.game.pause();
+      if (action === "inventory") this.toggleInventory();
+      if (action === "view") this.game.toggleView();
+      if (action === "roster") this.toggleRoster();
+      if (action === "fullscreen") this.game.requestMobileLandscape();
+    });
+    orientation.querySelector("button").addEventListener("click", () => this.game.requestMobileLandscape());
   }
 
   ensureInventoryPanel() {
@@ -238,8 +273,8 @@ export class SnejUI {
       if (event.key === "Enter" && !this.el.register.disabled) this.register();
     });
     this.el.register.addEventListener("click", () => this.register());
-    this.el.newGame.addEventListener("click", () => this.game.newGame());
-    this.el.continue.addEventListener("click", () => this.game.continueGame());
+    this.el.newGame.addEventListener("click", () => { this.game.requestMobileLandscape(); this.game.newGame(); });
+    this.el.continue.addEventListener("click", () => { this.game.requestMobileLandscape(); this.game.continueGame(); });
     this.el.online.addEventListener("click", () => this.el.onlineSetup.classList.remove("hidden"));
     document.getElementById("online-cancel").addEventListener("click", () => this.el.onlineSetup.classList.add("hidden"));
     document.getElementById("online-connect").addEventListener("click", () => this.game.startOnline(this.el.onlineRoom.value));
@@ -402,6 +437,11 @@ export class SnejUI {
     this.el.registration.querySelector("h1").textContent = t(enabled ? "Enter Snej Lake" : "Create Your Profile");
     this.el.register.textContent = t(enabled ? "Enter Snej Lake" : "Create Profile");
     document.getElementById("change-name").classList.toggle("hidden", enabled);
+    const identityLabel = this.el.profilePanel.querySelector(".eyebrow");
+    if (identityLabel) {
+      identityLabel.dataset.i18n = enabled ? "Server Profile" : "Local Identity";
+      identityLabel.textContent = t(identityLabel.dataset.i18n);
+    }
     this.el.online.classList.toggle("hidden", enabled || !this.game.mpEnabled);
     this.validateRegistration();
   }
@@ -412,6 +452,7 @@ export class SnejUI {
   }
 
   async register() {
+    this.game.requestMobileLandscape();
     const result = await this.game.authenticatePlayer(this.el.registrationName.value);
     this.validateRegistration();
     if (!result.ok) this.showToast(result.message);
@@ -433,6 +474,7 @@ export class SnejUI {
       { key: "sens", label: "Mouse Sensitivity", type: "range", min: 0.5, max: 2, step: 0.01 },
       { key: "quality", label: "Quality", type: "select", options: [["low", "Low"], ["mid", "Mid"], ["high", "High"]] },
       { key: "shadow", label: "Shadows", type: "checkbox" },
+      { key: "autoSprint", label: "Run without holding Shift", type: "checkbox" },
       { key: "lang", label: "Language", type: "select", options: [["ru", "\u0420\u0443\u0441\u0441\u043a\u0438\u0439"], ["en", "English"]] }
     ];
     for (const def of defs) {
@@ -932,7 +974,15 @@ export class SnejUI {
   }
 
   async inventoryAction(action, id) {
-    const result = await (action === "buy" ? this.game.buyGear(id) : this.game.equipGear(id));
+    this.pendingInventoryActions = (this.pendingInventoryActions || 0) + 1;
+    if (this.el.loadoutSave) this.el.loadoutSave.disabled = true;
+    let result;
+    try {
+      result = await (action === "buy" ? this.game.buyGear(id) : this.game.equipGear(id));
+    } finally {
+      this.pendingInventoryActions -= 1;
+      if (this.el.loadoutSave) this.el.loadoutSave.disabled = this.pendingInventoryActions > 0;
+    }
     if (result.ok) {
       this.refreshInventory();
       this.refreshProfile();
@@ -946,6 +996,11 @@ export class SnejUI {
   }
 
   saveLoadout() {
+    if (this.pendingInventoryActions > 0 || this.game.serverBusy) {
+      const result = { ok: false, message: "Please try again shortly." };
+      this.showToast(result.message);
+      return result;
+    }
     const result = this.game.inventory.saveLoadout(this.el.loadoutName?.value);
     if (result.ok) {
       if (this.el.loadoutName) this.el.loadoutName.value = "";

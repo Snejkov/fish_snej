@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mobile layout fixture (emulated capabilities)</title>
+<style>html,body{margin:0;height:100%;background:#111}iframe{display:block;width:100%;height:100%;border:0}</style>
+<iframe id="fixture" title="Game with emulated coarse-pointer capabilities"></iframe>
+<button id="run-checks" style="position:fixed;bottom:8px;left:50%;transform:translateX(-50%)">Run emulated input checks</button>
+<output id="check-result" style="position:fixed;bottom:40px;left:50%;transform:translateX(-50%);background:#111;color:white"></output>
+<script type="module">
+  // Test-only capability emulation; production detection does not read URL flags.
+  const page = new DOMParser().parseFromString(await (await fetch("../index.html")).text(), "text/html");
+  const base = page.createElement("base");
+  base.href = new URL("../", location.href).href;
+  page.head.prepend(base);
+  const setup = page.createElement("script");
+  setup.textContent = `const nativeMatchMedia = window.matchMedia.bind(window);
+    window.matchMedia = (query) => {
+      const result = nativeMatchMedia(query);
+      if (query === '(pointer: coarse)' || query === '(any-pointer: coarse)') Object.defineProperty(result, 'matches', { value: true });
+      return result;
+    };
+    Object.defineProperty(navigator, 'maxTouchPoints', { value: 2 });`;
+  base.after(setup);
+  const frame = document.getElementById("fixture");
+  const runButton = document.getElementById("run-checks");
+  const report = document.getElementById("check-result");
+  frame.onload = () => frame.contentDocument.body.append(runButton, report);
+  frame.srcdoc = "<!doctype html>" + page.documentElement.outerHTML;
+  runButton.onclick = () => {
+    const win = document.getElementById("fixture").contentWindow;
+    const game = win.snejFishing;
+    const controls = game.ui.el.mobileControls;
+    const stick = controls.querySelector(".mobile-stick");
+    const cast = controls.querySelector("[data-mobile-cast]");
+    const targets = [stick, game.canvas, cast];
+    const originals = targets.map((target) => [target.setPointerCapture, target.hasPointerCapture, target.releasePointerCapture]);
+    const check = (condition, message) => { if (!condition) throw new Error(message); };
+    // Synthetic pointers cannot acquire native capture; emulate capture only for this fixture.
+    targets.forEach((target) => {
+      const held = new Set();
+      target.setPointerCapture = (id) => held.add(id);
+      target.hasPointerCapture = (id) => held.has(id);
+      target.releasePointerCapture = (id) => held.delete(id);
+    });
+    const pointer = (target, type, id, x, y) => target.dispatchEvent(new win.PointerEvent(type,
+      { pointerType: "touch", pointerId: id, clientX: x, clientY: y, bubbles: true, cancelable: true }));
+    const before = { yaw: game.yaw, pitch: game.pitch, pos: game.pos.clone(), autoSprint: game.settings.autoSprint };
+    try {
+      check(game.mode === "playing" && game.mobileInput.enabled, "Enter the game first");
+      game.mobileInput.setActive(true);
+      const rect = stick.getBoundingClientRect(), x = rect.left + rect.width / 2, y = rect.top + rect.height / 2;
+      pointer(stick, "pointerdown", 101, x, y);
+      pointer(stick, "pointermove", 101, x, y + 22);
+      pointer(game.canvas, "pointerdown", 102, 330, 180);
+      pointer(game.canvas, "pointermove", 102, 370, 190);
+      check(game.mobileInput.state.axes.mz < 0, "Joystick not active");
+      game.updateLook(1 / 60);
+      check(game.yaw !== before.yaw, "Swipe did not turn camera");
+      game.settings.autoSprint = true;
+      game.updateMove(0.1);
+      check(game.pos.distanceTo(before.pos) > 0, "Joystick did not move character");
+      pointer(game.canvas, "pointerup", 102, 370, 190);
+      check(game.mobileInput.state.axes.mz < 0, "Look release cancelled movement");
+      pointer(stick, "pointercancel", 101, x, y);
+      check(game.mobileInput.state.axes.mz === 0, "Movement cancellation stuck");
+      pointer(cast, "pointerdown", 103, 770, 330);
+      check(game.mobileInput.state.castId === 103, "Cast finger not captured");
+      pointer(cast, "pointercancel", 103, 770, 330);
+      check(game.cast.state.fs !== "flight" && game.mobileInput.state.castId === null, "Cancel released a cast");
+      report.textContent = "PASS: emulated move + swipe + cancellation";
+      runButton.hidden = true;
+    } catch (error) {
+      report.textContent = "FAIL: " + error.message;
+    } finally {
+      game.mobileInput.reset();
+      game.pos.copy(before.pos); game.yaw = before.yaw; game.pitch = before.pitch; game.settings.autoSprint = before.autoSprint;
+      targets.forEach((target, i) => ["setPointerCapture", "hasPointerCapture", "releasePointerCapture"].forEach((key, j) => { target[key] = originals[i][j]; }));
+    }
+  };
+</script>
+</html>

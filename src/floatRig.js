@@ -6,11 +6,12 @@ export const FLOAT_RETRIEVE_FRACTION = 0.4;
 const MAX_ADJUSTMENT_SLACK = 0.12;
 
 export function rigForRod(length, depth = DEFAULT_FLOAT_DEPTH) {
-  const lineLength = Number.isFinite(length) && length > 0 ? length : 4;
+  const rodLength = Number.isFinite(length) && length > 0 ? length : 4;
+  const lineLength = rodLength * 2;
   const maxDepth = Math.max(0, lineLength - MIN_UPPER_LINE);
   const floatDepth = clamp(Number.isFinite(depth) ? depth : DEFAULT_FLOAT_DEPTH, 0, maxDepth);
   return { lineLength, floatDepth, maxDepth, upperLine: lineLength - floatDepth,
-    castRange: lineLength - floatDepth, rodReach: lineLength * 2 - floatDepth };
+    castRange: lineLength - floatDepth, rodReach: rodLength + lineLength - floatDepth };
 }
 
 const point = () => ({ x: 0, y: 0, z: 0 });

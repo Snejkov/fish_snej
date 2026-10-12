@@ -7,6 +7,26 @@ const profile = (revision = 1) => ({ user: { id: 2, name: "LakeTester", role: "p
     inventory: { owned: { bait: 0 }, equipped: { bait: "bait" }, clothing: {}, loadouts: [] } } });
 const response = (value, status = 200) => ({ ok: status === 200, status, json: async () => value });
 
+test("cast adapter retries the same intent and landing IDs after a lost response", async () => {
+  const calls = []; let lostStart = true, lostLand = true;
+  const client = new SnejServerClient({ requestId: () => "stable_cast_0001", fetcher: async (path, options) => {
+    const value = JSON.parse(options.body); calls.push({ path, value });
+    if (path === "/api/cast/start") {
+      if (lostStart) { lostStart = false; throw new Error("Lost response"); }
+      return response({ castId: "server_cast_0001" });
+    }
+    if (lostLand) { lostLand = false; throw new Error("Lost landing response"); }
+    return response({ applied: false, profile: profile(2) });
+  } });
+  client.accept(profile(), "restore");
+  const target = { x: 1, y: 0, z: 2 }, ticket = await client.beginCast(target);
+  assert.deepEqual(calls[0], calls[1]);
+  await client.landCast(ticket.castId, target);
+  assert.deepEqual(calls[2], calls[3]); assert.equal(client.profile.revision, 2);
+  assert.deepEqual(Object.keys(calls[0].value), ["requestId", "target"]);
+  assert.deepEqual(Object.keys(calls[2].value), ["castId", "landing"]);
+});
+
 test("HTTP-compatible operation IDs do not require secure-context randomUUID", () => {
   const random = { getRandomValues(bytes) { bytes.fill(171); return bytes; } };
   assert.equal(createOperationId(random), "ab".repeat(16));

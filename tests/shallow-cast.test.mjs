@@ -102,8 +102,8 @@ for (const rod of [4, 5, 6]) {
       assert.equal(writeFixedLine(tip, bobber, rig.upperLine, positions), true);
       let length = 0;
       for (let i = 3; i < positions.length; i += 3) length += Math.hypot(...[0, 1, 2].map((j) => positions[i + j] - positions[i + j - 3]));
-      assert.ok(Math.abs(length + follower.actualDepth + follower.bottomSlack - rod) < 0.00003);
-      assert.equal(rig.castRange, rod - depth, "Bottom contact never increases the configured range.");
+      assert.ok(Math.abs(length + follower.actualDepth + follower.bottomSlack - rig.lineLength) < 0.00003);
+      assert.equal(rig.castRange, rod * 2 - depth, "Bottom contact never increases the configured range.");
     }
   }
 }

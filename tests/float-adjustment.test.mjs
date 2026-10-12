@@ -54,7 +54,7 @@ for (const fps of [30, 60, 144]) {
   }
 }
 
-function floatGame(length, depth = 0.5, reach = length * 0.4 + 0.03) {
+function floatGame(length, depth = 0.5, reach = length * 2 * 0.4 + 0.03) {
   const tip = new THREE.Vector3(0, 0.1, reach), effects = { denied: 0, toasts: [] };
   const game = {
     cast: new SnejCastSystem({ rodRange: length * 2, floatDepth: depth }),
@@ -102,7 +102,7 @@ for (const length of [4, 5, 6]) {
 
     for (const depth of [0, 0.5, length - 0.25]) {
       const { game, tip: modelTip, effects } = floatGame(length, depth);
-      const threshold = length * FLOAT_RETRIEVE_FRACTION;
+      const threshold = game.cast.rig.lineLength * FLOAT_RETRIEVE_FRACTION;
       SnejFishingGame.prototype.updateFloatRig.call(game, dt);
       modelTip.z = threshold;
       game.castAdjusting = true;

@@ -27,6 +27,11 @@ export class GameStore {
       CREATE TABLE IF NOT EXISTS commands(user_id INTEGER NOT NULL REFERENCES users(id), request_id TEXT NOT NULL,
         payload TEXT NOT NULL, PRIMARY KEY(user_id, request_id)) STRICT;
       CREATE TABLE IF NOT EXISTS guest_users(user_id INTEGER PRIMARY KEY REFERENCES users(id), nickname TEXT NOT NULL) STRICT;
+      CREATE TABLE IF NOT EXISTS casts(cast_id TEXT PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id),
+        request_id TEXT NOT NULL, session_hash TEXT NOT NULL, connection_id TEXT NOT NULL,
+        status TEXT NOT NULL CHECK(status IN ('approved','landed','cancelled')), approved_at INTEGER NOT NULL,
+        landed_at INTEGER, origin_json TEXT NOT NULL, target_json TEXT NOT NULL, gear_json TEXT NOT NULL,
+        landing_json TEXT, UNIQUE(user_id,request_id)) STRICT;
       INSERT INTO sqlite_sequence(name,seq) SELECT 'users',1 WHERE NOT EXISTS(SELECT 1 FROM sqlite_sequence WHERE name='users');
       UPDATE sqlite_sequence SET seq=MAX(seq,1) WHERE name='users'; PRAGMA user_version=1;`);
   }

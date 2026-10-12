@@ -127,7 +127,7 @@ export async function requestLandscape(environment = globalThis, element = envir
 }
 
 export class SnejMobileInput {
-  constructor({ canvas, controls, canInteract, onCastStart, onCastEnd, onCastCancel, onTap, onAim, isTargeting, onAvailability, environment = globalThis }) {
+  constructor({ canvas, controls, canInteract, onCastStart, onCastEnd, onCastCancel, onTap, onAim, onAimCancel, onTargetStart, isTargeting, onAvailability, environment = globalThis }) {
     this.canvas = canvas;
     this.controls = controls;
     this.environment = environment;
@@ -137,6 +137,8 @@ export class SnejMobileInput {
     this.onCastCancel = onCastCancel;
     this.onTap = onTap;
     this.onAim = onAim;
+    this.onAimCancel = onAimCancel;
+    this.onTargetStart = onTargetStart;
     this.isTargeting = isTargeting;
     this.onAvailability = onAvailability;
     this.state = new MobileInputState();
@@ -176,7 +178,7 @@ export class SnejMobileInput {
     });
     this.listen(this.lookZone, "pointerdown", pointerStart(this.beginLook));
     if (canvas !== this.lookZone) this.listen(canvas, "pointerdown", pointerStart(function(event) {
-      if (this.isTargeting?.()) this.beginLook(event);
+      this.beginLook(event);
     }));
     this.listen(this.lookZone, "pointermove", (event) => {
       if (this.state.look?.id !== event.pointerId) return;
@@ -203,7 +205,7 @@ export class SnejMobileInput {
     this.listen(canvas, "touchstart", (event) => {
       if (!this.available()) return;
       event.preventDefault();
-      if (canvas !== this.lookZone && this.useTouchEvents && this.isTargeting?.()) {
+      if (canvas !== this.lookZone && this.useTouchEvents) {
         for (const touch of Array.from(event.changedTouches || [])) this.beginLook(this.touchPointer(touch, event));
       }
     }, { passive: false });
@@ -300,7 +302,7 @@ export class SnejMobileInput {
 
   touchPointer(touch, event) {
     return { pointerId: `touch:${touch.identifier}`, pointerType: "touch", nativeTouch: true,
-      clientX: touch.clientX, clientY: touch.clientY, preventDefault: () => event.preventDefault() };
+      clientX: touch.clientX, clientY: touch.clientY, currentTarget: event.currentTarget, preventDefault: () => event.preventDefault() };
   }
 
   movePointer(event) {
@@ -335,9 +337,12 @@ export class SnejMobileInput {
     if (!this.available(event)) return;
     // Suppress compatibility mouse casts even when an extra finger is ignored.
     event.preventDefault();
+    if (this.state.look) return;
+    const aiming = this.isTargeting?.() || this.onTargetStart?.(event.clientX, event.clientY);
+    if (!aiming && event.currentTarget === this.canvas && this.canvas !== this.lookZone) return;
     if (this.state.beginLook(event.pointerId, event.clientX, event.clientY)) {
       this.capture(event, event.currentTarget === this.canvas ? this.canvas : this.lookZone);
-      if (this.isTargeting?.() && this.onAim) {
+      if (aiming && this.onAim) {
         this.state.look.aiming = true;
         this.state.takeLook();
         this.onAim(event.clientX, event.clientY);
@@ -372,6 +377,7 @@ export class SnejMobileInput {
     if (role === "stick") this.paintStick();
     if (role === "run") this.paintRun();
     if (role === "look" && cancelled) this.state.takeLook();
+    if (role === "look" && look.aiming && (cancelled || !this.available())) this.onAimCancel?.();
     if (role === "look" && !cancelled && this.available() && (look.aiming || (look.travel <= 10
       && Math.hypot(event.clientX - look.startX, event.clientY - look.startY) <= 10))) {
       this.onTap?.(event.clientX, event.clientY);
@@ -396,6 +402,7 @@ export class SnejMobileInput {
 
   reset() {
     const casting = this.state.castId !== null;
+    const aiming = this.state.look?.aiming;
     this.state.reset();
     for (const [id, target] of this.captures) {
       this.releaseCapture(id, target);
@@ -406,6 +413,7 @@ export class SnejMobileInput {
     this.paintRun();
     this.castButton.classList.remove("pressed");
     if (casting) this.onCastCancel?.();
+    if (aiming) this.onAimCancel?.();
   }
 
   takeLook() {

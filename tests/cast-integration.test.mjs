@@ -114,7 +114,7 @@ for (const [reason, message] of Object.entries({
 
 const element = () => ({ classList: { toggle(name, enabled) { this[name] = enabled; } }, style: {}, setAttribute() {} });
 const markerState = {
-  fs: "idle", retrieving: false, aimValid: true, canRelease: true,
+  fs: "idle", retrieving: false, aimValid: true, aimHasPoint: true, canRelease: true,
   charge: 0.5, targetPower: 0.5, requestedDist: 4, minCastDist: 1, targetValid: true,
   aimPoint: { x: 0, y: 0, z: 4 }, targetLanding: { x: 0.2, y: 0, z: 5, water: true },
   predictedLanding: { x: 0, y: 0, z: 4, water: true }
@@ -127,11 +127,15 @@ const markerGame = {
   rodSelect: {}, floatDepthInput: {}, castMeter: element(), castMeterFill: element(), castMeterDistance: element(),
   castMeterTarget: element(), castMeterTol: element(),
   aimMarker: new THREE.Mesh(new THREE.RingGeometry(), new THREE.MeshBasicMaterial({ color: 0x9ff0ff })),
+  castWaterNearby: () => true,
+  cancelServerCast() {},
   terrain: { depthAt: () => 1 }, placeCastMarker: (marker, point) => placements.push({ marker, point })
 };
 const markerId = markerGame.aimMarker.uuid;
 function checkMarkers(fs, aimValid, predictedWater, currentWater, enabled, aimVisible) {
   Object.assign(markerState, { fs, aimValid });
+  markerState.aimHasPoint = aimValid || predictedWater;
+  markerState.targetValid = aimValid && predictedWater && currentWater;
   markerState.predictedLanding.water = predictedWater;
   markerGame.mode = enabled ? "playing" : "paused";
   markerGame.cast.isWaterAt = () => currentWater;
@@ -142,19 +146,19 @@ function checkMarkers(fs, aimValid, predictedWater, currentWater, enabled, aimVi
   assert.equal(placements.length, aimVisible ? 1 : 0, "A cast preview can place only one ring.");
   if (aimVisible) {
     assert.equal(placements[0].marker, markerGame.aimMarker);
-    assert.equal(placements[0].point, markerState.targetLanding);
+    assert.equal(placements[0].point, markerState.aimPoint);
+    assert.equal(markerGame.aimMarker.material.color.getHex(), markerState.targetValid ? 0x54e58b : 0xff5555);
   }
-  assert.equal(markerGame.aimMarker.material.color.getHex(), 0x9ff0ff, "Perfect, blocked, and shallow previews must keep the same color.");
   assert.deepEqual(markerGame.aimMarker.scale.toArray(), [1, 1, 1]);
   assert.equal(markerGame.aimMarker.uuid, markerId);
   assert.deepEqual(markerGame.pos.toArray(), before, "Marker visibility must not move the player.");
 }
 for (const fs of ["idle", "aim"]) {
   checkMarkers(fs, true, true, true, true, true);
-  checkMarkers(fs, false, true, true, true, false);
+  checkMarkers(fs, false, true, true, true, true);
   checkMarkers(fs, false, false, false, true, false);
-  checkMarkers(fs, true, false, false, true, false);
-  checkMarkers(fs, true, true, false, true, false);
+  checkMarkers(fs, true, false, false, true, true);
+  checkMarkers(fs, true, true, false, true, true);
   checkMarkers(fs, true, true, true, false, false);
 }
 for (const fs of ["charge", "flight", "wait"]) {
@@ -162,7 +166,7 @@ for (const fs of ["charge", "flight", "wait"]) {
   assert.equal(markerGame.castMeter.classList.hidden, true, "Direct casts never show a strength meter.");
 }
 markerState.targetValid = false;
-checkMarkers("aim", true, true, true, true, false);
+checkMarkers("aim", true, false, true, true, true);
 markerState.targetValid = true;
 checkMarkers("idle", true, true, true, true, true);
 for (const depth of [0.01, 0.4, 4]) {
@@ -191,13 +195,13 @@ for (const fs of ["charge", "flight"]) {
 depthGame.cast.state.fs = "wait";
 assert.equal(SnejFishingGame.prototype.selectFloatDepth.call(depthGame, 0.75), true);
 assert.equal(depthGame.cast.state.fs, "idle");
-assert.equal(depthGame.cast.castRange, 4.25);
-assert.equal(depthGame.floatDepthInput.value, "0.75");
+assert.equal(depthGame.cast.castRange, 9.25);
+assert.equal(depthGame.floatDepthInput.value, "0.375");
 assert.equal(depthGame.saved.floatDepth, 0.75);
-assert.equal(depthGame.rodReadout.textContent, t("Rod {length} m / Range {range} m", { length: 5, range: 4.25 }));
-assert.equal(depthGame.floatDepthReadout.textContent, t("Depth {depth} m / Line {length} m", { depth: 0.75, length: 5 }));
-depthGame.settings.floatDepth = 4.5;
+assert.equal(depthGame.rodReadout.textContent, t("Rod {length} m / Range {range} m", { length: 5, range: 4.625 }));
+assert.equal(depthGame.floatDepthReadout.textContent, t("Depth {depth} m / Line {length} m", { depth: 0.375, length: 5 }));
+depthGame.settings.floatDepth = 8.5;
 depthGame.applyRod({ length: 4, range: 8 });
-assert.equal(depthGame.settings.floatDepth, 3.75, "Selecting a shorter rod must clamp the stored depth to its line budget.");
-assert.equal(depthGame.floatDepthInput.max, "3.75");
+assert.equal(depthGame.settings.floatDepth, 7.75, "Selecting a shorter rod must clamp the stored depth to its line budget.");
+assert.equal(depthGame.floatDepthInput.max, "3.875");
 console.log("Stage 4 cast integration tests passed.");

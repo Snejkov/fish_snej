@@ -4,6 +4,7 @@ import { resolve, relative, sep, extname, isAbsolute } from "node:path";
 import { hashPassword, verifyPassword, readSession, sessionCookie, validPassword } from "./auth.mjs";
 import { RequestError, reject, object, playerName, position } from "./validation.mjs";
 import { CHAT_CHANNELS, cleanChatText, receivesChat, consumeChatToken } from "../src/multiplayer/chatRules.js";
+import { approveCast, landCast, cancelCast } from "./casts.mjs";
 
 const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
   ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".svg": "image/svg+xml",
@@ -123,6 +124,18 @@ export function createApp({ store, WebSocketServer, staticRoot, publicOrigin, se
           return json(res, 200, profile);
         }
         if (req.method === "POST" && url.pathname === "/api/command") return json(res, 200, store.command(user.id, await body(req)));
+        if (req.method === "POST" && ["/api/cast/start", "/api/cast/land", "/api/cast/cancel"].includes(url.pathname)) {
+          rate(req, "cast", 90);
+          const input = await body(req);
+          store.authenticate(token);
+          const peer = currentPeers.get(user.id);
+          if (!peer || peer.token !== token || peer.socket.readyState !== 1) reject("cast_unavailable", 409);
+          if (url.pathname === "/api/cast/start") {
+            persistPosition(peer);
+            return json(res, 200, approveCast(store, user.id, token, peer.id, input));
+          }
+          return json(res, 200, (url.pathname === "/api/cast/land" ? landCast : cancelCast)(store, user.id, token, peer.id, input));
+        }
         reject("not_found", 404);
       }
       if (!["GET", "HEAD"].includes(req.method)) reject("method_not_allowed", 405);

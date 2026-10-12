@@ -14,9 +14,9 @@
       {
         "imports": {
           "three": "./vendor/three.module.min.js",
-          "./src/game.js?v=0.0.4-hf7": "./src/game.js?v=direct-cast-1",
-          "./src/i18n.js": "./src/i18n.js?v=direct-cast-1",
-          "./src/floatRig.js?v=0.0.5a-hf4": "./src/floatRig.js?v=target-cast-1",
+          "./src/game.js?v=0.0.4-hf7": "./src/game.js?v=shore-cast-2",
+          "./src/i18n.js": "./src/i18n.js?v=shore-cast-2",
+          "./src/floatRig.js?v=0.0.5a-hf4": "./src/floatRig.js?v=shore-cast-2",
           "./src/multiplayer/client.js": "./src/multiplayer/client.js?v=chat-1",
           "./src/multiplayer/room.js": "./src/multiplayer/room.js?v=nameplate-range-1",
           "./src/gear/inventory.js": "./src/gear/inventory.js?v=0.0.5a-hf8",
@@ -219,8 +219,8 @@
               <button class="equipment-slot secondary" data-slot="lure" type="button"><span class="slot-kind">Lure</span><strong></strong></button>
             </div>
             <div class="inventory-rig">
-              <label class="field" for="float-depth"><span>Float depth (m)</span><input id="float-depth" type="number" min="0" max="3.75" step="0.05" value="0.5"></label>
-              <div class="profile-row"><span>Cast range</span><strong id="inventory-cast-range">3.5 m</strong></div>
+              <label class="field" for="float-depth"><span>Float depth (m)</span><input id="float-depth" type="number" min="0" max="3.875" step="0.025" value="0.25"></label>
+              <div class="profile-row"><span>Cast range</span><strong id="inventory-cast-range">3.75 m</strong></div>
             </div>
           </section>
           <section class="inventory-browser" aria-label="Available gear">
@@ -305,15 +305,15 @@
           <div id="pos-line">x 0.0, z 0.0</div>
           <div id="depth-line">On land</div>
           <div id="camera-line">Third Person</div>
-          <div id="rod-line">Rod 4 m / Cast 3.5 m</div>
-          <div id="float-depth-line">Depth 0.5 m / Line 4 m</div>
+          <div id="rod-line">Rod 4 m / Range 3.75 m</div>
+          <div id="float-depth-line">Depth 0.25 m / Line 4 m</div>
           <div id="bait-line">Bait: Earthworm x10</div>
         </div>
         <div id="fps" class="hud-box">0 FPS</div>
       </div>
         <div id="cast-meter" class="hud-box cast-meter hidden" role="meter" aria-label="Cast strength" aria-describedby="cast-meter-status" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
           <div class="cast-meter-label">Cast strength</div>
-          <div class="cast-meter-distance">0.0 / 3.5 m</div>
+          <div class="cast-meter-distance">0.0 / 3.75 m</div>
           <div class="cast-meter-status" id="cast-meter-status"></div>
           <div class="cast-meter-track">
             <div class="cast-meter-tol"></div>
@@ -332,7 +332,8 @@
 
       <div id="hint-bar" class="hidden">
         Move WASD &middot; Sprint Shift &middot; Look Mouse &middot;
-        <span class="chip" data-i18n="Cast">Cast</span> [C] &middot;
+        <span data-i18n="Cursor [Backquote]">Cursor [Backquote]</span> &middot;
+        <span class="chip" data-i18n="Hold LMB / C to cast">Hold LMB / C to cast</span> &middot;
         <span id="view-chip" class="chip">[V] View: Third Person</span> &middot;
         <span id="build-chip" class="chip">[B] Build (locked)</span> &middot;
         <span class="chip">[P] Profile</span> &middot; Esc Menu &middot; U Toggle HUD

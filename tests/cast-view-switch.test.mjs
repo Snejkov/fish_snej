@@ -58,7 +58,7 @@ for (const length of [4, 5, 6]) {
       assert.equal(float.follow(1 / fps, currentTip, bobber, rig, context), true, "View changes must not request line recovery.");
       assert.ok(Math.hypot(bobber.x - initial.x, bobber.z - initial.z) < 1e-6, "Switching views must leave the float at its water position.");
       assert.equal(writeFixedLine(currentTip, bobber, rig.upperLine, line), true);
-      assert.ok(Math.abs(polylineLength(line) + rig.floatDepth - length) < 0.00003);
+      assert.ok(Math.abs(polylineLength(line) + rig.floatDepth - rig.lineLength) < 0.00003);
       assert.deepEqual([angler.carry.rod.uuid, angler.carry.tip.uuid, angler.bones.RightHand.uuid], identities);
       assert.deepEqual(angler.skeleton.boneInverses.map((matrix) => matrix.toArray()), binds);
     };

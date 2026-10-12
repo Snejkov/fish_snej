@@ -1,6 +1,7 @@
 import { CATALOG, findItem } from "./gear/catalog.js";
 import { CLOTHING_SLOTS } from "./gear/inventory.js";
 import { SnejPlayerChat } from "./multiplayer/chat.js?v=chat-1";
+import { fishingMeters } from "./fishingUnits.js?v=shore-cast-2";
 import { t, translateText, formatCoins, errorMessage, applyTranslations, onLanguageChange, getLanguage, setLanguage } from "./i18n.js";
 
 const GEAR_LABELS = Object.freeze({ rod: "Rod", bait: "Bait", line: "Line", hook: "Hook", lure: "Lure" });
@@ -899,7 +900,7 @@ export class SnejUI {
     const depth = game.terrain ? game.terrain.depthAt(position.x, position.z) : 0;
     this.el.arrow.setAttribute("transform", `rotate(${(-game.yaw * 180) / Math.PI} 24 24)`);
     this.el.pos.textContent = `x ${position.x.toFixed(1)}, z ${position.z.toFixed(1)}`;
-    this.el.depth.textContent = depth < 0.1 ? t("On land") : t("Depth {depth} m", { depth: depth.toFixed(1) });
+    this.el.depth.textContent = depth < 0.1 ? t("On land") : t("Depth {depth} m", { depth: fishingMeters(depth).toFixed(1) });
     this.el.camera.textContent = t(game.cameraMode === "first-person" ? "First Person" : "Third Person");
     this.el.fps.textContent = `${this.fps} FPS`;
   }
@@ -963,7 +964,7 @@ export class SnejUI {
     const inv = this.game.inventory;
     if (!inv) return;
     const rod = inv.equippedRod();
-    this.el.rodLine.textContent = t("Rod {length} m / Range {range} m", { length: rod.length, range: this.game.cast.castRange });
+    this.el.rodLine.textContent = t("Rod {length} m / Range {range} m", { length: rod.length, range: fishingMeters(this.game.cast.castRange) });
     const bait = inv.equippedBait();
     this.el.baitLine.textContent = bait && inv.countOf(bait.id) > 0
       ? t("Bait: {name} x{count}", { name: t(bait.name), count: inv.countOf(bait.id) }) : t("No bait");
@@ -973,7 +974,7 @@ export class SnejUI {
     const rod = this.game.inventory?.equippedRod();
     const readout = document.getElementById("float-depth-line");
     if (rod && readout) readout.textContent = t("Depth {depth} m / Line {length} m", {
-      depth: Number(this.game.settings.floatDepth.toFixed(2)), length: rod.length
+      depth: fishingMeters(this.game.settings.floatDepth), length: fishingMeters(this.game.cast.rig.lineLength)
     });
   }
 
@@ -1123,7 +1124,7 @@ export class SnejUI {
     this.el.previewDescription.textContent = t(item.description);
     this.el.previewStatus.textContent = t(equipped ? "Equipped" : owned ? "Owned" : "Shop");
     this.el.previewStats.replaceChildren();
-    const stats = item.kind === "rod" ? [["Length", `${item.length} m`], ["Range", `${item.range} m`]]
+    const stats = item.kind === "rod" ? [["Length", `${item.length} m`], ["Range", `${fishingMeters(item.range)} m`]]
       : item.kind === "line" ? [["Strength", `${item.breakingStrengthKg} kg`]]
       : item.stackable ? [["Quantity", `x${inv.countOf(item.id)}`]] : [];
     for (const [label, value] of stats) {
@@ -1149,7 +1150,7 @@ export class SnejUI {
     if (!this.inventoryOpen) return;
     const kind = this.currentInventoryCategory;
     this.el.equipmentName.textContent = this.game.identity.name;
-    this.el.inventoryCastRange.textContent = translateText(`${Number(this.game.cast.castRange.toFixed(2))} m`);
+    this.el.inventoryCastRange.textContent = translateText(`${fishingMeters(this.game.cast.castRange)} m`);
     this.refreshClothingSlots();
     this.refreshLoadouts();
     for (const slot of this.el.equipmentSlots.querySelectorAll("[data-slot]")) {

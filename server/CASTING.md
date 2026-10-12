@@ -1,0 +1,72 @@
+# Casting contract
+
+The browser previews a forward target from held cast strength. Online casting requires an
+authenticated, current WebSocket lake connection and server approval before
+the local flight starts. Static/offline hosting keeps local casting.
+
+- `POST /api/cast/start`: `{requestId,target:{x,y,z}}`. The server assigns the
+  cast ID, identity, approval time, accepted player origin, owned gear and
+  depth snapshot. It checks finite coordinates, rendered shoreline, dock,
+  exposed rocks, minimum distance and the equipped line-minus-depth budget.
+- `POST /api/cast/land`: `{castId,landing:{x,y,z}}`, sent only when the actual
+  simulated float transitions from flight to water. The server requires the
+  same session and connection, live approved intent, unchanged gear/depth,
+  age 50 ms to 30 seconds, and a landing within 0.03 world units of the
+  approved point and still within the range budget.
+- `POST /api/cast/cancel`: `{castId}`. Cancelled, superseded or expired intents
+  cannot produce a successful landing. Invalid input cannot upload user IDs,
+  timestamps, equipment, success, fish or reward claims.
+
+The additive SQLite `casts` table stores the server-owned ID, user, session
+hash, connection, origin, target, gear/depth, approval time, actual reported
+landing and server landing time. Successful landing consumes one bait in the
+same transaction. Exact retries are idempotent; changed retries are rejected.
+No catch or money is awarded by this contract. Existing profiles and balances
+are preserved. Guest nickname persistence has its existing browser/session
+limitations; this change does not add permanent account registration.
+
+## Units and presentation
+
+World/network/physics coordinates and existing saved depths are unchanged.
+Fishing display meters equal world units divided by two. Editable displayed
+depth converts back to world units by multiplying by two. This applies to
+cast range, line length, float depth and water-depth readouts, not player
+coordinates, nominal catalog rod names/lengths, chat or nameplate radii.
+Equipped line length is now twice nominal rod length; horizontal casting
+range is line length minus the raw selected float depth. Pole meshes are not
+stretched. The same circle is green for a valid point and red for an invalid
+point; an invalid point is never silently moved closer.
+
+PC holds the left mouse button (or optional C) to charge, then releases to cast. The
+physical Backquote key toggles free cursor and pointer-lock camera look.
+Mobile/tablet users hold the mobile-only Cast button, then release to cast;
+ordinary screen swipes still look around. Strength grows monotonically to
+the maximum in 2.5 seconds and stays there without automatically throwing.
+Casting follows the visible character's facing at the beginning of the hold,
+not a free mouse/water pointer or an orbit-camera ray. The ring previews the
+charged endpoint; it is not draggable. Touch cancellation, blur and menus
+abort charging. Third person changes to first person only after accepted release.
+
+## Authority boundary
+
+This is an approved-intent and validated-endpoint foundation, not a fully
+authoritative movement or ballistic simulation. Accepted peer positions
+still originate in existing client presence/profile updates. The server
+does not yet reconstruct the full flight path or prove that a physical
+client animation occurred. It therefore does not promise total cheat
+prevention. Deployment does not enable new fish AI or fighting mechanics.
+
+For future fishing: client graphics/assets/animation and responsive local
+reeling prediction stay client-side. Fish selection/size, equipment
+properties, chance/load/break calculations, final outcome, catch and rewards
+must be decided on the server from player actions, not trusted client result,
+random-roll or reward claims. No such full fishing system is implemented here.
+
+## Verification
+
+Run `node --test tests/*.test.mjs` in the project root and
+`node --test server/tests/*.test.mjs` with the pinned server dependencies.
+The browser-only fixtures `tests/target-cast-browser.html` and
+`tests/desktop-cast-browser.html` run against isolated local static hosting,
+not production profiles. Native-touch emulation is not a real iPhone Safari
+device test. The production server deliberately does not serve `/tests/`.

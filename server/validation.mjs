@@ -1,5 +1,6 @@
 import { findItem } from "../src/gear/catalog.js";
 import { SPAWNS } from "../src/spawns.js";
+import { rigForRod } from "../src/floatRig.js";
 
 export class RequestError extends Error {
   constructor(status, code) { super(code); this.status = status; this.code = code; }
@@ -35,7 +36,7 @@ export function settings(value, previous = {}) {
   for (const [key, item] of Object.entries(value)) {
     if (["volume", "bgm"].includes(key)) next[key] = number(item, 0, 1);
     else if (key === "sens") next[key] = number(item, 0.1, 3);
-    else if (key === "floatDepth") next[key] = number(item, 0, 5.75);
+    else if (key === "floatDepth") next[key] = number(item, 0, 11.75);
     else if (["shadow", "autoSprint"].includes(key)) next[key] = typeof item === "boolean" ? item : reject();
     else if (key === "quality") next[key] = ["low", "mid", "high"].includes(item) ? item : reject();
     else if (key === "lang") next[key] = ["ru", "en"].includes(item) ? item : reject();
@@ -87,7 +88,7 @@ export function patchState(state, patch) {
   if (patch.clothing !== undefined) next.inventory.clothing = clothing(patch.clothing);
   if (patch.loadouts !== undefined) next.inventory.loadouts = loadouts(patch.loadouts, next.inventory);
   const rod = findItem(next.inventory.equipped.rod);
-  if (next.settings.floatDepth > rod.length - 0.25) reject("depth_out_of_range");
+  if (next.settings.floatDepth > rigForRod(rod.length).maxDepth) reject("depth_out_of_range");
   return next;
 }
 export function trustedOwnerState(input) {

@@ -15,7 +15,9 @@ export const ACCOUNT_ERRORS = Object.freeze({
   item_not_owned: "Item is not owned.", out_of_bait: "Out of bait. Reel in and re-equip.",
   revision_conflict: "Your profile changed. Please try again.", depth_out_of_range: "Invalid float depth.",
   bait_unavailable: "Out of bait. Reel in and re-equip.", name_unavailable: "This name is already taken.",
-  network_error: "Connection failed", server_error: "Server unavailable. Please try again."
+  network_error: "Connection failed", server_error: "Server unavailable. Please try again.",
+  cast_unavailable: "Reconnect to the lake before casting.", cast_invalid_target: "Invalid cast target.",
+  cast_expired: "Cast expired. Please cast again.", cast_conflict: "Cast changed. Please cast again."
 });
 export class AccountError extends Error {
   constructor(code, status = 0) { super(ACCOUNT_ERRORS[code] || "Server unavailable. Please try again."); this.code = code; this.status = status; }
@@ -137,6 +139,23 @@ export class SnejServerClient {
     }));
   }
   noteRevision(revision) { if (Number.isSafeInteger(revision)) this.revision = Math.max(this.revision, revision); }
+  castRequest(path, value) {
+    const snapshot = copy(value);
+    return this.enqueue(async () => {
+      // Idempotent cast IDs make a lost response safe to retry without consuming bait twice.
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        try { return await this.request(path, "POST", snapshot); }
+        catch (error) { if (error.code !== "network_error" || attempt === 2) throw error; }
+      }
+    });
+  }
+  beginCast(target) { return this.castRequest("/api/cast/start", { requestId: this.requestId(), target }); }
+  cancelCast(castId) { return this.castRequest("/api/cast/cancel", { castId }); }
+  async landCast(castId, landing) {
+    const result = await this.castRequest("/api/cast/land", { castId, landing });
+    this.accept(result.profile, "command");
+    return result;
+  }
   async logout() {
     await this.pending;
     await this.request("/api/logout", "POST", {});

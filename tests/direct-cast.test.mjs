@@ -15,7 +15,7 @@ function fixture(length, depth, desired, yaw, obstruction = null) {
   const pos = { x: 13, y: 0.04, z: -9 };
   const eye = new THREE.Vector3(pos.x, 1.62, pos.z);
   const target = new THREE.Vector3(pos.x + Math.sin(yaw) * desired, 0, pos.z + Math.cos(yaw) * desired);
-  const ctx = { pos, yaw, pitch: -0.4, aimRay: new THREE.Ray(eye, target.sub(eye).normalize()),
+  const ctx = { pos, yaw, pitch: -0.4, strictTarget: true, aimRay: new THREE.Ray(eye, target.sub(eye).normalize()),
     waterSurfaceY: () => 0, terrainHeightAt: () => -4, terrainDepthAt: () => 4,
     isWaterAt: () => true, lineObstruction: () => obstruction };
   const cast = new SnejCastSystem({ rodRange: length * 2, floatDepth: depth,
@@ -31,12 +31,13 @@ function fixture(length, depth, desired, yaw, obstruction = null) {
 
 test("Direct release lands on the circle with an offset grip at every frame rate and rig budget", () => {
   for (const length of [4, 5, 6]) for (const depth of [0, 0.5, 1.5]) {
-    for (const factor of [0.2, 0.75, 10]) for (const yaw of [0, 1.7, 4.8]) for (const fps of [30, 60, 144]) {
-      const { game, cast, ctx, releases } = fixture(length, depth, (length - depth) * factor, yaw);
+    for (const factor of [0.2, 0.75, 1]) for (const yaw of [0, 1.7, 4.8]) for (const fps of [30, 60, 144]) {
+      const { game, cast, ctx, releases } = fixture(length, depth, (length * 2 - depth) * factor, yaw);
       const circle = { ...cast.state.targetLanding };
       assert.equal(cast.state.targetValid, true);
       close(Math.hypot(circle.x - ctx.pos.x, circle.z - ctx.pos.z), cast.state.aimDist);
-      assert.ok(cast.state.aimDist <= length - depth + 1e-8);
+      assert.ok(cast.state.aimDist <= length * 2 - depth + 1e-8);
+      assert.ok(cast.castRange >= 2 * (length - depth));
       assert.equal(game.endCastAction(), true);
       assert.equal(cast.state.fs, "flight");
       assert.equal(releases(), 1);
@@ -44,8 +45,25 @@ test("Direct release lands on the circle with an offset grip at every frame rate
       for (let i = 0; i < fps * 10 && cast.state.fs === "flight"; i += 1) cast.tick(1 / fps, ctx);
       assert.equal(cast.state.fs, "wait");
       close(Math.hypot(cast.state.bobber.x - circle.x, cast.state.bobber.z - circle.z), 0);
-      assert.ok(cast.state.castDist <= length - depth + 1e-8);
+      assert.ok(cast.state.castDist <= length * 2 - depth + 1e-8);
     }
+  }
+});
+
+test("Out-of-range and land keep the actual chosen point but cannot release; moving back restores a valid circle", () => {
+  for (const length of [4, 5, 6]) {
+    const { game, cast, ctx, releases } = fixture(length, 0.5, 40, 0);
+    close(cast.state.aimPoint.z - ctx.pos.z, 40);
+    assert.equal(cast.state.aimHasPoint, true);
+    assert.equal(cast.state.targetValid, false);
+    assert.equal(cast.state.releaseBlock, "reach");
+    assert.equal(game.endCastAction(), false);
+    assert.equal(releases(), 0);
+    ctx.aimRay.direction.set(0, -1.62, cast.castRange).normalize();
+    game.updateCast(); assert.equal(cast.state.targetValid, true);
+    ctx.isWaterAt = () => false; game.updateCast(); assert.equal(cast.state.targetValid, false);
+    ctx.isWaterAt = () => true; game.updateCast(); assert.equal(cast.state.targetValid, true);
+    assert.equal(game.endCastAction(), true);
   }
 });
 

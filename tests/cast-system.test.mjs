@@ -57,7 +57,7 @@ assert.equal(charge.state.fs, "idle");
 
 for (const [power, acc, perfect] of [[0.5, 1, true], [0.56, 1, true], [0.6, 5 / 6, false], [0.8, 0, false]]) {
   const c = make();
-  const accuracyContext = { ...context, aimRay: { origin: { x: 0, y: 3, z: 0 }, direction: { x: 0, y: -3, z: 15 } } };
+  const accuracyContext = { ...context, aimRay: { origin: { x: 0, y: 3, z: 0 }, direction: { x: 0, y: -3, z: 30 } } };
   c.onActionDown();
   c.tick(0, accuracyContext);
   c.state.charge = power;
@@ -100,7 +100,7 @@ for (const pitch of [-Math.PI / 2, -0.5, 0, Math.PI / 2]) {
   c.tick(0, { ...context, pitch });
   assert.ok(Number.isFinite(c.state.aimDist) && Number.isFinite(c.state.targetPower));
   assert.equal(c.state.aimCapped, pitch >= 0);
-  assert.ok(c.state.aimDist >= c.state.minCastDist && c.state.aimDist <= 30);
+  assert.ok(c.state.aimDist >= c.state.minCastDist && c.state.aimDist <= 60);
 }
 
 for (let index = 0; index < 50; index += 1) {
@@ -133,7 +133,7 @@ for (const { range } of RODS) {
   for (const pitch of [-1.2, -0.5, -0.03]) {
     for (const fraction of [0.25, 0.5, 0.75, 1]) {
       const c = make();
-      c.setRodRange(range * 2);
+      c.setRodRange(range);
       const ctx = { ...context, pitch };
       c.tick(0, ctx);
       c.onActionDown();
@@ -163,7 +163,7 @@ for (const yaw of [0, Math.PI / 2, Math.PI]) {
       assert.equal(c.onActionUp(), fraction > 0, "A zero-distance release cannot launch even with a rotated origin.");
       if (fraction > 0) {
         for (let i = 0; i < 600 && c.state.fs === "flight"; i += 1) c.tick(1 / 60, ctx);
-        assert.ok(Math.abs(c.state.castDist - 30 * fraction) < 0.0001);
+        assert.ok(Math.abs(c.state.castDist - 60 * fraction) < 0.0001);
       }
     }
   }
@@ -175,7 +175,7 @@ for (const override of [
   { lineObstruction: () => "rock" },
   { terrainHeightAt: () => 1, terrainDepthAt: () => 0 },
   // The aim is water, but an undercast ends on land.
-  { isWaterAt: (x, z) => z > 25 },
+  { isWaterAt: (x, z) => z > 40 },
   // The landing is water, but the aim points at land.
   { isWaterAt: (x, z) => z < 20 }
 ]) {
@@ -207,9 +207,9 @@ assert.equal(changing.setRodRange(10), false);
 for (let i = 0; i < 600 && changing.state.fs === "flight"; i += 1) changing.tick(1 / 60, context);
 assert.equal(changing.setRodRange(8), true);
 assert.equal(changing.state.fs, "idle");
-assert.equal(changing.maxLine, 4);
+assert.equal(changing.maxLine, 8);
 changing.tick(0, context);
-assert.equal(changing.state.aimDist, 4);
+assert.equal(changing.state.aimDist, 8);
 assert.equal(changing.state.targetPower, 1);
 
 // Collision recovery remains a safeguard if scenery changes after a valid launch.
@@ -287,5 +287,5 @@ flatLine.onActionDown();
 flatLine.state.charge = 1;
 assert.equal(flatLine.onActionUp(), true, "A fixed sideways line must not be checked against obsolete vertical sag.");
 assert.equal(new SnejCastSystem().getCastOriginLocal().y, 1.4);
-assert.equal(new SnejCastSystem().castRange, 4);
+assert.equal(new SnejCastSystem().castRange, 8);
 console.log("Stage 4 cast physics tests passed.");

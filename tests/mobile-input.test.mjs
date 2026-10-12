@@ -368,6 +368,31 @@ canvas.dispatchEvent(pointer("pointerup", 92, 200, 120));
 assert.deepEqual(aimReleases.at(-1), [200, 120]);
 pointerAim.destroy();
 
+// A ring grab starts directly from idle; unrelated swipes retain camera ownership.
+let idleAim = false;
+const idlePoints = [], idleReleases = [];
+const idleController = new SnejMobileInput({ canvas, controls, environment: nativeEnvironment,
+  canInteract: () => true, isTargeting: () => idleAim,
+  onTargetStart: (x, y) => { if (x !== 200) return false; idleAim = true; idleController.reset(); return true; },
+  onAim: (x, y) => idlePoints.push([x, y]), onTap: (x, y) => idleReleases.push([x, y]) });
+idleController.setActive(true);
+lookZone.dispatchEvent(touchEvent("touchstart", [100, 600, 200]));
+nativeEnvironment.document.dispatchEvent(touchEvent("touchmove", [100, 650, 200]));
+assert.deepEqual(idleController.takeLook(), { dx: 50, dy: 0 });
+nativeEnvironment.document.dispatchEvent(touchEvent("touchend", [100, 650, 200]));
+assert.equal(idleAim, false);
+canvas.dispatchEvent(touchEvent("touchstart", [101, 200, 200]));
+nativeEnvironment.document.dispatchEvent(touchEvent("touchmove", [101, 300, 180]));
+assert.deepEqual(idlePoints, [[200, 200], [300, 180]]);
+assert.deepEqual(idleController.takeLook(), { dx: 0, dy: 0 });
+nativeEnvironment.document.dispatchEvent(touchEvent("touchend", [101, 300, 180]));
+assert.deepEqual(idleReleases, [[300, 180]]);
+idleAim = false;
+canvas.dispatchEvent(touchEvent("touchstart", [102, 200, 200]));
+nativeEnvironment.document.dispatchEvent(touchEvent("touchcancel", [102, 250, 180]));
+assert.equal(idleReleases.length, 1, "A cancelled ring drag never releases a cast.");
+idleController.destroy();
+
 const order = [];
 const document = { fullscreenElement: null };
 const supported = {

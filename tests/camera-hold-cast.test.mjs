@@ -10,6 +10,7 @@ const { SnejFishingGame: Game } = await import("../src/game.js");
 const { SnejAngler } = await import("../src/angler.js");
 const { SnejCastSystem } = await import("../src/castSystem.js");
 const { makePresence } = await import("../src/multiplayer/presence.js");
+const { SnejDesktopCursor } = await import("../src/desktopCursor.js");
 const flush = async () => { for (let i = 0; i < 15; i += 1) await Promise.resolve(); };
 const classes = () => ({ toggle() {}, add() {}, contains() { return false; } });
 
@@ -194,4 +195,97 @@ test("held strength accumulates 20 percent faster without changing the range or 
   game.updateCast(2.5 / 1.2 - 1 + 1e-9);
   assert.equal(game.cast.state.charge, 1); assert.equal(game.cast.state.fs, "charge");
   game.updateCast(10); assert.equal(game.cast.state.charge, 1); assert.equal(game.cast.state.fs, "charge");
+});
+
+function eventSurface() {
+  const listeners = new Map();
+  return { listeners, addEventListener(type, listener, capture = false) {
+    const entries = listeners.get(type) || []; entries.push({ listener, capture: Boolean(capture) }); listeners.set(type, entries);
+  }, emit(type, event, captureOnly = false) {
+    for (const entry of listeners.get(type) || []) if (!captureOnly || entry.capture) entry.listener(event);
+  } };
+}
+
+function withDesktopInput(view, callback) {
+  const previousWindow = globalThis.window, previousDocument = globalThis.document;
+  const win = eventSurface(), doc = eventSurface(), { game } = fixture(view);
+  let captures = 0, releases = 0;
+  Object.assign(doc, { hidden: false, pointerLockElement: null, exitPointerLock() {
+    this.pointerLockElement = null; this.emit("pointerlockchange", {});
+  } });
+  globalThis.window = win; globalThis.document = doc;
+  game.canvas = eventSurface();
+  game.canvas.requestPointerLock = () => { captures += 1; doc.pointerLockElement = game.canvas; doc.emit("pointerlockchange", {}); };
+  game.desktopCursor = new SnejDesktopCursor({ canvas: game.canvas, canInteract: () => game.canCast(), environment: { document: doc, addEventListener: win.addEventListener },
+    onCapture: () => { game.castPointer = null; game.mouse.dx = game.mouse.dy = 0; } });
+  game.castCancelButton = eventSurface(); game.floatDepthInput = eventSurface();
+  game.ui.el.mobileLook = eventSurface(); game.mode = "playing";
+  game.mobileInput = { enabled: false, reset() {}, takeLook: () => ({ dx: 0, dy: 0 }) };
+  game.placementSystem = { handlePointerUp() {} }; game.worldClock = { refresh() {} };
+  const originalRelease = game.endHoldCast.bind(game);
+  game.endHoldCast = () => { releases += 1; return originalRelease(); };
+  game.installEvents();
+  const mouse = (extra = {}) => ({ button: 0, preventDefault() {}, sourceCapabilities: { firesTouchEvents: false }, ...extra });
+  try { callback({ game, win, doc, mouse, counts: () => ({ captures, releases }) }); }
+  finally { globalThis.window = previousWindow; globalThis.document = previousDocument; }
+}
+
+test("captured primary pointer release launches exactly once without a bubbling mouseup in both views", () => {
+  for (const view of ["first-person", "third-person"]) withDesktopInput(view, ({ game, win, mouse, counts }) => {
+    game.canvas.emit("mousedown", mouse()); assert.equal(game.cast.state.fs, "charge");
+    game.updateCast(2.2); assert.equal(game.cast.state.canRelease, true);
+    const target = { ...game.cast.state.aimPoint };
+    win.emit("pointerup", mouse({ pointerType: "mouse" }), true);
+    assert.equal(game.holdCasting, false); assert.ok(game.castTurn);
+    win.emit("mouseup", mouse(), true); win.emit("pointerup", mouse({ pointerType: "mouse" }), true);
+    assert.equal(counts().releases, 1, "Pointer and compatibility mouse releases cannot throw twice.");
+    for (let i = 0; i < 600 && game.cast.state.fs !== "wait"; i += 1) game.updateCast(1 / 60);
+    assert.equal(game.cast.state.fs, "wait"); assert.equal(game.cameraMode, "first-person");
+    assert.ok(Math.hypot(game.cast.state.bobber.x - target.x, game.cast.state.bobber.z - target.z) < 0.00001);
+  });
+});
+
+test("first mouse hold captures before release and a real mouse remains usable on a touch-capable PC", () => {
+  withDesktopInput("third-person", ({ game, win, doc, mouse, counts }) => {
+    game.mobileInput.enabled = true; game.lastTouchCanvas = performance.now();
+    game.canvas.emit("mousedown", mouse());
+    assert.equal(game.cast.state.fs, "charge"); assert.equal(counts().captures, 1);
+    assert.equal(doc.pointerLockElement, game.canvas, "The initial held gesture must already support camera look.");
+    win.emit("mousemove", mouse({ movementX: 12, movementY: 0 })); assert.equal(game.mouse.dx, 12);
+    game.updateCast(2.2);
+    win.emit("mouseup", mouse(), true); assert.equal(counts().releases, 1); assert.ok(game.castTurn);
+  });
+});
+
+test("manual free cursor is preserved and touch, pen, and non-primary releases cannot end a mouse hold", () => {
+  withDesktopInput("first-person", ({ game, win, mouse, counts }) => {
+    game.desktopCursor.release();
+    game.canvas.emit("mousedown", mouse()); game.updateCast(2.2);
+    for (const event of [mouse({ pointerType: "touch" }), mouse({ pointerType: "pen" }),
+      mouse({ sourceCapabilities: { firesTouchEvents: true } }), mouse({ button: 2 })]) win.emit("pointerup", event, true);
+    assert.equal(game.holdCasting, true); assert.equal(counts().releases, 0);
+    win.emit("mouseup", mouse(), true);
+    assert.equal(counts().captures, 0); assert.equal(counts().releases, 1); assert.equal(game.desktopCursor.free, true);
+  });
+});
+
+test("touch compatibility down and cancelled desktop holds cannot produce a throw", () => {
+  withDesktopInput("first-person", ({ game, win, mouse, counts }) => {
+    game.canvas.emit("mousedown", mouse({ sourceCapabilities: { firesTouchEvents: true } }));
+    assert.equal(game.cast.state.fs, "idle"); assert.equal(counts().captures, 0);
+    game.canvas.emit("mousedown", mouse()); game.updateCast(2.2); win.emit("blur", {});
+    assert.equal(game.cast.state.fs, "idle"); win.emit("pointerup", mouse({ pointerType: "mouse" }), true);
+    assert.equal(counts().releases, 0); assert.equal(game.castTurn, null);
+  });
+});
+
+test("a long touch refreshes compatibility suppression on release without disabling a known real mouse", () => {
+  withDesktopInput("first-person", ({ game, doc, mouse, counts }) => {
+    game.mobileInput.enabled = true; game.lastTouchCanvas = performance.now() - 10000;
+    doc.emit("touchend", {});
+    game.canvas.emit("mousedown", mouse({ sourceCapabilities: undefined }));
+    assert.equal(game.cast.state.fs, "idle"); assert.equal(counts().captures, 0);
+    game.canvas.emit("mousedown", mouse());
+    assert.equal(game.cast.state.fs, "charge"); assert.equal(counts().captures, 1);
+  });
 });

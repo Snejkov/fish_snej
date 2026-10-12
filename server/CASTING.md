@@ -39,6 +39,14 @@ point; an invalid point is never silently moved closer.
 
 PC holds the left mouse button (or optional C) to charge, then releases to cast. The
 physical Backquote key toggles free cursor and pointer-lock camera look.
+In automatic cursor mode the initial held mouse gesture requests capture,
+not the later click after release; manual free-cursor mode is never recaptured.
+Primary mouse release is handled in the capture phase through `pointerup`,
+with `mouseup` as a compatibility fallback and a once-only held flag.
+Touch availability does not disable a real mouse on a hybrid PC, while
+touch/pen compatibility events cannot begin or end a desktop mouse cast.
+Compatibility suppression refreshes on touch end/cancel too, including a
+long-held Safari touch; known physical mouse events remain independent.
 Mobile/tablet users hold the mobile-only Cast button, then release to cast;
 ordinary screen swipes still look around. Strength grows monotonically to
 the maximum in about 2.08 seconds (20 percent faster accumulation) and stays

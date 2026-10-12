@@ -40,7 +40,8 @@ button.onclick = () => {
     game.canvas.dispatchEvent(new win.MouseEvent("mousedown", { bubbles: true, button: 0, clientX: 300, clientY: 180 }));
     return cancel => {
       if (cancel) win.dispatchEvent(new win.Event("blur"));
-      else win.dispatchEvent(new win.MouseEvent("mouseup", { bubbles: true, button: 0, clientX: 300, clientY: 180 }));
+      // Deliberately omit compatibility mouseup to verify the native pointer release path.
+      else win.dispatchEvent(new win.PointerEvent("pointerup", { bubbles: true, pointerType: "mouse", button: 0, clientX: 300, clientY: 180 }));
     };
   };
   try {

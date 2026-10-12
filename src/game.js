@@ -232,7 +232,7 @@ export class SnejFishingGame {
     this.applyStart(this.lake.start, { mode: "third-person", pitch: -0.12 });
     this.installEvents();
     this.desktopCursor = new SnejDesktopCursor({ canvas: this.canvas,
-      canInteract: () => this.canCast() && !this.mobileInput?.enabled,
+      canInteract: () => this.canCast(),
       onCapture: () => { this.castPointer = null; this.mouse.dx = this.mouse.dy = 0; this.audio.resume(); },
       onRelease: () => { this.mouse.dx = this.mouse.dy = 0; }
     });
@@ -354,6 +354,10 @@ export class SnejFishingGame {
 
   installEvents() {
     this.castCancelButton.addEventListener("click", () => this.cancelCastAction());
+    // Safari can emit compatibility mouse events after a long touch ends.
+    for (const type of ["touchstart", "touchend", "touchcancel"]) {
+      document.addEventListener(type, () => { this.lastTouchCanvas = performance.now(); }, { capture: true, passive: true });
+    }
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden) this.worldClock.refresh(true);
     });
@@ -443,19 +447,24 @@ export class SnejFishingGame {
       });
       surface.addEventListener("touchstart", () => { this.lastTouchCanvas = performance.now(); }, { passive: true });
       surface.addEventListener("mousedown", (event) => {
-        if (event.button !== 0 || this.isTouchCompatibilityEvent(event) || this.mobileInput?.enabled) return;
+        if (event.button !== 0 || this.isTouchCompatibilityEvent(event)) return;
         event.preventDefault();
         this.desktopCastHeld = this.beginHoldCast();
+        if (this.desktopCastHeld && !this.desktopCursor?.free && document.pointerLockElement !== this.canvas) this.desktopCursor?.capture();
       });
       surface.addEventListener("click", (event) => {
         if (this.isTouchCompatibilityEvent(event) || !this.canCast() || ["aim", "charge", "flight"].includes(this.cast.state.fs)) return;
         this.audio.resume();
-        if (!this.mobileInput?.enabled && !this.desktopCursor?.free) this.desktopCursor?.capture();
+        if (!this.desktopCursor?.free) this.desktopCursor?.capture();
       });
     }
-    window.addEventListener("mouseup", event => {
+    const releaseMouseCast = event => {
+      if (this.isTouchCompatibilityEvent(event)) return;
       if (event.button === 0 && this.desktopCastHeld) { this.desktopCastHeld = false; this.endHoldCast(); }
-    });
+    };
+    // Pointer release survives a missing compatibility mouseup or a UI bubble stop.
+    window.addEventListener("pointerup", releaseMouseCast, true);
+    window.addEventListener("mouseup", releaseMouseCast, true);
     window.addEventListener("pointercancel", () => { if (this.desktopCastHeld) this.cancelCastAction(); });
     window.addEventListener("blur", () => { if (["aim", "charge"].includes(this.cast.state.fs)) this.cancelCastAction(); });
     document.addEventListener("visibilitychange", () => {
@@ -465,7 +474,7 @@ export class SnejFishingGame {
 
   isTouchCompatibilityEvent(event) {
     return ["touch", "pen"].includes(event.pointerType) || event.sourceCapabilities?.firesTouchEvents
-      || (this.lastTouchCanvas != null && performance.now() - this.lastTouchCanvas < 800);
+      || (!event.pointerType && !event.sourceCapabilities && this.lastTouchCanvas != null && performance.now() - this.lastTouchCanvas < 800);
   }
 
   requestMobileLandscape() {

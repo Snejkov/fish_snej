@@ -145,7 +145,6 @@
 .touch-device .field span { min-width: 0; overflow-wrap: anywhere; }
 .touch-device .mobile-control-button { box-shadow: none; }
 .touch-device .mobile-cast { overflow-wrap: anywhere; line-height: 1.2; padding: 4px; }
-.touch-device #cast-start { display: none; }
 .touch-device .cast-actions { width: min(430px, calc(100% - 190px)); }
 .touch-device.cast-session .mobile-stick, .touch-device.cast-session .mobile-run { visibility: hidden; pointer-events: none; }
 .touch-device.cast-session .cast-meter { bottom: 125px; width: min(340px, calc(100% - 40px)); }

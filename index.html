@@ -9,12 +9,12 @@
     <link rel="stylesheet" href="./styles/build.css?v=0.0.3-hf2.12">
     <link rel="stylesheet" href="./styles/profile.css?v=accounts-1">
     <link rel="stylesheet" href="./styles/multiplayer.css?v=chat-1">
-    <link rel="stylesheet" href="./styles/mobile.css?v=target-cast-1">
+    <link rel="stylesheet" href="./styles/mobile.css?v=mobile-cast-only-1">
     <script type="importmap">
       {
         "imports": {
           "three": "./vendor/three.module.min.js",
-          "./src/game.js?v=0.0.4-hf7": "./src/game.js?v=chat-1",
+          "./src/game.js?v=0.0.4-hf7": "./src/game.js?v=mobile-cast-only-1",
           "./src/i18n.js": "./src/i18n.js?v=chat-1",
           "./src/floatRig.js?v=0.0.5a-hf4": "./src/floatRig.js?v=target-cast-1",
           "./src/multiplayer/client.js": "./src/multiplayer/client.js?v=chat-1",
@@ -326,7 +326,6 @@
       <div id="cast-actions" class="cast-actions hidden">
         <div id="cast-instruction" class="cast-instruction" role="status"></div>
         <div class="cast-action-buttons">
-          <button id="cast-start" type="button">Cast</button>
           <button id="cast-cancel" type="button" class="hidden">Cancel</button>
         </div>
       </div>

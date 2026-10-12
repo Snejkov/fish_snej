@@ -100,7 +100,6 @@ export class SnejFishingGame {
     this.castMeterStatus = this.castMeter.querySelector(".cast-meter-status");
     this.castMeterCursor = this.castMeter.querySelector(".cast-meter-cursor");
     this.castActions = document.getElementById("cast-actions");
-    this.castStartButton = document.getElementById("cast-start");
     this.castCancelButton = document.getElementById("cast-cancel");
     this.castInstruction = document.getElementById("cast-instruction");
     this.rodReadout = document.getElementById("rod-line");
@@ -344,7 +343,6 @@ export class SnejFishingGame {
   }
 
   installEvents() {
-    this.castStartButton.addEventListener("click", () => this.beginCastAction());
     this.castCancelButton.addEventListener("click", () => this.cancelCastAction());
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden) this.worldClock.refresh(true);
@@ -518,11 +516,9 @@ export class SnejFishingGame {
   updateCastControls(enabled) {
     if (!this.castActions) return;
     const fs = this.cast.state.fs, session = ["aim", "charge"].includes(fs);
-    this.castActions.classList.toggle("hidden", !enabled);
+    this.castActions.classList.toggle("hidden", !enabled || !session);
     this.castCancelButton.classList.toggle("hidden", !session);
-    this.castStartButton.disabled = fs === "flight" || fs === "aim";
     const label = fs === "charge" ? "Stop cast" : "Cast";
-    this.castStartButton.textContent = t(label);
     const mobile = this.ui.el.mobileControls?.querySelector("[data-mobile-cast]");
     if (mobile) { mobile.dataset.i18n = label; mobile.textContent = t(label); mobile.disabled = fs === "flight"; }
     this.castInstruction.textContent = t(fs === "aim" ? "Tap the water to choose a target." : fs === "charge" ? "Tap again when the marker reaches green." : "");

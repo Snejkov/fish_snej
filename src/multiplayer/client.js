@@ -1,4 +1,5 @@
 import { decodeMessage, encodeMessage, MESSAGE_TYPES } from "./protocol.js";
+import { CHAT_CHANNELS, CHAT_LIMIT, cleanChatText } from "./chatRules.js?v=chat-1";
 
 export class SnejMultiplayerClient {
   constructor(options = {}) {
@@ -18,6 +19,7 @@ export class SnejMultiplayerClient {
     this.onPlacements = options.onPlacements || (() => {});
     this.onIdentityAssigned = options.onIdentityAssigned || (() => {});
     this.onChat = options.onChat || (() => {});
+    this.onChatError = options.onChatError || (() => {});
   }
 
   connect(room, identity, rank) {
@@ -104,6 +106,7 @@ export class SnejMultiplayerClient {
     if (message.type === MESSAGE_TYPES.LEAVE) this.onLeave(message.clientId);
     if (message.type === MESSAGE_TYPES.PLACEMENTS && message.clientId !== this.clientId) this.onPlacements(message.placements || []);
     if (message.type === MESSAGE_TYPES.CHAT) this.onChat(message);
+    if (message.type === "chat.error") this.onChatError(message.error);
   }
 
   send(type, payload = {}) {
@@ -121,9 +124,9 @@ export class SnejMultiplayerClient {
     return this.send(MESSAGE_TYPES.PLACEMENTS, { placements });
   }
 
-  sendChat(text) {
-    const clean = String(text || "").trim().slice(0, 240);
-    if (clean) this.send(MESSAGE_TYPES.CHAT, { text: clean });
+  sendChat(text, channel = "local") {
+    const clean = cleanChatText(String(text || "").slice(0, CHAT_LIMIT));
+    return Boolean(clean && CHAT_CHANNELS.includes(channel) && this.send(MESSAGE_TYPES.CHAT, { text: clean, channel }));
   }
 
   disconnect(notify = true) {

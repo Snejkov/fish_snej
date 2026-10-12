@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chat native-touch and nameplate fixture</title>
+<style>html,body{margin:0;height:100%;background:#111}iframe{display:block;width:100%;height:100%;border:0}.test-tool{position:fixed;z-index:100;left:12px;top:90px;background:#111;color:white;font-size:11px}#check-result{top:130px;max-width:220px}</style>
+<iframe id="fixture" title="Chat game fixture"></iframe>
+<button id="run-checks" class="test-tool">Check chat controls</button>
+<output id="check-result" class="test-tool"></output>
+<script type="module">
+  const frame = document.getElementById("fixture"), button = document.getElementById("run-checks"), report = document.getElementById("check-result");
+  frame.onload = () => {
+    const style = frame.contentDocument.createElement("style");
+    style.textContent = ".test-tool{position:fixed;z-index:100;left:12px;top:90px;background:#111;color:white;font-size:11px}#check-result{top:130px;max-width:220px}";
+    frame.contentDocument.head.appendChild(style);
+    frame.contentDocument.body.append(button, report);
+  };
+  frame.src = "/index.html?chatqa";
+  button.addEventListener("click", async () => {
+    report.textContent = "RUNNING";
+    const win = frame.contentWindow, game = win.snejFishing;
+    const check = (value, message) => { if (!value) throw new Error(message); };
+    const wait = () => new Promise(resolve => win.requestAnimationFrame(resolve));
+    const touch = (target, identifier, type) => {
+      const r = target.getBoundingClientRect();
+      const finger = new win.Touch({ identifier, target, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 });
+      const event = new win.TouchEvent(type, { bubbles: true, cancelable: true, changedTouches: [finger], touches: type === "touchstart" ? [finger] : [] });
+      target.dispatchEvent(event); return event.defaultPrevented;
+    };
+    try {
+      check(game.mode === "playing" && game.multiplayer.connected && game.server.enabled, "Enter the isolated online game first");
+      check(game.remoteRoom.players.size > 0, "Open the second isolated browser player");
+      game.ui.chat.toggle(false);
+      const stick = game.mobileInput.stick;
+      touch(stick, 900, "touchstart");
+      check(game.mobileInput.state.stick, "Native joystick did not acquire finger");
+      game.keys.add("KeyW"); game.mouse.dx = 12;
+      game.ui.chat.launcher.click();
+      check(game.ui.chat.open && game.keys.size === 0 && game.mouse.dx === 0 && !game.mobileInput.state.stick, "Opening chat did not reset gameplay input");
+      const start = game.pos.clone(), yaw = game.yaw;
+      game.ui.chat.input.value = "wasd P I C";
+      for (const code of ["KeyW", "KeyA", "KeyS", "KeyD", "KeyP", "KeyI", "KeyC"]) game.ui.chat.input.dispatchEvent(new win.KeyboardEvent("keydown", { code, bubbles: true }));
+      await wait(); await wait();
+      check(game.pos.distanceTo(start) === 0 && game.yaw === yaw && game.keys.size === 0, "Typing drove the character or camera");
+      check(!game.ui.profileOpen && !game.ui.inventoryOpen && !game.canCast(), "Typing activated a game action");
+      check(!touch(game.ui.chat.input, 901, "touchstart"), "Text input was intercepted by mobile gestures");
+      touch(game.ui.chat.input, 901, "touchend");
+      const hit = win.document.elementFromPoint(game.ui.chat.input.getBoundingClientRect().left + 10, game.ui.chat.input.getBoundingClientRect().top + 10);
+      check(hit === game.ui.chat.input, "Input is covered by a control layer");
+      const r = game.ui.chat.panel.getBoundingClientRect();
+      check(r.top >= 0 && r.bottom <= win.innerHeight + 1 && r.right <= win.innerWidth + 1, "Chat overflows viewport");
+      check(win.getComputedStyle(game.ui.chat.input).fontSize === "16px", "Input could trigger Safari zoom");
+      check(game.ui.chat.input.maxLength === 240, "Text length guard missing");
+      game.ui.chat.input.dispatchEvent(new win.KeyboardEvent("keydown", { code: "Escape", bubbles: true, cancelable: true }));
+      await wait();
+      check(!game.ui.chat.open && game.mobileInput.active, "Closing chat did not restore mobile input");
+      check([...game.remoteRoom.players.values()].some((peer) => peer.label && !peer.label.hidden), "No visible remote nickname");
+      game.ui.chat.launcher.click();
+      game.ui.chat.input.value = "";
+      report.textContent = "PASS: native touch, typing isolation, close recovery, viewport, remote nickname";
+      report.style.color = "#91dac6";
+    } catch (error) { report.textContent = `FAIL: ${error.message}`; report.style.color = "#ff8585"; console.error(error); }
+  });
+</script>

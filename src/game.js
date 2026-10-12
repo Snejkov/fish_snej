@@ -24,7 +24,7 @@ import { SnejSky } from "./sky.js";
 import { SPAWNS, SPAWN_INITIAL_NAME, SPAWN_NAMES } from "./spawns.js";
 import { SnejTerrain } from "./terrain.js";
 import { SnejTextureManager } from "./textureManager.js";
-import { SnejUI } from "./ui.js?v=target-cast-1";
+import { SnejUI } from "./ui.js?v=chat-1";
 import { SnejMobileInput, movementInput, requestLandscape } from "./mobileInput.js?v=target-cast-1";
 import { SnejWater } from "./water.js?v=0.0.5a-hf3";
 import { clamp, clamp01, damp, lerp, moveDelta, resolveWalkableStart } from "./util.js?v=0.0.3-hf2.12";
@@ -181,7 +181,11 @@ export class SnejFishingGame {
 
     this.textureManager = new SnejTextureManager();
     this.placementSystem = new SnejPlacementSystem(this, this.textureManager);
-    this.remoteRoom = new SnejRemotePlayerRoom();
+    this.nameplateLayer = document.createElement("div");
+    this.nameplateLayer.className = "player-nameplates";
+    this.nameplateLayer.dataset.i18nSkip = "true";
+    document.getElementById("app").appendChild(this.nameplateLayer);
+    this.remoteRoom = new SnejRemotePlayerRoom({ labelRoot: this.nameplateLayer });
     this.audio = new SnejAudio(this.settings);
     this.ui = new SnejUI(this);
     this.multiplayer = new SnejMultiplayerClient({
@@ -202,7 +206,8 @@ export class SnejFishingGame {
       },
       onPlacements: (placements) => this.applyRemotePlacements(placements),
       onIdentityAssigned: (assignment) => this.handleIdentityAssignment(assignment),
-      onChat: () => {},
+      onChat: (message) => this.ui.chat.receive(message),
+      onChatError: (error) => this.ui.chat.error(error),
       onWelcome: (message) => {
         if (!this.server.enabled) return;
         this.server.accept(message.profile, "refresh");
@@ -353,6 +358,15 @@ export class SnejFishingGame {
     window.addEventListener("keydown", (event) => {
       const tag = event.target?.tagName;
       if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") return;
+      if (this.ui.chat?.open) {
+        if (event.code === "Escape") { event.preventDefault(); this.ui.chat.toggle(false); }
+        return;
+      }
+      if (event.code === "Enter" && !event.repeat && this.ui.chat?.available()) {
+        event.preventDefault();
+        this.ui.chat.toggle(true);
+        return;
+      }
       if (event.code === "Tab" && !this.ui.inventoryOpen && !this.ui.profileOpen && !this.ui.modalOpen && this.identity
         && ["playing", "paused", "connecting"].includes(this.mode)) {
         event.preventDefault();
@@ -396,7 +410,7 @@ export class SnejFishingGame {
     });
     window.addEventListener("keyup", (event) => this.keys.delete(event.code));
     window.addEventListener("mousemove", (event) => {
-      if (document.pointerLockElement === this.canvas && this.mode === "playing" && !this.ui.buildOpen && !this.ui.profileOpen && !this.ui.inventoryOpen && !this.ui.modalOpen) {
+      if (document.pointerLockElement === this.canvas && this.mode === "playing" && !this.ui.buildOpen && !this.ui.profileOpen && !this.ui.inventoryOpen && !this.ui.modalOpen && !this.ui.chat?.open) {
         this.mouse.dx += event.movementX;
         this.mouse.dy += event.movementY;
       }
@@ -1099,6 +1113,7 @@ export class SnejFishingGame {
   }
 
   update(dt) {
+    this.ui.chat?.update();
     const mobileActive = this.canCast() && !this.ui.rosterOpen;
     this.mobileInput?.setActive(mobileActive);
     if (this.ui.el?.mobileOrientation) this.ui.el.mobileOrientation.hidden = !this.mobileInput?.enabled || !mobileActive;
@@ -1112,7 +1127,7 @@ export class SnejFishingGame {
     if (this.mode === "playing") {
       this.stats.tickPlaytime(dt);
     }
-    if (this.mode === "playing" && !this.ui.buildOpen && !this.ui.profileOpen && !this.ui.inventoryOpen && !this.ui.modalOpen) {
+    if (this.mode === "playing" && !this.ui.buildOpen && !this.ui.profileOpen && !this.ui.inventoryOpen && !this.ui.modalOpen && !this.ui.chat?.open) {
       this.updateLook(sceneDt);
       this.updateMove(dt);
     } else {
@@ -1156,7 +1171,8 @@ export class SnejFishingGame {
     }
     this.updateFloatRig(this.canCast() ? sceneDt : 0);
     this.updateCastVisuals();
-    this.remoteRoom.update(dt, this.camera);
+    if (this.nameplateLayer) this.nameplateLayer.hidden = this.mode !== "playing" || this.ui.profileOpen || this.ui.inventoryOpen || this.ui.buildOpen || this.ui.modalOpen;
+    this.remoteRoom.update(dt, this.camera, this.canvas && { width: this.canvas.clientWidth, height: this.canvas.clientHeight });
     this.updateMultiplayer(dt);
     this.ui.updateHUD(this, dt);
     this.lastSave += dt;
@@ -1168,7 +1184,7 @@ export class SnejFishingGame {
 
   canCast() {
     return this.mode === "playing" && (!this.server?.enabled || (this.multiplayer.connected && !this.serverBusy))
-      && !this.ui.buildOpen && !this.ui.profileOpen && !this.ui.inventoryOpen && !this.ui.modalOpen && !this.ui.rosterOpen;
+      && !this.ui.buildOpen && !this.ui.profileOpen && !this.ui.inventoryOpen && !this.ui.modalOpen && !this.ui.rosterOpen && !this.ui.chat?.open;
   }
 
   applyRod(rod) {

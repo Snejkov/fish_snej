@@ -108,6 +108,17 @@ saved at most once/second and on disconnect, and restored on reconnect. Body,
 header, message, room-size, slow-consumer, auth concurrency/rate, and heartbeat
 limits are applied. Messages do not confer arbitrary inventory or money.
 
+Chat accepts `{t:"chat", channel:"local"|"global", text}` (up to 240 characters).
+The server supplies sender ID/name and delivers local messages within 100 meters
+in the horizontal X/Z plane, including the sender. Global reaches every current
+socket in the lake. Delivery uses accepted presence positions, not chat-supplied
+coordinates. Four messages can burst, then one token refills every 2.5 seconds;
+`chat.error` reports invalid messages/rate limits without ending the session.
+Messages are live-only, kept in a 40-message browser buffer, not database history.
+Enter or the touch-friendly Chat button opens the composer; Escape/close returns
+control to the game. Nameplates track interpolated remote avatars and disappear
+on leave/disconnect or outside the camera view.
+
 Regular movement writes increase profile revisions. The browser adapter
 processes `profile.revision` and handles 409/reload/merge. A replacement
 socket must not overwrite its successor's position on close. There is no

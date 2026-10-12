@@ -3,6 +3,7 @@ import { readFile, realpath, stat } from "node:fs/promises";
 import { resolve, relative, sep, extname, isAbsolute } from "node:path";
 import { hashPassword, verifyPassword, readSession, sessionCookie, validPassword } from "./auth.mjs";
 import { RequestError, reject, object, playerName, position } from "./validation.mjs";
+import { CHAT_CHANNELS, cleanChatText, receivesChat, consumeChatToken } from "../src/multiplayer/chatRules.js";
 
 const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
   ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".svg": "image/svg+xml",
@@ -196,8 +197,23 @@ export function createApp({ store, WebSocketServer, staticRoot, publicOrigin, se
           }
           broadcast({ t: "presence", clientId: id, presence: peer.presence }, peer);
         } else if (message.t === "chat") {
-          if (typeof message.text !== "string" || !message.text.trim() || message.text.length > 240) reject();
-          broadcast({ t: "chat", clientId: id, id: user.id, name: user.name, rank: user.role, text: message.text.trim() });
+          const channel = message.channel ?? "global", text = cleanChatText(message.text);
+          if (!CHAT_CHANNELS.includes(channel) || !text) {
+            socket.send(JSON.stringify({ t: "chat.error", error: "invalid_chat" }));
+            return;
+          }
+          if (!consumeChatToken(peer, now)) {
+            socket.send(JSON.stringify({ t: "chat.error", error: "chat_rate_limited" }));
+            return;
+          }
+          // Only server-accepted positions and authenticated identities determine delivery.
+          const outgoing = JSON.stringify({ t: "chat", channel, clientId: id, id: user.id,
+            name: user.name, rank: user.role, text, time: now });
+          for (const recipient of currentPeers.values()) {
+            if (recipient.socket.readyState !== 1 || !receivesChat(channel, peer.presence, recipient.presence)) continue;
+            if (recipient.socket.bufferedAmount > 131072) recipient.socket.close(1008, "Slow consumer");
+            else recipient.socket.send(outgoing);
+          }
         } else reject("unsupported_message");
       } catch (error) {
         if (error.status === 401 || error.status === 429) socket.close(1008, "Session or rate rejected");

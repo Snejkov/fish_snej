@@ -12,11 +12,13 @@ function materialsOf(model) {
 }
 
 export class SnejRemotePlayerRoom {
-  constructor() {
+  constructor({ labelRoot = null } = {}) {
     this.group = new THREE.Group();
     this.group.name = "remote-players";
     this.players = new Map();
     this.observerPosition = new THREE.Vector3();
+    this.labelRoot = labelRoot;
+    this.labelPoint = new THREE.Vector3();
   }
 
   applyPresence(message) {
@@ -45,6 +47,13 @@ export class SnejRemotePlayerRoom {
       player.model.userData.materials = materialsOf(player.model);
       this.players.set(id, player);
       this.group.add(player.model);
+      if (this.labelRoot) {
+        player.label = this.labelRoot.ownerDocument.createElement("span");
+        player.label.className = "player-nameplate";
+        player.label.dataset.i18nSkip = "true";
+        player.label.hidden = true;
+        this.labelRoot.appendChild(player.label);
+      }
     }
     player.target.set(data.x, y, data.z);
     player.yaw = yaw;
@@ -52,12 +61,14 @@ export class SnejRemotePlayerRoom {
     player.name = String(data.name || player.name);
     player.rank = String(data.rank || player.rank);
     player.lastSeen = performance.now();
+    if (player.label) player.label.textContent = `${player.name} #${player.id}`;
   }
 
   remove(id) {
     const player = this.players.get(id);
     if (!player) return;
     this.group.remove(player.model);
+    player.label?.remove();
     player.angler.mixer.stopAllAction();
     player.angler.mixer.uncacheRoot(player.angler.rig);
     player.angler.skeleton.dispose();
@@ -79,10 +90,11 @@ export class SnejRemotePlayerRoom {
       .sort((a, b) => a.id - b.id);
   }
 
-  update(dt, observerCamera) {
+  update(dt, observerCamera, viewport) {
     dt = Number.isFinite(dt) ? Math.max(0, dt) : 0;
     const alpha = 1 - Math.exp(-12 * dt);
     if (observerCamera) observerCamera.getWorldPosition(this.observerPosition);
+    if (observerCamera && viewport) observerCamera.updateMatrixWorld();
     // Membership ends with a server leave or transport loss, never with a paused animation.
     for (const player of this.players.values()) {
       player.previousPosition.copy(player.model.position);
@@ -102,6 +114,18 @@ export class SnejRemotePlayerRoom {
       const dz = this.observerPosition.z - player.model.position.z;
       const eyeHeight = this.observerPosition.y - player.model.position.y;
       player.model.visible = !observerCamera || dx * dx + dz * dz >= 0.16 || eyeHeight < 0 || eyeHeight > 1.95;
+      if (player.label) {
+        const point = this.labelPoint.copy(player.model.position);
+        point.y += 2.15;
+        if (observerCamera) point.project(observerCamera);
+        const visible = Boolean(viewport && observerCamera && player.model.visible
+          && point.z >= -1 && point.z <= 1 && Math.abs(point.x) < 0.94 && Math.abs(point.y) < 0.94);
+        player.label.hidden = !visible;
+        if (visible) {
+          player.label.style.left = `${(point.x + 1) * viewport.width / 2}px`;
+          player.label.style.top = `${(1 - point.y) * viewport.height / 2}px`;
+        }
+      }
     }
   }
 }

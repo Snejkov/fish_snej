@@ -1,5 +1,6 @@
 import { CATALOG, findItem } from "./gear/catalog.js";
 import { CLOTHING_SLOTS } from "./gear/inventory.js";
+import { SnejPlayerChat } from "./multiplayer/chat.js?v=chat-1";
 import { t, translateText, formatCoins, errorMessage, applyTranslations, onLanguageChange, getLanguage, setLanguage } from "./i18n.js";
 
 const GEAR_LABELS = Object.freeze({ rod: "Rod", bait: "Bait", line: "Line", hook: "Hook", lure: "Lure" });
@@ -95,6 +96,7 @@ export class SnejUI {
     };
     this.ensureInventoryPanel();
     this.ensureMobileControls();
+    this.chat = new SnejPlayerChat(game, document.getElementById("app"));
     this.ensureLanguagePicker();
     this.bind();
     this.renderSettings(document.getElementById("title-settings"));
@@ -110,6 +112,7 @@ export class SnejUI {
       this.syncSettings();
       this.updateProfile();
       this.game.refreshPeerList();
+      this.chat.translate();
       this.updateViewChip(this.game);
       this.updateHUD(this.game, 0);
       this.refreshFloatDepthLine();

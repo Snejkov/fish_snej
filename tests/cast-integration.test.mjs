@@ -142,14 +142,14 @@ function checkMarkers(fs, aimValid, predictedWater, currentWater, enabled, aimVi
   assert.equal(placements.length, aimVisible ? 1 : 0, "A cast preview can place only one ring.");
   if (aimVisible) {
     assert.equal(placements[0].marker, markerGame.aimMarker);
-    assert.equal(placements[0].point, fs === "charge" ? markerState.predictedLanding : markerState.targetLanding);
+    assert.equal(placements[0].point, markerState.targetLanding);
   }
   assert.equal(markerGame.aimMarker.material.color.getHex(), 0x9ff0ff, "Perfect, blocked, and shallow previews must keep the same color.");
   assert.deepEqual(markerGame.aimMarker.scale.toArray(), [1, 1, 1]);
   assert.equal(markerGame.aimMarker.uuid, markerId);
   assert.deepEqual(markerGame.pos.toArray(), before, "Marker visibility must not move the player.");
 }
-for (const fs of ["idle", "charge"]) {
+for (const fs of ["idle", "aim"]) {
   checkMarkers(fs, true, true, true, true, true);
   checkMarkers(fs, false, true, true, true, false);
   checkMarkers(fs, false, false, false, true, false);
@@ -157,23 +157,17 @@ for (const fs of ["idle", "charge"]) {
   checkMarkers(fs, true, true, false, true, false);
   checkMarkers(fs, true, true, true, false, false);
 }
-for (const fs of ["flight", "wait"]) checkMarkers(fs, true, true, true, true, false);
-markerState.canRelease = false;
-checkMarkers("charge", true, true, true, true, true);
-assert.equal(markerGame.castMeterTol.classList.invalid, true, "An invalid release inside the tolerance band must not appear green.");
-markerState.targetPower = 0.125;
-markerState.charge = 0.12;
-checkMarkers("charge", true, true, true, true, true);
-assert.equal(markerGame.castMeterTol.style.left, "12.5%", "The tolerance band cannot include throws below the one-meter minimum.");
-assert.ok(Math.abs(parseFloat(markerGame.castMeterTol.style.width) - 6) < 1e-8);
-markerState.canRelease = true;
-checkMarkers("charge", true, true, true, true, true);
-assert.equal(markerGame.castMeterTol.classList.invalid, false);
-checkMarkers("charge", false, false, false, true, false);
+for (const fs of ["charge", "flight", "wait"]) {
+  checkMarkers(fs, true, true, true, true, false);
+  assert.equal(markerGame.castMeter.classList.hidden, true, "Direct casts never show a strength meter.");
+}
+markerState.targetValid = false;
+checkMarkers("aim", true, true, true, true, false);
+markerState.targetValid = true;
 checkMarkers("idle", true, true, true, true, true);
 for (const depth of [0.01, 0.4, 4]) {
   markerGame.terrain.depthAt = () => depth;
-  checkMarkers("charge", true, true, true, true, true);
+  checkMarkers("aim", true, true, true, true, true);
 }
 markerGame.aimMarker.geometry.dispose();
 markerGame.aimMarker.material.dispose();

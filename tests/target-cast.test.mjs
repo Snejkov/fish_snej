@@ -104,14 +104,18 @@ let denies = 0, charges = 0;
 Object.assign(game, { cast: new SnejCastSystem({ rodRange: 8, floatDepth: 0.5 }), camera,
   pos: new THREE.Vector3(), water: { surfaceY: () => 0 },
   canvas: { getBoundingClientRect: () => ({ left: 0, top: 0, width: 844, height: 390 }) },
-  ui: { showToast: () => { denies += 1; } }, audio: { charge: () => { charges += 1; } },
-  canCast: () => true, isCastWater: () => true, updateCast: () => game.cast.tick(0, { ...ctx, yaw: game.yaw }), updateCamera() {} });
+  ui: { showToast: () => { denies += 1; } }, audio: { cast: () => { charges += 1; } }, cameraMode: "first-person",
+  canCast: () => true, isCastWater: () => true,
+  updateCast: () => game.cast.tick(0, { ...ctx, yaw: game.yaw, aimRay: game.castScreenRay?.ray }), updateCamera() {}, updateCastVisuals() {} });
 game.cast.tick(0, ctx); game.cast.beginTargeting();
 assert.equal(game.handleCastTap(422, 195), true, "A real screen ray selects the tapped water point.");
 close(game.cast.state.aimDist, 2.5); assert.equal(charges, 1); assert.equal(denies, 0);
-let releases = 0; game.endCastAction = () => { releases += 1; };
-game.handleCastTap(422, 195); assert.equal(releases, 1, "The next tap stops the meter once.");
-game.cast.cancelCharge(); game.cast.beginTargeting(); game.isCastWater = () => false;
+assert.equal(game.cast.state.fs, "flight", "A screen selection releases immediately, without a strength meter.");
+assert.equal(game.handleCastTap(422, 195), false, "Extra taps cannot fire a second cast during flight.");
+for (let i = 0; i < 600 && game.cast.state.fs === "flight"; i += 1) game.cast.tick(1 / 60, { ...ctx, yaw: game.yaw });
+assert.equal(game.cast.state.fs, "wait");
+close(game.cast.state.castDist, 2.5, "Direct input lands exactly at its preview.");
+game.cast.reset(); game.cast.tick(0, ctx); game.cast.beginTargeting(); game.isCastWater = () => false;
 assert.equal(game.handleCastTap(422, 195), false); assert.equal(game.cast.state.fs, "aim");
 game.ui.rosterOpen = true;
 assert.equal(Game.prototype.canCast.call({ mode: "playing", ui: game.ui }), false);

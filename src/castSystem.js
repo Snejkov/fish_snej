@@ -136,7 +136,7 @@ export class SnejCastSystem {
     if (this.state.fs !== "aim" || !Number.isFinite(target?.x) || !Number.isFinite(target?.z)) return false;
     this.state.selectedTarget = { x: target.x, y: 0, z: target.z };
     this.updateAim();
-    const reason = this.state.aimDist < this.state.minCastDist ? "range"
+    const reason = this.state.aimDist < this.state.minCastDist - 1e-8 ? "range"
       : this.releaseReason(this.state.targetPower, this.state.targetLanding);
     if (reason) {
       this.state.selectedTarget = null;
@@ -258,7 +258,7 @@ export class SnejCastSystem {
     const elev = elevFor(finite(this._ctx?.pitch));
     const origin = this.getCastOriginLocal();
     const pos = this._ctx?.pos || point();
-    if (this.state.selectedTarget) {
+    if (this.state.selectedTarget || this._ctx?.aimRay) {
       const want = this.castRange * clamp01(finite(power));
       const endX = finite(pos.x) + Math.sin(yaw) * want;
       const endZ = finite(pos.z) + Math.cos(yaw) * want;
@@ -315,7 +315,7 @@ export class SnejCastSystem {
       state.aimPoint.y = this._ctx?.waterSurfaceY?.(target.x, target.z) ?? 0;
       state.aimPoint.z = finite(pos.z) + Math.cos(state.aimYaw) * state.aimDist;
       state.targetPower = state.aimDist / this.castRange;
-      state.aimValid = look >= state.minCastDist && this.isWaterAt(target) && this.isWaterAt(state.aimPoint);
+      state.aimValid = look >= state.minCastDist - 1e-8 && this.isWaterAt(target) && this.isWaterAt(state.aimPoint);
       state.aimOutOfReach = look > this.castRange && !this.isWaterAt(state.aimPoint);
       return;
     }

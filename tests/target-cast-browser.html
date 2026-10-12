@@ -73,21 +73,26 @@
       const surface = win.document.elementFromPoint(x, y);
       check(surface === game.canvas || surface === game.ui.el.mobileLook, "Water tap covered by UI");
       tap(surface, x, y, true); check(game.cast.state.fs === "aim", "Cancelled finger selected water");
-      tap(surface, x, y);
-      check(game.cast.state.fs === "charge", "Water tap did not start strength meter");
-      check(!game.castMeter.classList.contains("hidden"), "Strength meter invisible");
-      const hudVisible = game.ui.hudVisible;
-      game.ui.toggleHUD();
-      check(game.castMeter.getBoundingClientRect().height > 0, "Hidden HUD also hid the required casting meter");
-      if (game.ui.hudVisible !== hudVisible) game.ui.toggleHUD();
-      const chosen = { ...game.cast.state.aimPoint }, power = game.cast.state.targetPower;
-      game.cast.state.charge = power + 0.02; game.updateCast(0);
-      check(game.castMeterFill.classList.contains("on-target"), "Green timing not recognized");
-      tapButton(); check(game.cast.state.fs === "flight", "Second button tap did not release");
+      const touchId = identifier++;
+      const dragEvent = (type, px, py) => {
+        const finger = new win.Touch({ identifier: touchId, target: surface, clientX: px, clientY: py });
+        surface.dispatchEvent(new win.TouchEvent(type, { bubbles: true, cancelable: true,
+          changedTouches: [finger], touches: type === "touchend" ? [] : [finger] }));
+      };
+      dragEvent("touchstart", x - 12, y);
+      const firstCircle = game.aimMarker.position.clone();
+      dragEvent("touchmove", x, y);
+      check(game.cast.state.fs === "aim" && game.aimMarker.visible, "Finger did not preview the circle");
+      check(game.aimMarker.position.distanceTo(firstCircle) > 0.001, "Dragging did not move the circle");
+      check(game.cameraMode === "third-person" && game.pitch === savedPitch, "Aiming finger rotated the camera");
+      const chosen = game.aimMarker.position.clone();
+      dragEvent("touchend", x, y);
+      check(game.cast.state.fs === "flight", "Lifting a dragged finger did not cast immediately");
+      check(game.castMeter.classList.contains("hidden"), "Obsolete strength meter is visible");
       check(game.cameraMode === "first-person" && viewButton.textContent === "1P" && !viewButton.disabled, "Release did not switch to first person");
       for (let i = 0; i < 600 && game.cast.state.fs === "flight"; i += 1) game.updateCast(1 / 60);
-      check(game.cast.state.fs === "wait" && game.cast.state.castPerfect, "Green throw failed");
-      close(Math.hypot(game.cast.state.bobber.x - chosen.x, game.cast.state.bobber.z - chosen.z), 0, "Green missed selected water point");
+      check(game.cast.state.fs === "wait" && game.cast.state.castPerfect, "Direct throw failed");
+      close(Math.hypot(game.cast.state.bobber.x - chosen.x, game.cast.state.bobber.z - chosen.z), 0, "Float missed the displayed circle");
       close(game.cast.castRange, game.cast.rig.lineLength - game.settings.floatDepth, "Wrong rig budget");
       for (let i = 0; i < 90; i += 1) {
         game.angler.update(1 / 60, { state: "playing", speed: 0, viewBlend: 0, camera: game.camera, castCamera: game.castCamera, castState: "wait" });
@@ -104,17 +109,11 @@
       check(game.cameraMode === "third-person" && !viewButton.disabled, "Cancel changed the view or left the button locked");
       viewButton.click(); check(game.cameraMode === "first-person", "Mobile view button did not select first person");
       game.updateCamera(0.3);
-      // Leave the real meter visible for layout and hit-area inspection.
-      const centerX = rect.left + rect.width / 2, centerY = rect.top + rect.height / 2;
-      tapButton(); tap(win.document.elementFromPoint(centerX, centerY), centerX, centerY);
-      await wait();
-      check(game.cast.state.fs === "charge", "Final meter preview missing");
-      // Freeze only the final test preview at green; the preceding throw used the real flow.
-      const tick = game.cast.tick.bind(game.cast);
-      game.cast.tick = (dt, ctx) => tick(game.cast.state.fs === "charge" ? 0 : dt, ctx);
-      game.cast.state.charge = game.cast.state.targetPower;
-      game.updateCast(0);
-      report.textContent = "PASS: original view / release first person / mobile view / native touch / exact green / cancel";
+      viewButton.click(); game.updateCamera(0.3);
+      // Leave genuine aiming controls and the circle visible for layout inspection.
+      tapButton(); game.updateCastPointer(x, y); await wait();
+      check(game.cast.state.fs === "aim" && game.aimMarker.visible, "Final circle preview missing");
+      report.textContent = "PASS: finger drag / exact circle landing / no meter / original view / release first person / cancel";
       button.hidden = true;
     } catch (error) { report.textContent = "FAIL: " + error.message; }
   };

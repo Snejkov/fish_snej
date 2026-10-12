@@ -341,6 +341,33 @@ canvas.dispatchEvent(pointer("pointerup", 82, 101, 100));
 assert.deepEqual(pointerTaps, [[101, 100]]);
 pointerTapController.destroy();
 
+const aimPoints = [], aimReleases = [];
+const aimController = new SnejMobileInput({ canvas, controls, environment: nativeEnvironment,
+  canInteract: () => true, isTargeting: () => true,
+  onAim: (x, y) => aimPoints.push([x, y]), onTap: (x, y) => aimReleases.push([x, y]) });
+aimController.setActive(true);
+canvas.dispatchEvent(touchEvent("touchstart", [90, 150, 120]));
+nativeEnvironment.document.dispatchEvent(touchEvent("touchmove", [90, 300, 170]));
+assert.deepEqual(aimPoints, [[150, 120], [300, 170]], "Native finger motion updates the cast circle continuously.");
+assert.deepEqual(aimController.takeLook(), { dx: 0, dy: 0 }, "Aiming never also rotates the camera.");
+nativeEnvironment.document.dispatchEvent(touchEvent("touchend", [90, 300, 170]));
+assert.deepEqual(aimReleases, [[300, 170]], "Lifting a dragged finger confirms exactly its final location.");
+lookZone.dispatchEvent(touchEvent("touchstart", [91, 300, 170]));
+nativeEnvironment.document.dispatchEvent(touchEvent("touchcancel", [91, 400, 170]));
+assert.equal(aimReleases.length, 1, "Cancelled targeting never throws.");
+aimController.destroy();
+
+const pointerAim = new SnejMobileInput({ canvas, controls, environment, canInteract: () => true,
+  isTargeting: () => true, onAim: (x, y) => aimPoints.push([x, y]), onTap: (x, y) => aimReleases.push([x, y]) });
+pointerAim.setActive(true);
+canvas.dispatchEvent(pointer("pointerdown", 92, 100, 100));
+canvas.dispatchEvent(pointer("pointermove", 92, 200, 120));
+assert.deepEqual(aimPoints.at(-1), [200, 120]);
+assert.deepEqual(pointerAim.takeLook(), { dx: 0, dy: 0 });
+canvas.dispatchEvent(pointer("pointerup", 92, 200, 120));
+assert.deepEqual(aimReleases.at(-1), [200, 120]);
+pointerAim.destroy();
+
 const order = [];
 const document = { fullscreenElement: null };
 const supported = {

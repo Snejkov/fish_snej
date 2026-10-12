@@ -40,7 +40,7 @@ test("Cast instructions and cancellation show only during an active cast session
       assert.equal(game.castActions.classList.contains("hidden"), !enabled || !session);
       assert.equal(game.castCancelButton.classList.contains("hidden"), !session);
       assert.equal(document.documentElement.classList.contains("cast-session"), enabled && session);
-      assert.equal(mobile.dataset.i18n, state === "charge" ? "Stop cast" : "Cast");
+      assert.equal(mobile.dataset.i18n, "Cast");
       assert.equal(mobile.textContent, t(mobile.dataset.i18n));
       assert.equal(mobile.disabled, state === "flight");
       assert.equal(Boolean(game.castInstruction.textContent), session);
@@ -56,6 +56,6 @@ test("Desktop casting updates without requiring a mobile button", () => {
       castCancelButton: { classList: classes() }, castInstruction: {}, ui: { el: {} } };
     Game.prototype.updateCastControls.call(game, true);
     assert.equal(game.castActions.classList.contains("hidden"), false);
-    assert.equal(game.castInstruction.textContent, t("Tap the water to choose a target."));
+    assert.equal(game.castInstruction.textContent, t("Move the circle, then click or lift your finger to cast."));
   } finally { globalThis.document = originalDocument; }
 });

@@ -421,7 +421,12 @@ export class SnejMobileInput {
     event.preventDefault();
     if (this.state.look) return;
     const aiming = this.isTargeting?.() || this.onTargetStart?.(event.clientX, event.clientY);
-    if (!aiming && event.currentTarget === this.canvas && this.canvas !== this.lookZone) return;
+    if (!aiming && event.currentTarget === this.canvas && this.canvas !== this.lookZone) {
+      const rect = this.canvas.getBoundingClientRect();
+      // The right canvas remains a look surface even if the overlay misses a touch.
+      if (event.clientX < rect.left + rect.width / 2 || event.clientX > rect.left + rect.width
+        || event.clientY < rect.top || event.clientY > rect.top + rect.height) return;
+    }
     if (this.state.beginLook(event.pointerId, event.clientX, event.clientY)) {
       this.capture(event, event.currentTarget === this.canvas ? this.canvas : this.lookZone);
       if (aiming && this.onAim) {

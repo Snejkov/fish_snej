@@ -14,6 +14,7 @@ const { SnejCastSystem } = await import("../src/castSystem.js");
 function makeGame(depth, keys, yaw) {
   const effects = { steps: 0, splashes: 0, groundSnaps: 0 };
   const game = {
+    releaseFishingView: SnejFishingGame.prototype.releaseFishingView,
     cast: new SnejCastSystem(),
     pos: new THREE.Vector3(3, -depth + 0.04, 7),
     terrain: { depthAt: () => depth, heightAt: () => -depth, blockedAt: () => false },

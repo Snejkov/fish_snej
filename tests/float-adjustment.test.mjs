@@ -14,7 +14,8 @@ const { SnejFloatRig, rigForRod, FLOAT_RETRIEVE_FRACTION, writeFixedLine } = awa
 const close = (actual, expected, message) => assert.ok(Math.abs(actual - expected) < 1e-8, message);
 
 function lookGame(fs, sens = 1) {
-  return { cast: { state: { fs } }, settings: { sens }, yaw: 0, pitch: 0, mouse: { dx: 0, dy: 0 } };
+  return { releaseFishingView: SnejFishingGame.prototype.releaseFishingView,
+    cast: { state: { fs } }, settings: { sens }, yaw: 0, pitch: 0, mouse: { dx: 0, dy: 0 } };
 }
 
 for (const fps of [30, 60, 144]) {

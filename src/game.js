@@ -27,7 +27,7 @@ import { SPAWNS, SPAWN_INITIAL_NAME, SPAWN_NAMES } from "./spawns.js";
 import { SnejTerrain } from "./terrain.js";
 import { SnejTextureManager } from "./textureManager.js";
 import { SnejUI } from "./ui.js?v=menu-retrieve-1";
-import { SnejMobileInput, movementInput, requestLandscape } from "./mobileInput.js?v=closer-view-1";
+import { SnejMobileInput, movementInput, requestLandscape } from "./mobileInput.js?v=shoulder-view-1";
 import { SnejWater } from "./water.js?v=0.0.5a-hf3";
 import { clamp, clamp01, damp, lerp, moveDelta, resolveWalkableStart } from "./util.js?v=0.0.3-hf2.12";
 
@@ -1251,11 +1251,14 @@ export class SnejFishingGame {
     this.camDist = CAM_DIST;
     this.viewBlend = this.cameraMode === "third-person" ? 1 : 0;
     this.viewTransition = null;
+    this.fishingFocusActive = false;
+    this.fishingFocusWeight = 0;
     this.ui.updateViewChip(this);
   }
 
   toggleView() {
     if (["aim", "charge"].includes(this.cast.state.fs)) return;
+    this.releaseFishingView(true);
     this.resetSquint();
     this.mobileInput?.reset();
     const next = this.cameraMode === "first-person" ? "third-person" : "first-person";
@@ -1963,7 +1966,21 @@ export class SnejFishingGame {
     this.multiplayer.sendPresence(makePresence(this, this.presenceSeq));
   }
 
+  releaseFishingView(force = false) {
+    if (!this.fishingFocusActive || (!force && this.cameraMode === "first-person"
+      && this.cast.state.fs === "wait" && !this.cast.state.retrieving && this.canCast())) return;
+    // Continue from the visible float-focused view, not hidden rod-adjustment angles.
+    if (this.cameraMode === "first-person") {
+      const direction = this.camera.getWorldDirection(new THREE.Vector3());
+      this.yaw = Math.atan2(direction.x, direction.z);
+      this.pitch = Math.asin(clamp(direction.y, -1, 1));
+    }
+    this.fishingFocusActive = false;
+    this.fishingFocusWeight = 0;
+  }
+
   updateLook(dt = 1 / 60) {
+    this.releaseFishingView();
     const adjusting = this.cast.state.fs === "flight" || this.cast.state.fs === "wait";
     const rodStick = this.mobileInput?.enabled && this.cameraMode === "first-person"
       && this.cast.state.fs === "wait" && !this.cast.state.retrieving;
@@ -2062,9 +2079,11 @@ export class SnejFishingGame {
   }
 
   updateCamera(dt) {
+    this.releaseFishingView();
     this.updateSquint(dt);
     const fishingFocus = this.canCast() && this.cameraMode === "first-person"
       && this.cast.state.fs === "wait" && !this.cast.state.retrieving;
+    this.fishingFocusActive = fishingFocus;
     this.fishingFocusWeight = damp(this.fishingFocusWeight || 0, fishingFocus ? 1 : 0, 8, Math.max(0, dt));
     if (Math.abs(this.fishingFocusWeight - (fishingFocus ? 1 : 0)) < 0.0001) this.fishingFocusWeight = fishingFocus ? 1 : 0;
     if (!this.terrain) {
@@ -2079,28 +2098,10 @@ export class SnejFishingGame {
       Math.cos(this.yaw) * Math.cos(this.pitch)
     ).normalize();
     const touchView = Boolean(this.mobileInput?.enabled);
-    const orbitHorizontal = touchView ? Math.max(0.9, Math.cos(this.pitch)) : Math.cos(this.pitch);
-    const back = new THREE.Vector3(
-      -Math.sin(this.yaw) * orbitHorizontal,
-      touchView ? 1.0 - Math.sin(this.pitch) * 0.2 : 0.35 - Math.sin(this.pitch) * 0.6,
-      -Math.cos(this.yaw) * orbitHorizontal
-    );
-    // A raised shoulder orbit keeps close floats clear of the mobile avatar.
-    if (touchView) back.addScaledVector(new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw)), 0.25);
-    if (touchView && this.cast.state.fs === "wait" && !this.cast.state.retrieving) {
-      const float = new THREE.Vector3().copy(this.cast.state.bobber);
-      const towardFloat = float.sub(this.pos).setY(0);
-      const range = towardFloat.length();
-      const facing = clamp01((towardFloat.normalize().dot(lookDir.clone().setY(0).normalize()) - 0.2) / 0.5);
-      const blend = facing * facing * (3 - 2 * facing);
-      if (blend > 0) {
-        // Short casts below a raised bank need extra elevation, not a longer orbit.
-        const bankShoulder = clamp01((this.pos.y - this.cast.state.bobber.y) / 0.7) * clamp01((3 - range) / 1.5);
-        back.addScaledVector(new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw)), 1.5 * bankShoulder * blend);
-        const clearance = Math.max(0, this.pos.y + 1.9 - this.cast.state.bobber.y);
-        back.y = lerp(back.y, Math.max(back.y, Math.hypot(back.x, back.z) * clearance / Math.max(0.75, range) + 0.5), blend);
-      }
-    }
+    // A low shoulder orbit follows both look axes; fishing never raises it automatically.
+    const back = lookDir.clone().negate()
+      .addScaledVector(new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw)), 0.25);
+    back.y += 0.12;
     back.normalize();
     let distance = touchView ? TOUCH_CAM_DIST : CAM_DIST;
     const probe = eye.clone().addScaledVector(back, distance);
@@ -2135,31 +2136,6 @@ export class SnejFishingGame {
     desiredPosition.addScaledVector(new THREE.Vector3(-Math.cos(this.yaw), 0, Math.sin(this.yaw)),
       -rodViewOffset * this.fishingFocusWeight * (1 - this.viewBlend));
     const thirdTarget = eye.clone();
-    if (touchView) thirdTarget.y -= 0.4;
-    if (touchView && this.cast.state.fs === "wait" && !this.cast.state.retrieving) {
-      const float = new THREE.Vector3().copy(this.cast.state.bobber);
-      const towardFloat = float.clone().sub(eye).setY(0).normalize();
-      const forward = lookDir.clone().setY(0).normalize();
-      const framing = clamp01((towardFloat.dot(forward) - 0.2) / 0.5);
-      if (framing > 0) {
-        // Center the angular bounds of head, feet and float, including narrow portrait views.
-        const points = [this.pos.clone().add(new THREE.Vector3(0, 0.15, 0)),
-          this.pos.clone().add(new THREE.Vector3(0, 1.8, 0)), float];
-        const directions = points.map(point => point.sub(thirdPosition).normalize());
-        const frameDirection = thirdTarget.clone().sub(thirdPosition).normalize();
-        for (let i = 0; i < 4; i++) {
-          const right = frameDirection.clone().cross(new THREE.Vector3(0, 1, 0)).normalize();
-          const up = right.clone().cross(frameDirection).normalize();
-          const bounds = directions.map(direction => {
-            const depth = Math.max(0.01, direction.dot(frameDirection));
-            return { x: direction.dot(right) / depth, y: direction.dot(up) / depth };
-          });
-          frameDirection.addScaledVector(right, (Math.min(...bounds.map(a => a.x)) + Math.max(...bounds.map(a => a.x))) / 2)
-            .addScaledVector(up, (Math.min(...bounds.map(a => a.y)) + Math.max(...bounds.map(a => a.y))) / 2).normalize();
-        }
-        thirdTarget.lerp(thirdPosition.clone().addScaledVector(frameDirection, 4), framing * framing * (3 - 2 * framing));
-      }
-    }
     const desiredTarget = firstTarget.lerp(thirdTarget, this.viewBlend);
     // Zoom only the rendered view; the physical grip and casting camera stay unchanged.
     const focusWeight = Math.max(this.squintWeight || 0, this.fishingFocusWeight);

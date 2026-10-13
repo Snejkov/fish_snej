@@ -24,12 +24,12 @@ function settle(game, fps = 60) {
   for (let i = 0; i < fps * 3; i++) game.updateCamera(1 / fps);
 }
 
-test("Every third-person orbit is thirty percent closer at phone/tablet aspects and every FPS", () => {
+test("Every third-person orbit is twenty percent closer again at phone/tablet aspects and every FPS", () => {
   for (const aspect of [844 / 390, 390 / 844, 1024 / 768, 16 / 9]) for (const fps of [30, 60, 144]) {
     for (const enabled of [false, true]) {
       const game = fixture(enabled, aspect), state = structuredClone(game.cast.state), player = game.pos.clone();
       settle(game, fps);
-      near(game.camera.position.distanceTo(game.castCamera.position), (enabled ? 3.3 : 4.6) * 0.7);
+      near(game.camera.position.distanceTo(game.castCamera.position), (enabled ? 3.3 : 4.6) * 0.7 * 0.8);
       assert.ok(game.pos.equals(player)); assert.deepEqual(game.cast.state, state);
       assert.equal(game.camera.fov, 70); assert.equal(game.castCamera.fov, 70);
       const desktop = fixture(false, aspect); settle(desktop, fps);
@@ -47,16 +47,35 @@ test("The closer orbit retains obstacle pull-in and terrain clearance", () => {
     const game = fixture(enabled), probes = [];
     game.terrain.obstacleTopAt = (x, z) => { probes.push({ x, z }); return 10; };
     settle(game);
-    near(game.camera.position.distanceTo(game.castCamera.position), (enabled ? 3.3 : 4.6) * 0.7 * 0.55);
+    near(game.camera.position.distanceTo(game.castCamera.position), Math.max(1.1, (enabled ? 3.3 : 4.6) * 0.7 * 0.8 * 0.55));
     const horizontal = enabled ? Math.max(0.9, Math.cos(game.pitch)) : Math.cos(game.pitch);
     const back = new THREE.Vector3(-Math.sin(game.yaw) * horizontal,
-      enabled ? 1.7 - Math.sin(game.pitch) * 0.2 : 0.35 - Math.sin(game.pitch) * 0.6, -Math.cos(game.yaw) * horizontal);
+      enabled ? 1.0 - Math.sin(game.pitch) * 0.2 : 0.35 - Math.sin(game.pitch) * 0.6, -Math.cos(game.yaw) * horizontal);
     if (enabled) back.addScaledVector(new THREE.Vector3(Math.cos(game.yaw), 0, -Math.sin(game.yaw)), 0.25);
-    const expected = game.castCamera.position.clone().addScaledVector(back.normalize(), (enabled ? 3.3 : 4.6) * 0.7);
+    const expected = game.castCamera.position.clone().addScaledVector(back.normalize(), (enabled ? 3.3 : 4.6) * 0.7 * 0.8);
     near(probes[0].x, expected.x); near(probes[0].z, expected.z);
     game.terrain.heightAt = () => 4;
     settle(game);
     assert.ok(game.camera.position.y >= 4.35 - 1e-6);
+  }
+});
+
+test("The closer mobile baseline looks less steep than the preceding raised camera", () => {
+  for (const aspect of [390 / 844, 844 / 390, 768 / 1024, 1024 / 768]) {
+    for (const pitch of [-0.8, -0.1, 0.7]) for (const fps of [30, 60, 144]) {
+      const game = fixture(true, aspect); game.pitch = pitch; settle(game, fps);
+      const horizontal = Math.max(0.9, Math.cos(pitch));
+      const previousBack = new THREE.Vector3(-Math.sin(game.yaw) * horizontal,
+        1.7 - Math.sin(pitch) * 0.2, -Math.cos(game.yaw) * horizontal)
+        .addScaledVector(new THREE.Vector3(Math.cos(game.yaw), 0, -Math.sin(game.yaw)), 0.25).normalize();
+      const previousPosition = game.castCamera.position.clone().addScaledVector(previousBack, 3.3 * 0.7);
+      const previousDirection = game.castCamera.position.clone().add(new THREE.Vector3(0, -0.4, 0)).sub(previousPosition).normalize();
+      const direction = game.camera.getWorldDirection(new THREE.Vector3());
+      const angle = Math.atan2(-direction.y, Math.hypot(direction.x, direction.z));
+      const previousAngle = Math.atan2(-previousDirection.y, Math.hypot(previousDirection.x, previousDirection.z));
+      assert.ok(angle < previousAngle - 0.07, `The mobile view did not become visibly less steep: ${angle}, ${previousAngle}`);
+      near(game.camera.position.distanceTo(game.castCamera.position), 3.3 * 0.7 * 0.8);
+    }
   }
 });
 
@@ -103,7 +122,7 @@ test("Raised mobile orbit frames real avatar and short, medium and long floats w
           const point = angler.bones[bone].getWorldPosition(new THREE.Vector3()).project(game.camera);
           assert.ok(Math.abs(point.x) < 0.95 && Math.abs(point.y) < 0.95 && point.z < 1, `Character clipped ${bone}: ${label}`);
         }
-        near(game.camera.position.distanceTo(game.castCamera.position), 3.3 * 0.7);
+        near(game.camera.position.distanceTo(game.castCamera.position), 3.3 * 0.7 * 0.8);
         assert.deepEqual(game.cast.state, state);
       }
     }
@@ -115,7 +134,7 @@ test("Desktop keeps its prior viewing angle and mobile look-away does not force 
     const game = fixture(false); game.pitch = pitch; settle(game);
     const back = new THREE.Vector3(-Math.sin(game.yaw) * Math.cos(pitch),
       0.35 - Math.sin(pitch) * 0.6, -Math.cos(game.yaw) * Math.cos(pitch)).normalize();
-    assert.ok(game.camera.position.distanceTo(game.castCamera.position.clone().addScaledVector(back, 4.6 * 0.7)) < 1e-6);
+    assert.ok(game.camera.position.distanceTo(game.castCamera.position.clone().addScaledVector(back, 4.6 * 0.7 * 0.8)) < 1e-6);
     const expected = game.camera.clone(); expected.lookAt(game.castCamera.position);
     assert.ok(game.camera.quaternion.angleTo(expected.quaternion) < 1e-6);
   }
@@ -138,7 +157,7 @@ test("Mobile wall pull-in leaves the landed float unobstructed by the real avata
     const ray = new THREE.Raycaster(game.camera.position, float.clone().sub(game.camera.position).normalize(), 0,
       float.distanceTo(game.camera.position));
     assert.equal(ray.intersectObjects(angler.model.meshes, false).length, 0, `Wall pull-in blocks float range=${range} pitch=${pitch}`);
-    near(game.camera.position.distanceTo(game.castCamera.position), 3.3 * 0.7 * 0.55);
+    near(game.camera.position.distanceTo(game.castCamera.position), Math.max(1.1, 3.3 * 0.7 * 0.8 * 0.55));
   }
 });
 

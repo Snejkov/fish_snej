@@ -38,8 +38,8 @@ const EYE_H = 1.62;
 const PLAYER_RADIUS = 0.34;
 const MAX_WADE_DEPTH = 1.0;
 const CAM_PULL_MIN = 1.1;
-const CAM_DIST = 4.6 * 0.7;
-const TOUCH_CAM_DIST = 3.3 * 0.7;
+const CAM_DIST = 4.6 * 0.7 * 0.8;
+const TOUCH_CAM_DIST = 3.3 * 0.7 * 0.8;
 const VIEW_TRANSITION_TIME = 0.18;
 const CAST_LOOK_SCALE = 0.06;
 const CAST_LOOK_SPEED = 0.12;
@@ -2053,7 +2053,7 @@ export class SnejFishingGame {
     const orbitHorizontal = touchView ? Math.max(0.9, Math.cos(this.pitch)) : Math.cos(this.pitch);
     const back = new THREE.Vector3(
       -Math.sin(this.yaw) * orbitHorizontal,
-      touchView ? 1.7 - Math.sin(this.pitch) * 0.2 : 0.35 - Math.sin(this.pitch) * 0.6,
+      touchView ? 1.0 - Math.sin(this.pitch) * 0.2 : 0.35 - Math.sin(this.pitch) * 0.6,
       -Math.cos(this.yaw) * orbitHorizontal
     );
     // A raised shoulder orbit keeps close floats clear of the mobile avatar.

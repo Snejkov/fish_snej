@@ -1,8 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { registerHooks } from "node:module";
-import { SnejFloatRig, rigForRod, lineStretchLimit, elasticLineLength, writeFixedLine } from "../src/floatRig.js";
+import { SnejFloatRig, rigForRod, writeFixedLine } from "../src/floatRig.js";
 import { SnejCastSystem } from "../src/castSystem.js";
+import { fishingMeters, fishingWorld } from "../src/fishingUnits.js";
 
 registerHooks({ resolve(specifier, context, nextResolve) {
   if (specifier === "three") return { url: new URL("../vendor/three.module.min.js", import.meta.url).href, shortCircuit: true };
@@ -35,18 +36,17 @@ test("slack transmits neither pole translation nor a push, including reversals",
   }
 });
 
-test("a taut elastic line pulls gradually with inertia instead of copying the pole", () => {
+test("a taut fixed line pulls immediately at its exact budget, then damps light float inertia", () => {
   for (const rod of [4, 5, 6]) for (const fps of [30, 60, 144]) {
     const f = fixture(rod), start = f.bobber.x;
     f.tip.x -= 0.06;
     f.float.follow(1 / fps, f.tip, f.bobber, f.rig, water);
-    assert.ok(start - f.bobber.x > 0 && start - f.bobber.x < 0.01);
-    assert.ok(f.float.extension > 0 && f.float.tension > 0);
+    assert.ok(start - f.bobber.x >= 0.06 - 1e-6, "No extra length is allowed while the pole moves away.");
+    assert.ok(f.float.tension > 0);
     const early = f.bobber.x;
     for (let i = 0; i < fps; i++) f.float.follow(1 / fps, f.tip, f.bobber, f.rig, water);
-    assert.ok(f.bobber.x < early - 0.02, "A stationary pole still pulls until tension is relieved.");
-    assert.ok(distance(f.tip, f.bobber) <= f.rig.upperLine + lineStretchLimit(f.rig.upperLine) + 1e-6);
-    assert.ok(f.float.extension < 0.01);
+    assert.ok(f.bobber.x < early, "The light float retains a little water-damped momentum after a pull.");
+    assert.ok(distance(f.tip, f.bobber) <= f.rig.upperLine + 1e-6);
     f.tip.x += 0.2;
     const before = f.bobber.x;
     f.float.follow(1 / fps, f.tip, f.bobber, f.rig, water);
@@ -62,7 +62,7 @@ test("line dynamics are consistent across frame rates and bounded after a stalle
     for (let i = 1; i <= fps * 3; i++) {
       f.tip.x = -Math.min(i / fps, 1) * 0.4;
       f.float.follow(1 / fps, f.tip, f.bobber, f.rig, water);
-      assert.ok(distance(f.tip, f.bobber) <= f.rig.upperLine + lineStretchLimit(f.rig.upperLine) + 1e-6);
+      assert.ok(distance(f.tip, f.bobber) <= f.rig.upperLine + 1e-6);
     }
     results.push(f.bobber.x); assert.ok(start - f.bobber.x > 0.35);
   }
@@ -73,11 +73,10 @@ test("line dynamics are consistent across frame rates and bounded after a stalle
   assert.deepEqual(a.bobber, b.bobber);
 });
 
-test("elastic rendering shares the actual float endpoint without extending the casting budget", () => {
+test("fixed rendering shares the actual float endpoint and retains the total upper and lower budget", () => {
   const f = fixture(), startRange = f.rig.castRange, points = new Float32Array(99);
   f.tip.x = -0.1; f.float.follow(1 / 60, f.tip, f.bobber, f.rig, water);
-  const length = elasticLineLength(f.tip, f.bobber, f.rig.upperLine);
-  assert.ok(length > f.rig.upperLine);
+  const length = f.rig.upperLine;
   assert.equal(writeFixedLine(f.tip, f.bobber, length, points), true);
   let sum = 0;
   for (let i = 3; i < points.length; i += 3) sum += Math.hypot(points[i] - points[i - 3], points[i + 1] - points[i - 2], points[i + 2] - points[i - 1]);
@@ -96,7 +95,7 @@ test("pause, automatic pose settling and reset cannot leave stale float momentum
   const snapshot = JSON.stringify([f.bobber, f.float]); f.tip.x -= 0.02;
   for (const dt of [0, -1, NaN]) f.float.follow(dt, f.tip, f.bobber, f.rig, water);
   assert.equal(JSON.stringify([f.bobber, f.float]), snapshot);
-  const before = { ...f.bobber };
+  const before = { ...f.bobber }; f.tip.x += 0.1;
   f.float.follow(1 / 60, f.tip, f.bobber, f.rig, water, { settle: true });
   assert.deepEqual(f.bobber, before); assert.deepEqual(f.float.velocity, { x: 0, y: 0, z: 0 });
   f.float.reset(); assert.equal(f.float.anchored, false); assert.equal(f.float.tension, 0);
@@ -105,7 +104,7 @@ test("pause, automatic pose settling and reset cannot leave stale float momentum
 
 test("surface drag stops at shoreline and obstructions; impossible heights request recovery", () => {
   const f = fixture(), edge = f.bobber.x - 0.02;
-  f.tip.x = -0.1;
+  f.tip.x = -0.01;
   for (let i = 0; i < 120; i++) {
     assert.equal(f.float.follow(1 / 120, f.tip, f.bobber, f.rig, { ...water, isWaterAt: p => p.x >= edge }), true);
     assert.ok(f.bobber.x >= edge);
@@ -113,6 +112,43 @@ test("surface drag stops at shoreline and obstructions; impossible heights reque
   assert.equal(f.float.follow(1 / 60, f.tip, f.bobber, f.rig, { ...water, lineObstruction: () => "dock" }), false);
   assert.equal(f.float.follow(1 / 60, { ...f.tip, y: 20 }, f.bobber, f.rig, water), false);
   assert.equal(f.float.follow(1 / 60, { ...f.tip, x: NaN }, f.bobber, f.rig, water), false);
+  const blocked = fixture(); blocked.tip.x = -0.1;
+  assert.equal(blocked.float.follow(1 / 60, blocked.tip, blocked.bobber, blocked.rig,
+    { ...water, isWaterAt: p => p.x >= edge }), false,
+  "If shore prevents the required pull, recover the rig rather than silently grow the line.");
+});
+
+test("displayed pole length is the exact total line, minus configured depth above the float", () => {
+  for (const rod of [4, 5, 6]) for (const depth of [0, 0.25, 1, rod - 0.125]) {
+    const rig = rigForRod(rod, fishingWorld(depth));
+    near(fishingMeters(rig.lineLength), rod);
+    near(fishingMeters(rig.upperLine), rod - depth);
+    assert.equal(rig.upperLine + rig.floatDepth, rig.lineLength);
+  }
+});
+
+test("repeated full sideways sweeps never grow the line and only start dragging once slack is consumed", () => {
+  for (const rod of [4, 5, 6]) for (const fps of [30, 60, 144]) for (const depth of [0, 0.5, rod * 2 - 0.25]) {
+    const f = fixture(rod, depth), positions = new Float32Array(99);
+    for (let frame = 1; frame <= fps * 3; frame++) {
+      const yaw = frame / fps * 2;
+      f.tip.x = Math.sin(yaw) * 0.2;
+      f.tip.z = Math.cos(yaw) * 0.2 - 0.2;
+      assert.equal(f.float.follow(1 / fps, f.tip, f.bobber, f.rig, water), true);
+      assert.ok(distance(f.tip, f.bobber) <= f.rig.upperLine + 1e-6);
+      assert.equal(writeFixedLine(f.tip, f.bobber, f.rig.upperLine, positions, frame / fps), true);
+      let total = f.rig.floatDepth;
+      for (let i = 3; i < positions.length; i += 3) total += Math.hypot(positions[i] - positions[i - 3],
+        positions[i + 1] - positions[i - 2], positions[i + 2] - positions[i - 1]);
+      near(total, f.rig.lineLength, 2e-5);
+    }
+    const slack = fixture(rod, 0.5, 0.5), before = { ...slack.bobber };
+    slack.tip.x -= 0.2; slack.float.follow(1 / fps, slack.tip, slack.bobber, slack.rig, water);
+    near(slack.bobber.x, before.x); near(slack.bobber.z, before.z);
+    slack.tip.x -= 0.4; slack.float.follow(1 / fps, slack.tip, slack.bobber, slack.rig, water);
+    assert.ok(slack.bobber.x < before.x - 0.05);
+    assert.ok(distance(slack.tip, slack.bobber) <= slack.rig.upperLine + 1e-6);
+  }
 });
 
 test("pole retrieval lifts before the main horizontal swing and preserves the fixed-line budget", () => {

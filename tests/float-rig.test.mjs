@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { SnejFloatRig, rigForRod, lineStretchLimit, elasticLineLength, limitLineEnd, writeFixedLine } from "../src/floatRig.js";
+import { SnejFloatRig, rigForRod, limitLineEnd, writeFixedLine } from "../src/floatRig.js";
 import { SnejCastSystem } from "../src/castSystem.js";
 
 const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
@@ -31,13 +31,12 @@ for (const rod of [4, 5, 6]) {
       for (let frame = 1; frame <= fps; frame += 1) {
         tip.x = Math.sin(frame / fps) * 0.8;
         assert.equal(model.follow(1 / fps, tip, bobber, rig, context), true);
-        assert.ok(distance(tip, bobber) <= rig.upperLine + lineStretchLimit(rig.upperLine) + 1e-6);
+        assert.ok(distance(tip, bobber) <= rig.upperLine + 1e-6);
         assert.ok(Math.hypot(bobber.x, bobber.z) <= rig.rodReach + 1e-6);
         assert.equal(model.hook.y, bobber.y - depth);
-        const length = elasticLineLength(tip, bobber, rig.upperLine);
-        assert.equal(writeFixedLine(tip, bobber, length, positions), true);
-        assert.ok(Math.abs(lengthOf(positions) + depth - rig.lineLength - model.extension) < 0.00003,
-          "The visible polyline retains the configured length plus bounded physical extension.");
+        assert.equal(writeFixedLine(tip, bobber, rig.upperLine, positions), true);
+        assert.ok(Math.abs(lengthOf(positions) + depth - rig.lineLength) < 0.00003,
+          "The visible polyline and reserved leader retain the configured total length without stretching.");
       }
       assert.ok(Math.abs(bobber.x - start.x) < 1e-8, "Slack must not copy sideways pole movement to the float.");
       const frozen = JSON.stringify([bobber, model.lastTip, model.hook]);
@@ -53,8 +52,8 @@ for (const rod of [4, 5, 6]) {
 const rig = rigForRod(5, 0.5), model = new SnejFloatRig();
 const tip = { x: 0, y: 1, z: 5 }, bobber = { x: 0, y: 0, z: 14.5 };
 assert.equal(model.follow(1 / 60, tip, bobber, rig, context), true);
-assert.ok(distance(tip, bobber) <= rig.upperLine + lineStretchLimit(rig.upperLine) + 1e-6,
-  "A taut line must remain inside its bounded elastic rod-tip limit.");
+assert.ok(distance(tip, bobber) <= rig.upperLine + 1e-6,
+  "A taut line must remain inside the exact rod-tip line limit.");
 model.reset();
 bobber.z = 8;
 assert.equal(model.follow(1 / 60, tip, bobber, rig, context), true);

@@ -142,6 +142,7 @@ export function createApp({ store, WebSocketServer, staticRoot, publicOrigin, se
       let path;
       try { path = decodeURIComponent(url.pathname); } catch { reject("invalid_path"); }
       if (path.includes("\\") || path.includes("\0") || !(path === "/" || path === "/index.html" || path === "/styles.css"
+        || path === "/icons/apple-touch-icon.png" || path === "/icons/apple-touch-icon.svg"
         || /^\/(src|styles|vendor)\//.test(path))) reject("not_found", 404);
       const root = await realpath(staticRoot);
       const file = await realpath(resolve(root, `.${path === "/" ? "/index.html" : path}`));

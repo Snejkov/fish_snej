@@ -24,12 +24,12 @@ function settle(game, fps = 60) {
   for (let i = 0; i < fps * 3; i++) game.updateCamera(1 / fps);
 }
 
-test("Only touch third-person orbit gets closer at phone/tablet aspects and every FPS", () => {
+test("Every third-person orbit is thirty percent closer at phone/tablet aspects and every FPS", () => {
   for (const aspect of [844 / 390, 390 / 844, 1024 / 768, 16 / 9]) for (const fps of [30, 60, 144]) {
     for (const enabled of [false, true]) {
       const game = fixture(enabled, aspect), state = structuredClone(game.cast.state), player = game.pos.clone();
       settle(game, fps);
-      near(game.camera.position.distanceTo(game.castCamera.position), enabled ? 3.3 : 4.6);
+      near(game.camera.position.distanceTo(game.castCamera.position), (enabled ? 3.3 : 4.6) * 0.7);
       assert.ok(game.pos.equals(player)); assert.deepEqual(game.cast.state, state);
       assert.equal(game.camera.fov, 70); assert.equal(game.castCamera.fov, 70);
       const desktop = fixture(false, aspect); settle(desktop, fps);
@@ -47,10 +47,12 @@ test("The closer orbit retains obstacle pull-in and terrain clearance", () => {
     const game = fixture(enabled), probes = [];
     game.terrain.obstacleTopAt = (x, z) => { probes.push({ x, z }); return 10; };
     settle(game);
-    near(game.camera.position.distanceTo(game.castCamera.position), (enabled ? 3.3 : 4.6) * 0.55);
-    const back = new THREE.Vector3(-Math.sin(game.yaw) * Math.cos(game.pitch),
-      0.35 - Math.sin(game.pitch) * 0.6, -Math.cos(game.yaw) * Math.cos(game.pitch)).normalize();
-    const expected = game.castCamera.position.clone().addScaledVector(back, enabled ? 3.3 : 4.6);
+    near(game.camera.position.distanceTo(game.castCamera.position), (enabled ? 3.3 : 4.6) * 0.7 * 0.55);
+    const horizontal = enabled ? Math.max(0.9, Math.cos(game.pitch)) : Math.cos(game.pitch);
+    const back = new THREE.Vector3(-Math.sin(game.yaw) * horizontal,
+      enabled ? 1.7 - Math.sin(game.pitch) * 0.2 : 0.35 - Math.sin(game.pitch) * 0.6, -Math.cos(game.yaw) * horizontal);
+    if (enabled) back.addScaledVector(new THREE.Vector3(Math.cos(game.yaw), 0, -Math.sin(game.yaw)), 0.25);
+    const expected = game.castCamera.position.clone().addScaledVector(back.normalize(), (enabled ? 3.3 : 4.6) * 0.7);
     near(probes[0].x, expected.x); near(probes[0].z, expected.z);
     game.terrain.heightAt = () => 4;
     settle(game);
@@ -74,6 +76,77 @@ test("Manual view transitions leave landed targets and physical cameras identica
     assert.ok(touch.castCamera.position.equals(desktop.castCamera.position));
     assert.ok(touch.castCamera.quaternion.equals(desktop.castCamera.quaternion));
     if (!end) assert.ok(touch.camera.position.equals(desktop.camera.position));
+  }
+});
+
+test("Raised mobile orbit frames real avatar and short, medium and long floats without body occlusion", () => {
+  for (const aspect of [390 / 844, 844 / 390, 768 / 1024, 1024 / 768]) {
+    for (const range of [1.5, 3, 8, 20]) for (const pitch of [-0.8, -0.1, 0.7]) {
+      for (const offset of [-0.3, 0, 0.3]) {
+        const game = fixture(true, aspect), angler = new SnejAngler();
+        game.pitch = pitch; game.cast.state.fs = "wait";
+        Object.assign(game.cast.state.bobber, { x: Math.sin(game.yaw + offset) * range,
+          y: 0.05, z: Math.cos(game.yaw + offset) * range });
+        const state = structuredClone(game.cast.state); settle(game);
+        angler.group.position.copy(game.pos); angler.group.rotation.y = game.yaw + offset;
+        for (let i = 0; i < 120; i++) angler.update(1 / 60, { state: "playing", speed: 0,
+          camera: game.castCamera, castCamera: game.castCamera, cameraMode: "third-person", viewBlend: 1, castState: "wait" });
+        angler.group.updateMatrixWorld(true); game.camera.updateMatrixWorld();
+        const float = new THREE.Vector3().copy(game.cast.state.bobber), projected = float.clone().project(game.camera);
+        const label = `aspect=${aspect} range=${range} pitch=${pitch} offset=${offset}`;
+        assert.ok(Math.abs(projected.x) < 0.95 && Math.abs(projected.y) < 0.95 && projected.z < 1, `Float clipped: ${label} ${projected.toArray()}`);
+        const ray = new THREE.Raycaster(game.camera.position, float.clone().sub(game.camera.position).normalize(), 0,
+          float.distanceTo(game.camera.position));
+        assert.equal(ray.intersectObjects(angler.model.meshes, false).length, 0, `Avatar blocks float: ${label}`);
+        for (const bone of ["HeadTip", "LeftFoot", "RightFoot"]) {
+          const point = angler.bones[bone].getWorldPosition(new THREE.Vector3()).project(game.camera);
+          assert.ok(Math.abs(point.x) < 0.95 && Math.abs(point.y) < 0.95 && point.z < 1, `Character clipped ${bone}: ${label}`);
+        }
+        near(game.camera.position.distanceTo(game.castCamera.position), 3.3 * 0.7);
+        assert.deepEqual(game.cast.state, state);
+      }
+    }
+  }
+});
+
+test("Desktop keeps its prior viewing angle and mobile look-away does not force the float into view", () => {
+  for (const pitch of [-0.8, -0.1, 0.7]) {
+    const game = fixture(false); game.pitch = pitch; settle(game);
+    const back = new THREE.Vector3(-Math.sin(game.yaw) * Math.cos(pitch),
+      0.35 - Math.sin(pitch) * 0.6, -Math.cos(game.yaw) * Math.cos(pitch)).normalize();
+    assert.ok(game.camera.position.distanceTo(game.castCamera.position.clone().addScaledVector(back, 4.6 * 0.7)) < 1e-6);
+    const expected = game.camera.clone(); expected.lookAt(game.castCamera.position);
+    assert.ok(game.camera.quaternion.angleTo(expected.quaternion) < 1e-6);
+  }
+  const game = fixture(true); game.cast.state.fs = "wait"; game.yaw = Math.PI; settle(game);
+  const expected = game.camera.clone(); expected.lookAt(game.castCamera.position.clone().add(new THREE.Vector3(0, -0.4, 0)));
+  assert.ok(game.camera.quaternion.angleTo(expected.quaternion) < 1e-6);
+});
+
+test("Mobile wall pull-in leaves the landed float unobstructed by the real avatar", () => {
+  for (const range of [1.5, 3, 8, 20]) for (const pitch of [-1.4, -0.1, 1.4]) {
+    const game = fixture(true), angler = new SnejAngler();
+    game.pitch = pitch; game.cast.state.fs = "wait";
+    game.terrain.obstacleTopAt = () => 10;
+    Object.assign(game.cast.state.bobber, { x: Math.sin(game.yaw) * range, y: 0.05, z: Math.cos(game.yaw) * range });
+    settle(game); angler.group.position.copy(game.pos); angler.group.rotation.y = game.yaw;
+    angler.update(1, { state: "playing", speed: 0, camera: game.castCamera, castCamera: game.castCamera,
+      cameraMode: "third-person", viewBlend: 1, castState: "wait" });
+    angler.group.updateMatrixWorld(true); game.camera.updateMatrixWorld();
+    const float = new THREE.Vector3().copy(game.cast.state.bobber);
+    const ray = new THREE.Raycaster(game.camera.position, float.clone().sub(game.camera.position).normalize(), 0,
+      float.distanceTo(game.camera.position));
+    assert.equal(ray.intersectObjects(angler.model.meshes, false).length, 0, `Wall pull-in blocks float range=${range} pitch=${pitch}`);
+    near(game.camera.position.distanceTo(game.castCamera.position), 3.3 * 0.7 * 0.55);
+  }
+});
+
+test("Mobile landed-float framing blends smoothly when looking away", () => {
+  const game = fixture(true); game.cast.state.fs = "wait"; game.cast.state.bobber = { x: 0, y: 0.05, z: 8 };
+  for (let yaw = 0.75; yaw <= 1.5; yaw += 0.01) {
+    game.yaw = yaw; settle(game); const previous = game.camera.quaternion.clone();
+    game.yaw += 0.01; settle(game);
+    assert.ok(game.camera.quaternion.angleTo(previous) < 0.045, `Framing jumps at yaw ${yaw}`);
   }
 });
 

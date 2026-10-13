@@ -37,7 +37,7 @@ for (const length of [4, 5, 6]) {
     look.y = Math.sin(pitch);
     const back = forward.clone().multiplyScalar(-Math.cos(pitch));
     back.y = 0.35 - Math.sin(pitch) * 0.6;
-    const thirdPosition = eye.clone().addScaledVector(back.normalize(), 4.6);
+    const thirdPosition = eye.clone().addScaledVector(back.normalize(), 4.6 * 0.7);
     castCamera.position.copy(eye);
     castCamera.lookAt(eye.clone().addScaledVector(look, 8));
     const frame = (viewBlend, dt = 1 / fps) => {

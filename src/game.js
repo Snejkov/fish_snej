@@ -38,8 +38,8 @@ const EYE_H = 1.62;
 const PLAYER_RADIUS = 0.34;
 const MAX_WADE_DEPTH = 1.0;
 const CAM_PULL_MIN = 1.1;
-const CAM_DIST = 4.6;
-const TOUCH_CAM_DIST = 3.3;
+const CAM_DIST = 4.6 * 0.7;
+const TOUCH_CAM_DIST = 3.3 * 0.7;
 const VIEW_TRANSITION_TIME = 0.18;
 const CAST_LOOK_SCALE = 0.06;
 const CAST_LOOK_SPEED = 0.12;
@@ -2049,12 +2049,17 @@ export class SnejFishingGame {
       Math.sin(this.pitch),
       Math.cos(this.yaw) * Math.cos(this.pitch)
     ).normalize();
+    const touchView = Boolean(this.mobileInput?.enabled);
+    const orbitHorizontal = touchView ? Math.max(0.9, Math.cos(this.pitch)) : Math.cos(this.pitch);
     const back = new THREE.Vector3(
-      -Math.sin(this.yaw) * Math.cos(this.pitch),
-      0.35 - Math.sin(this.pitch) * 0.6,
-      -Math.cos(this.yaw) * Math.cos(this.pitch)
-    ).normalize();
-    let distance = this.mobileInput?.enabled ? TOUCH_CAM_DIST : CAM_DIST;
+      -Math.sin(this.yaw) * orbitHorizontal,
+      touchView ? 1.7 - Math.sin(this.pitch) * 0.2 : 0.35 - Math.sin(this.pitch) * 0.6,
+      -Math.cos(this.yaw) * orbitHorizontal
+    );
+    // A raised shoulder orbit keeps close floats clear of the mobile avatar.
+    if (touchView) back.addScaledVector(new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw)), 0.25);
+    back.normalize();
+    let distance = touchView ? TOUCH_CAM_DIST : CAM_DIST;
     const probe = eye.clone().addScaledVector(back, distance);
     const top = this.terrain.obstacleTopAt(probe.x, probe.z);
     const ground = this.terrain.heightAt(probe.x, probe.z);
@@ -2086,7 +2091,33 @@ export class SnejFishingGame {
     const rodViewOffset = lerp(0.155, 0.22, clamp01((this.camera.aspect - 0.5) / 0.5));
     desiredPosition.addScaledVector(new THREE.Vector3(-Math.cos(this.yaw), 0, Math.sin(this.yaw)),
       -rodViewOffset * this.fishingFocusWeight * (1 - this.viewBlend));
-    const desiredTarget = firstTarget.lerp(eye, this.viewBlend);
+    const thirdTarget = eye.clone();
+    if (touchView) thirdTarget.y -= 0.4;
+    if (touchView && this.cast.state.fs === "wait" && !this.cast.state.retrieving) {
+      const float = new THREE.Vector3().copy(this.cast.state.bobber);
+      const towardFloat = float.clone().sub(eye).setY(0).normalize();
+      const forward = lookDir.clone().setY(0).normalize();
+      const framing = clamp01((towardFloat.dot(forward) - 0.2) / 0.5);
+      if (framing > 0) {
+        // Center the angular bounds of head, feet and float, including narrow portrait views.
+        const points = [this.pos.clone().add(new THREE.Vector3(0, 0.15, 0)),
+          this.pos.clone().add(new THREE.Vector3(0, 1.8, 0)), float];
+        const directions = points.map(point => point.sub(thirdPosition).normalize());
+        const frameDirection = thirdTarget.clone().sub(thirdPosition).normalize();
+        for (let i = 0; i < 4; i++) {
+          const right = frameDirection.clone().cross(new THREE.Vector3(0, 1, 0)).normalize();
+          const up = right.clone().cross(frameDirection).normalize();
+          const bounds = directions.map(direction => {
+            const depth = Math.max(0.01, direction.dot(frameDirection));
+            return { x: direction.dot(right) / depth, y: direction.dot(up) / depth };
+          });
+          frameDirection.addScaledVector(right, (Math.min(...bounds.map(a => a.x)) + Math.max(...bounds.map(a => a.x))) / 2)
+            .addScaledVector(up, (Math.min(...bounds.map(a => a.y)) + Math.max(...bounds.map(a => a.y))) / 2).normalize();
+        }
+        thirdTarget.lerp(thirdPosition.clone().addScaledVector(frameDirection, 4), framing * framing * (3 - 2 * framing));
+      }
+    }
+    const desiredTarget = firstTarget.lerp(thirdTarget, this.viewBlend);
     // Zoom only the rendered view; the physical grip and casting camera stay unchanged.
     const focusWeight = Math.max(this.squintWeight || 0, this.fishingFocusWeight);
     if (focusWeight > 0) desiredTarget.lerp(new THREE.Vector3().copy(this.cast.state.bobber), focusWeight);

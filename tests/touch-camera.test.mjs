@@ -80,10 +80,11 @@ test("Manual view transitions leave landed targets and physical cameras identica
 });
 
 test("Raised mobile orbit frames real avatar and short, medium and long floats without body occlusion", () => {
-  for (const aspect of [390 / 844, 844 / 390, 768 / 1024, 1024 / 768]) {
+  for (const aspect of [390 / 844, 844 / 390, 768 / 1024, 1024 / 768]) for (const height of [0, 1.5, 2.6]) {
     for (const range of [1.5, 3, 8, 20]) for (const pitch of [-0.8, -0.1, 0.7]) {
       for (const offset of [-0.3, 0, 0.3]) {
         const game = fixture(true, aspect), angler = new SnejAngler();
+        game.pos.y = height + 0.04; game.terrain.heightAt = () => height;
         game.pitch = pitch; game.cast.state.fs = "wait";
         Object.assign(game.cast.state.bobber, { x: Math.sin(game.yaw + offset) * range,
           y: 0.05, z: Math.cos(game.yaw + offset) * range });
@@ -93,7 +94,7 @@ test("Raised mobile orbit frames real avatar and short, medium and long floats w
           camera: game.castCamera, castCamera: game.castCamera, cameraMode: "third-person", viewBlend: 1, castState: "wait" });
         angler.group.updateMatrixWorld(true); game.camera.updateMatrixWorld();
         const float = new THREE.Vector3().copy(game.cast.state.bobber), projected = float.clone().project(game.camera);
-        const label = `aspect=${aspect} range=${range} pitch=${pitch} offset=${offset}`;
+        const label = `aspect=${aspect} height=${height} range=${range} pitch=${pitch} offset=${offset}`;
         assert.ok(Math.abs(projected.x) < 0.95 && Math.abs(projected.y) < 0.95 && projected.z < 1, `Float clipped: ${label} ${projected.toArray()}`);
         const ray = new THREE.Raycaster(game.camera.position, float.clone().sub(game.camera.position).normalize(), 0,
           float.distanceTo(game.camera.position));
@@ -142,11 +143,14 @@ test("Mobile wall pull-in leaves the landed float unobstructed by the real avata
 });
 
 test("Mobile landed-float framing blends smoothly when looking away", () => {
-  const game = fixture(true); game.cast.state.fs = "wait"; game.cast.state.bobber = { x: 0, y: 0.05, z: 8 };
+  for (const height of [0, 1.5, 2.6]) for (const range of [1.5, 8]) {
+  const game = fixture(true); game.pos.y = height + 0.04; game.terrain.heightAt = () => height;
+  game.cast.state.fs = "wait"; game.cast.state.bobber = { x: 0, y: 0.05, z: range };
   for (let yaw = 0.75; yaw <= 1.5; yaw += 0.01) {
     game.yaw = yaw; settle(game); const previous = game.camera.quaternion.clone();
     game.yaw += 0.01; settle(game);
     assert.ok(game.camera.quaternion.angleTo(previous) < 0.045, `Framing jumps at yaw ${yaw}`);
+  }
   }
 });
 

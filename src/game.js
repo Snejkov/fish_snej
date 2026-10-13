@@ -2058,6 +2058,20 @@ export class SnejFishingGame {
     );
     // A raised shoulder orbit keeps close floats clear of the mobile avatar.
     if (touchView) back.addScaledVector(new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw)), 0.25);
+    if (touchView && this.cast.state.fs === "wait" && !this.cast.state.retrieving) {
+      const float = new THREE.Vector3().copy(this.cast.state.bobber);
+      const towardFloat = float.sub(this.pos).setY(0);
+      const range = towardFloat.length();
+      const facing = clamp01((towardFloat.normalize().dot(lookDir.clone().setY(0).normalize()) - 0.2) / 0.5);
+      const blend = facing * facing * (3 - 2 * facing);
+      if (blend > 0) {
+        // Short casts below a raised bank need extra elevation, not a longer orbit.
+        const bankShoulder = clamp01((this.pos.y - this.cast.state.bobber.y) / 0.7) * clamp01((3 - range) / 1.5);
+        back.addScaledVector(new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw)), 1.5 * bankShoulder * blend);
+        const clearance = Math.max(0, this.pos.y + 1.9 - this.cast.state.bobber.y);
+        back.y = lerp(back.y, Math.max(back.y, Math.hypot(back.x, back.z) * clearance / Math.max(0.75, range) + 0.5), blend);
+      }
+    }
     back.normalize();
     let distance = touchView ? TOUCH_CAM_DIST : CAM_DIST;
     const probe = eye.clone().addScaledVector(back, distance);

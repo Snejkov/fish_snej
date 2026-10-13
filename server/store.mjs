@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { tokenHash, newToken, SESSION_SECONDS } from "./auth.mjs";
 import { RequestError, reject, integer, object, playerName, initialState, patchState, trustedOwnerState, position } from "./validation.mjs";
 import { findItem } from "../src/gear/catalog.js";
+import { migrateFishingSettings } from "../src/fishingUnits.js";
 
 export const OWNER_GRANT_KEY = "owner-id1-gold-10000-2026-10-12";
 export class GameStore {
@@ -95,7 +96,9 @@ export class GameStore {
   profile(id) {
     const row = this.db.prepare("SELECT * FROM profiles WHERE user_id=?").get(id);
     if (!row) reject("profile_not_found", 404);
-    return { user: this.user(id), revision: row.revision, schemaVersion: row.schema_version, coins: row.coins, state: JSON.parse(row.state_json) };
+    const state = JSON.parse(row.state_json);
+    state.settings = migrateFishingSettings(state.settings);
+    return { user: this.user(id), revision: row.revision, schemaVersion: row.schema_version, coins: row.coins, state };
   }
   write(id, state, coins, revision) {
     this.db.prepare("UPDATE profiles SET state_json=?,coins=?,revision=?,updated_at=? WHERE user_id=?").run(JSON.stringify(state), coins, revision, this.now(), id);

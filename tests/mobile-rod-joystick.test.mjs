@@ -124,5 +124,5 @@ test("Joystick corrections consume slack without teleporting the float or changi
     assert.ok(Math.hypot(bobber.x - tip.x, bobber.y - tip.y, bobber.z - tip.z) <= rig.upperLine);
   }
   assert.equal(bobber.x, 0, "A slack rope cannot transmit a sideways push to the float.");
-  assert.ok(follower.slack > 7);
+  assert.ok(follower.slack > 3);
 });

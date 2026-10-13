@@ -31,13 +31,15 @@ function fixture(length, depth, desired, yaw, obstruction = null) {
 
 test("Direct release lands on the circle with an offset grip at every frame rate and rig budget", () => {
   for (const length of [4, 5, 6]) for (const depth of [0, 0.5, 1.5]) {
-    for (const factor of [0.2, 0.75, 1]) for (const yaw of [0, 1.7, 4.8]) for (const fps of [30, 60, 144]) {
-      const { game, cast, ctx, releases } = fixture(length, depth, (length * 2 - depth) * factor, yaw);
+    // The shortest 2.5m upper line still needs the unchanged 1m minimum launch clearance.
+    for (const factor of [0.4, 0.75, 1]) for (const yaw of [0, 1.7, 4.8]) for (const fps of [30, 60, 144]) {
+      const { game, cast, ctx, releases } = fixture(length, depth, (length - depth) * factor, yaw);
       const circle = { ...cast.state.targetLanding };
-      assert.equal(cast.state.targetValid, true);
+      assert.equal(cast.state.targetValid, true,
+        `${length}m/depth ${depth}, power ${factor}, yaw ${yaw}, min ${cast.state.minCastDist}: ${cast.state.releaseBlock}`);
       close(Math.hypot(circle.x - ctx.pos.x, circle.z - ctx.pos.z), cast.state.aimDist);
-      assert.ok(cast.state.aimDist <= length * 2 - depth + 1e-8);
-      assert.ok(cast.castRange >= 2 * (length - depth));
+      assert.ok(cast.state.aimDist <= length - depth + 1e-8);
+      assert.equal(cast.castRange, length - depth);
       assert.equal(game.endCastAction(), true);
       assert.equal(cast.state.fs, "flight");
       assert.equal(releases(), 1);
@@ -45,7 +47,7 @@ test("Direct release lands on the circle with an offset grip at every frame rate
       for (let i = 0; i < fps * 10 && cast.state.fs === "flight"; i += 1) cast.tick(1 / fps, ctx);
       assert.equal(cast.state.fs, "wait");
       close(Math.hypot(cast.state.bobber.x - circle.x, cast.state.bobber.z - circle.z), 0);
-      assert.ok(cast.state.castDist <= length * 2 - depth + 1e-8);
+      assert.ok(cast.state.castDist <= length - depth + 1e-8);
     }
   }
 });

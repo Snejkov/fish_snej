@@ -195,13 +195,13 @@ for (const fs of ["charge", "flight"]) {
 depthGame.cast.state.fs = "wait";
 assert.equal(SnejFishingGame.prototype.selectFloatDepth.call(depthGame, 0.75), true);
 assert.equal(depthGame.cast.state.fs, "idle");
-assert.equal(depthGame.cast.castRange, 9.25);
-assert.equal(depthGame.floatDepthInput.value, "0.375");
+assert.equal(depthGame.cast.castRange, 4.25);
+assert.equal(depthGame.floatDepthInput.value, "0.75");
 assert.equal(depthGame.saved.floatDepth, 0.75);
-assert.equal(depthGame.rodReadout.textContent, t("Rod {length} m / Range {range} m", { length: 5, range: 4.625 }));
-assert.equal(depthGame.floatDepthReadout.textContent, t("Depth {depth} m / Line {length} m", { depth: 0.375, length: 5 }));
+assert.equal(depthGame.rodReadout.textContent, t("Rod {length} m / Range {range} m", { length: 5, range: 4.25 }));
+assert.equal(depthGame.floatDepthReadout.textContent, t("Depth {depth} m / Line {length} m", { depth: 0.75, length: 5 }));
 depthGame.settings.floatDepth = 8.5;
 depthGame.applyRod({ length: 4, range: 8 });
-assert.equal(depthGame.settings.floatDepth, 7.75, "Selecting a shorter rod must clamp the stored depth to its line budget.");
+assert.equal(depthGame.settings.floatDepth, 3.875, "Selecting a shorter rod must clamp the stored depth to its line budget.");
 assert.equal(depthGame.floatDepthInput.max, "3.875");
 console.log("Stage 4 cast integration tests passed.");

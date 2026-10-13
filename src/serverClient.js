@@ -1,3 +1,5 @@
+import { FISHING_UNITS_VERSION } from "./fishingUnits.js";
+
 const copy = (value) => JSON.parse(JSON.stringify(value));
 const same = (a, b) => {
   if (a === b) return true;
@@ -14,6 +16,7 @@ export const ACCOUNT_ERRORS = Object.freeze({
   login_required: "Please sign in again.", already_owned: "Already owned.",
   item_not_owned: "Item is not owned.", out_of_bait: "No bait.",
   revision_conflict: "Your profile changed. Please try again.", depth_out_of_range: "Invalid float depth.",
+  client_update_required: "Refresh the game to update fishing units.",
   bait_unavailable: "No bait.", name_unavailable: "This name is already taken.",
   network_error: "Connection failed", server_error: "Server unavailable. Please try again.",
   cast_unavailable: "Reconnect to the lake before casting.", cast_invalid_target: "Invalid cast target.",
@@ -33,7 +36,7 @@ export function createOperationId(random = globalThis.crypto) {
 export function editableProfile(game) {
   const { volume, bgm, sens, quality, shadow, floatDepth, lang } = game.settings;
   const { equipped, clothing, loadouts } = game.inventory.serialize();
-  return copy({ settings: { volume, bgm, sens, quality, shadow, floatDepth, lang,
+  return copy({ settings: { volume, bgm, sens, quality, shadow, floatDepth, lang, fishingUnitsVersion: FISHING_UNITS_VERSION,
     autoSprint: game.settings.autoSprint === true }, equipped, clothing, loadouts });
 }
 export function profileDifference(desired, profile) {

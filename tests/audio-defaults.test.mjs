@@ -96,7 +96,10 @@ try {
   const migrated = game.loadSave();
   assert.equal(migrated.settings.bgm, 0);
   assert.equal(migrated.settings.ambientDefaultsVersion, AMBIENT_DEFAULTS_VERSION);
-  for (const key of ["volume", "sens", "quality", "shadow", "floatDepth", "lang"]) {
+  assert.equal(migrated.settings.floatDepth, legacySave.settings.floatDepth / 2);
+  assert.equal(migrated.settings.fishingUnitsVersion, 2);
+  assert.equal(game.loadSave().settings.floatDepth, migrated.settings.floatDepth, "Reload cannot convert depth twice.");
+  for (const key of ["volume", "sens", "quality", "shadow", "lang"]) {
     assert.equal(migrated.settings[key], legacySave.settings[key]);
   }
   for (const key of ["inventory", "catchLog", "stats", "lastPosition", "identity"]) {

@@ -36,7 +36,7 @@ for (const outcome of ["accepted", "bait-denied", "range-denied"]) {
     const previousWindow = globalThis.window; globalThis.window = {};
     const store = new GameStore(":memory:");
     const user = store.createGuest("PredictionTester"), token = store.newSession(user.id);
-    const pos = { x: -5, y: 0.04, z: 0, yaw: 0, pitch: -0.4, view: "first-person" };
+    const pos = { x: -2.5, y: 0.04, z: 0, yaw: 0, pitch: -0.4, view: "first-person" };
     store.updatePosition(user.id, pos);
     const app = createApp({ store, WebSocketServer, staticRoot: releaseRoot,
       publicOrigin: "http://127.0.0.1", secure: false, guestOnly: true });
@@ -69,11 +69,11 @@ for (const outcome of ["accepted", "bait-denied", "range-denied"]) {
         pos: new THREE.Vector3(pos.x, pos.y, pos.z), yaw: context.yaw, pitch: context.pitch,
         settings: { ...profile.state.settings, rodLength: range / 2 }, keys: new Set(), mouse: { dx: 0, dy: 0 },
         inventory: new SnejInventory({ ...profile.state.inventory, coins: profile.coins }), stats: new SnejStats(),
-        cast: new SnejCastSystem({ rodRange: range, floatDepth: 0.5, getCastOrigin: () => ({ x: -5, y: 1.4, z: 0 }) }),
+        cast: new SnejCastSystem({ rodRange: range, floatDepth: profile.state.settings.floatDepth, getCastOrigin: () => ({ x: pos.x, y: 1.4, z: 0 }) }),
         castContext: context, canCast: () => true, updateCamera() {}, updateCastVisuals() {}, updateCastControls() {}, save() {},
         handleAccountError: error => errors.push(error), ui: { showToast() {}, refreshInventory() {}, refreshProfile() {} },
         audio: { cast() {}, deny() {}, splash() {} }, castMarkerHeight: () => 0,
-        angler: { group: { position: { copy() {} }, rotation: {} }, getRodTip: () => ({ x: -5, y: 1.4, z: 0 }) },
+        angler: { group: { position: { copy() {} }, rotation: {} }, getRodTip: () => ({ x: pos.x, y: 1.4, z: 0 }) },
         floatDepthInput: {}, castMeter: { classList: { toggle() {} } }, aimMarker: {},
         water: { particles: { children: [] }, addSplash() {}, addRipple() {} },
         updateCast: dt => game.cast.tick(dt, context) });

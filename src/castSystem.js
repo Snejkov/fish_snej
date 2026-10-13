@@ -1,6 +1,6 @@
 import { clamp, clamp01, lerp } from "./util.js";
 import { RODS } from "./rods.js?v=0.0.4-hf2";
-import { rigForRod } from "./floatRig.js?v=fixed-line-1";
+import { rigForRod } from "./floatRig.js?v=line-scale-1";
 
 // Stage 4 cast analysis, sections 1, 4, 5, 9, and 10. No fish behavior is active.
 const GRAVITY = 9.8;
@@ -81,6 +81,7 @@ function waterRange(speed, elev, height) {
 export class SnejCastSystem {
   constructor({ rodRange = RODS[0].range, floatDepth = 0, getCastOrigin } = {}) {
     this.rodRange = Math.max(CAST_SPEED_MIN, finite(rodRange, RODS[0].range));
+    // Catalog range is a legacy input (twice pole length), not the physical line budget.
     this.rig = rigForRod(this.rodRange / 2, floatDepth);
     this.castRange = this.rig.castRange;
     this.castTop = castTopSpeed(this.castRange);

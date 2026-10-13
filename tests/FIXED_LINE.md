@@ -8,9 +8,12 @@ it cannot extend the line. The small elastic reserve from the prior version
 has been removed. Visual sway is subtle and preserves the polyline length.
 
 The upper-line budget is the total line minus the selected float depth. The
-existing UI scale uses two world units per fishing meter, so a 4m rod still
-has exactly 4m of displayed line. Depth, cast range, server validation, and
-ownership are unchanged. Bottom contact reserves unused leader slack.
+pole mesh, physics and UI all use one world unit per fishing meter: a 4m
+pole has 4m of total line, and 1m depth leaves 3m from tip to float. Legacy
+saved depth is halved once to preserve its displayed value, with version 2
+preventing repeat conversion. Server validation shares the same budget and
+rejects obsolete unversioned depth writes. Ownership and balances are unchanged.
+Bottom contact reserves unused leader slack.
 Automatic post-cast pose settling clears momentum; pause freezes the solver.
 Reset clears momentum. Shoreline and straight-line obstruction checks remain
 active. An impossible configuration requests the existing retrieval path.
@@ -21,7 +24,8 @@ visible hook catch, terrain clearance, and eventual movement unlock remain.
 
 `fixed-pole.test.mjs` exercises slack, release/reversal, exact taut limits,
 frame-rate consistency, bounded stalls, render endpoints, pause/reset,
-displayed lengths, repeated side sweeps, shoreline safety, and pole-first
+displayed lengths, repeated side sweeps with the actual 4/5/6m model,
+slack-to-pull transitions, shoreline safety, and pole-first
 retrieval with the actual angler and cast system. The float, mobile-input,
 pose, and retrieval regressions also cover
 the new behavior. The tension value is a foundation for future fish loads;

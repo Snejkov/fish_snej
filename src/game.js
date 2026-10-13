@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { SnejAngler } from "./angler.js?v=fixed-line-1";
+import { SnejAngler } from "./angler.js?v=line-scale-1";
 import { RODS, rodForLength } from "./rods.js?v=0.0.5a";
 import { SnejInventory } from "./gear/inventory.js";
 import { SnejCatchLog } from "./game/catchLog.js";
@@ -9,12 +9,12 @@ import { SnejAudio, DEFAULT_AMBIENT_VOLUME, AMBIENT_DEFAULTS_VERSION, migrateAmb
 import {
   SnejCastSystem, SPLASH_BASE, SPLASH_MIN, SPLASH_SCALE,
   STARTLE_R, STARTLE_SEC, WAKE_BOB_AMP, WAKE_BOB_FREQ
-} from "./castSystem.js?v=fixed-line-1";
-import { DEFAULT_FLOAT_DEPTH, FLOAT_RETRIEVE_FRACTION, SnejFloatRig, limitLineEnd, writeFixedLine } from "./floatRig.js?v=fixed-line-1";
+} from "./castSystem.js?v=line-scale-1";
+import { DEFAULT_FLOAT_DEPTH, FLOAT_RETRIEVE_FRACTION, SnejFloatRig, limitLineEnd, writeFixedLine } from "./floatRig.js?v=line-scale-1";
 import { SnejDesktopCursor, editableTarget } from "./desktopCursor.js?v=menu-retrieve-1";
-import { fishingMeters, fishingWorld } from "./fishingUnits.js?v=shore-cast-2";
+import { fishingMeters, fishingWorld, FISHING_UNITS_VERSION, migrateFishingSettings } from "./fishingUnits.js?v=line-scale-1";
 import { SnejAuth, SNEJKOV_ID, SNEJKOV_NAME } from "./auth.js";
-import { SnejServerClient, editableProfile } from "./serverClient.js?v=cast-bait-error-1";
+import { SnejServerClient, editableProfile } from "./serverClient.js?v=line-scale-1";
 import { DEFAULT_LANGUAGE, normalizeLanguage, setLanguage, t, translateText, errorMessage } from "./i18n.js";
 import { resolveLake } from "./lakeValidator.js";
 import { SNEJ_FIXED_SEED, WORLD_SIZE, WATER_REGION } from "./lake.js";
@@ -26,7 +26,7 @@ import { SnejSky } from "./sky.js";
 import { SPAWNS, SPAWN_INITIAL_NAME, SPAWN_NAMES } from "./spawns.js";
 import { SnejTerrain } from "./terrain.js";
 import { SnejTextureManager } from "./textureManager.js";
-import { SnejUI } from "./ui.js?v=first-person-only-1";
+import { SnejUI } from "./ui.js?v=line-scale-1";
 import { SnejMobileInput, movementInput, requestLandscape } from "./mobileInput.js?v=shoulder-view-1";
 import { SnejWater } from "./water.js?v=0.0.5a-hf3";
 import { clamp, clamp01, damp, lerp, moveDelta, resolveWalkableStart } from "./util.js?v=0.0.3-hf2.12";
@@ -60,6 +60,7 @@ const DEFAULT_SETTINGS = {
   randomLake: false,
   rodLength: 4,
   floatDepth: DEFAULT_FLOAT_DEPTH,
+  fishingUnitsVersion: FISHING_UNITS_VERSION,
   lang: DEFAULT_LANGUAGE
 };
 
@@ -1382,7 +1383,7 @@ export class SnejFishingGame {
           : Number.isFinite(legacyView.pitch) ? legacyView.pitch : -0.08
       }
       : null;
-    const settings = { ...DEFAULT_SETTINGS, ...migrateAmbientSettings(data.settings), randomLake: false };
+    const settings = { ...DEFAULT_SETTINGS, ...migrateFishingSettings(migrateAmbientSettings(data.settings)), randomLake: false };
     settings.lang = normalizeLanguage(settings.lang);
     const inventory = new SnejInventory(data.player?.inventory);
     if (sourceVersion < 5 && !data.player?.inventory) {
@@ -1458,6 +1459,7 @@ export class SnejFishingGame {
         randomLake: false,
         rodLength: this.settings.rodLength,
         floatDepth: this.settings.floatDepth,
+        fishingUnitsVersion: FISHING_UNITS_VERSION,
         lang: this.settings.lang
       },
       player: {

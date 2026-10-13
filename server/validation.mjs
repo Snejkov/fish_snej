@@ -1,6 +1,7 @@
 import { findItem } from "../src/gear/catalog.js";
 import { SPAWNS } from "../src/spawns.js";
-import { rigForRod } from "../src/floatRig.js";
+import { rigForRod, DEFAULT_FLOAT_DEPTH } from "../src/floatRig.js";
+import { FISHING_UNITS_VERSION, migrateFishingSettings } from "../src/fishingUnits.js";
 
 export class RequestError extends Error {
   constructor(status, code) { super(code); this.status = status; this.code = code; }
@@ -31,12 +32,14 @@ export function position(value) {
     view: ["first-person", "third-person"].includes(value.view) ? value.view : reject() };
 }
 export function settings(value, previous = {}) {
-  object(value, ["volume", "bgm", "sens", "quality", "shadow", "floatDepth", "lang", "autoSprint"]);
+  object(value, ["volume", "bgm", "sens", "quality", "shadow", "floatDepth", "lang", "autoSprint", "fishingUnitsVersion"]);
+  if (Object.hasOwn(value, "floatDepth") && value.fishingUnitsVersion !== FISHING_UNITS_VERSION) reject("client_update_required", 409);
   const next = { ...previous };
   for (const [key, item] of Object.entries(value)) {
     if (["volume", "bgm"].includes(key)) next[key] = number(item, 0, 1);
     else if (key === "sens") next[key] = number(item, 0.1, 3);
-    else if (key === "floatDepth") next[key] = number(item, 0, 11.75);
+    else if (key === "floatDepth") next[key] = number(item, 0, rigForRod(6).maxDepth);
+    else if (key === "fishingUnitsVersion") next[key] = item === FISHING_UNITS_VERSION ? item : reject();
     else if (["shadow", "autoSprint"].includes(key)) next[key] = typeof item === "boolean" ? item : reject();
     else if (key === "quality") next[key] = ["low", "mid", "high"].includes(item) ? item : reject();
     else if (key === "lang") next[key] = ["ru", "en"].includes(item) ? item : reject();
@@ -74,7 +77,7 @@ export function loadouts(value, inventory) {
   });
 }
 export function initialState() {
-  return { position: { ...SPAWNS.initial, view: "third-person" }, settings: { volume: 0.7, bgm: 0, sens: 1, quality: "mid", shadow: true, floatDepth: 0.5, lang: "ru", autoSprint: false },
+  return { position: { ...SPAWNS.initial, view: "third-person" }, settings: { volume: 0.7, bgm: 0, sens: 1, quality: "mid", shadow: true, floatDepth: DEFAULT_FLOAT_DEPTH, fishingUnitsVersion: FISHING_UNITS_VERSION, lang: "ru", autoSprint: false },
     inventory: { owned: { "rod.bamboo.4m": 1, "line.mono.0.20": 1, "hook.single.8": 1, "bait.earthworm": 10 },
       equipped: { rod: "rod.bamboo.4m", line: "line.mono.0.20", hook: "hook.single.8", bait: "bait.earthworm", lure: null },
       clothing: clothing({}), loadouts: [] }, stats: {}, catchLog: [] };
@@ -110,7 +113,7 @@ export function trustedOwnerState(input) {
   state.inventory.clothing = clothing(inv.clothing);
   state.inventory.loadouts = loadouts(inv.loadouts, state.inventory);
   state.position = position(input.state.position);
-  state.settings = settings(input.state.settings);
+  state.settings = settings(migrateFishingSettings(input.state.settings));
   if (!input.state.stats || typeof input.state.stats !== "object" || Array.isArray(input.state.stats)
     || !Array.isArray(input.state.catchLog) || Buffer.byteLength(JSON.stringify(input.state)) > 65536) reject();
   state.stats = clone(input.state.stats);

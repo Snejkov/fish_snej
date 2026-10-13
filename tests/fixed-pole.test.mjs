@@ -81,7 +81,7 @@ test("fixed rendering shares the actual float endpoint and retains the total upp
   let sum = 0;
   for (let i = 3; i < points.length; i += 3) sum += Math.hypot(points[i] - points[i - 3], points[i + 1] - points[i - 2], points[i + 2] - points[i - 1]);
   near(sum, length, 1e-5); near(points[96], f.bobber.x);
-  assert.equal(f.rig.castRange, startRange); assert.equal(f.rig.lineLength, 8);
+  assert.equal(f.rig.castRange, startRange); assert.equal(f.rig.lineLength, 4);
   const line = count => new THREE.Line(new THREE.BufferGeometry().setAttribute("position", new THREE.BufferAttribute(new Float32Array(count * 3), 3)));
   const game = Object.assign(Object.create(Game.prototype), { mode: "playing", time: 0, castTip: new THREE.Vector3(),
     cast: { rig: f.rig, state: { fs: "wait", bobber: f.bobber, waitTime: 0 } }, floatRig: f.float,
@@ -128,7 +128,7 @@ test("displayed pole length is the exact total line, minus configured depth abov
 });
 
 test("repeated full sideways sweeps never grow the line and only start dragging once slack is consumed", () => {
-  for (const rod of [4, 5, 6]) for (const fps of [30, 60, 144]) for (const depth of [0, 0.5, rod * 2 - 0.25]) {
+  for (const rod of [4, 5, 6]) for (const fps of [30, 60, 144]) for (const depth of [0, 0.5, rod - 0.125]) {
     const f = fixture(rod, depth), positions = new Float32Array(99);
     for (let frame = 1; frame <= fps * 3; frame++) {
       const yaw = frame / fps * 2;
@@ -148,6 +148,56 @@ test("repeated full sideways sweeps never grow the line and only start dragging 
     slack.tip.x -= 0.4; slack.float.follow(1 / fps, slack.tip, slack.bobber, slack.rig, water);
     assert.ok(slack.bobber.x < before.x - 0.05);
     assert.ok(distance(slack.tip, slack.bobber) <= slack.rig.upperLine + 1e-6);
+  }
+});
+
+test("the actual meter-scaled pole consumes slack, then its sideways sweep pulls the landed float", () => {
+  for (const rod of [4, 5, 6]) for (const fps of [30, 60, 144]) {
+    const angler = new SnejAngler(), camera = new THREE.PerspectiveCamera(70, 2, 0.05, 100);
+    angler.carry.setLength(rod); camera.position.set(0, 1.62, 0); camera.lookAt(0, 1.62, 8);
+    const cast = new SnejCastSystem({ rodRange: rod * 2, floatDepth: 1 });
+    const start = { x: 0, y: 0, z: rod - 1 };
+    Object.assign(cast.state, { fs: "wait", bobber: { ...start } });
+    const info = { state: "playing", castState: "wait", cameraMode: "first-person", camera, castCamera: camera,
+      castBobber: cast.state.bobber, castLineLength: cast.rig.upperLine };
+    for (let i = 0; i < fps * 2; i++) angler.update(1 / fps, info);
+    const game = Object.assign(Object.create(Game.prototype), { mode: "playing", time: 0, pos: new THREE.Vector3(),
+      castTip: new THREE.Vector3(), cast, angler, floatRig: new SnejFloatRig(), floatContext: water,
+      audio: { deny() { assert.fail("A valid side sweep cannot retrieve an unreachable rig."); } },
+      ui: { showToast() { assert.fail("A valid side sweep cannot force retrieval."); } } });
+    game.updateFloatRig(1 / fps);
+    assert.deepEqual(cast.state.bobber, start);
+    let slackFrames = 0, pullFrames = 0;
+    for (let i = 1; i <= fps * 3; i++) {
+      const yaw = Math.PI / 2 * i / (fps * 3);
+      angler.group.rotation.y = yaw;
+      camera.lookAt(Math.sin(yaw) * 8, 1.62, Math.cos(yaw) * 8);
+      angler.update(1 / fps, info);
+      const tip = angler.getRodTip().clone(), before = { ...cast.state.bobber };
+      const span = distance(tip, before);
+      game.castAdjusting = true; game.updateFloatRig(1 / fps);
+      assert.equal(cast.state.fs, "wait");
+      if (pullFrames === 0 && span < cast.rig.upperLine - 1e-6) {
+        slackFrames++; assert.deepEqual(cast.state.bobber, start, "Slack cannot copy any visible pole movement.");
+      }
+      if (span > cast.rig.upperLine + 1e-6) {
+        pullFrames++;
+        assert.ok(distance(tip, cast.state.bobber) < span, "The actual tip must pull once its distance exhausts the line.");
+      }
+      assert.ok(distance(tip, cast.state.bobber) <= cast.rig.upperLine + 1e-6);
+      const base = new THREE.Vector3(0, -0.1925, 0).applyMatrix4(angler.carry.rod.matrixWorld);
+      near(base.distanceTo(tip), rod);
+      near(cast.rig.lineLength, base.distanceTo(tip));
+    }
+    assert.ok(slackFrames > fps / 2); assert.ok(pullFrames > fps / 2);
+    assert.ok(Math.hypot(cast.state.bobber.x - start.x, cast.state.bobber.z - start.z) > 0.5,
+      "A 90-degree sweep of the real pole must visibly move the float, not leave it on an oversized rope.");
+    const points = new Float32Array(99);
+    assert.equal(writeFixedLine(angler.getRodTip(), cast.state.bobber, cast.rig.upperLine, points), true);
+    let total = cast.rig.floatDepth;
+    for (let i = 3; i < points.length; i += 3) total += Math.hypot(points[i] - points[i - 3],
+      points[i + 1] - points[i - 2], points[i + 2] - points[i - 1]);
+    near(total, rod, 2e-5);
   }
 });
 
@@ -179,6 +229,6 @@ test("pole retrieval lifts before the main horizontal swing and preserves the fi
       ctx.rodTip.copy(angler.getRodTip()); ctx.retrieveTarget.copy(angler.getRetrieveHand());
     }
     assert.ok(sampled); assert.ok(maxLift > 0.9); assert.equal(cast.state.fs, "idle");
-    assert.equal(cast.rig.lineLength, rod * 2); assert.equal(cast.rig.floatDepth, depth);
+    assert.equal(cast.rig.lineLength, rod); assert.equal(cast.rig.floatDepth, depth);
   }
 });

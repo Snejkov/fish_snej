@@ -1,7 +1,7 @@
 import { CATALOG, findItem } from "./gear/catalog.js";
 import { CLOTHING_SLOTS } from "./gear/inventory.js";
 import { SnejPlayerChat } from "./multiplayer/chat.js?v=menu-retrieve-1";
-import { fishingMeters } from "./fishingUnits.js?v=shore-cast-2";
+import { fishingMeters } from "./fishingUnits.js?v=line-scale-1";
 import { t, translateText, formatCoins, errorMessage, applyTranslations, onLanguageChange, getLanguage, setLanguage } from "./i18n.js";
 
 const GEAR_LABELS = Object.freeze({ rod: "Rod", bait: "Bait", line: "Line", hook: "Hook", lure: "Lure" });
@@ -1138,7 +1138,7 @@ export class SnejUI {
     this.el.previewDescription.textContent = t(item.description);
     this.el.previewStatus.textContent = t(equipped ? "Equipped" : owned ? "Owned" : "Shop");
     this.el.previewStats.replaceChildren();
-    const stats = item.kind === "rod" ? [["Length", `${item.length} m`], ["Range", `${fishingMeters(item.range)} m`]]
+    const stats = item.kind === "rod" ? [["Length", `${item.length} m`], ["Range", `${item.length} m`]]
       : item.kind === "line" ? [["Strength", `${item.breakingStrengthKg} kg`]]
       : item.stackable ? [["Quantity", `x${inv.countOf(item.id)}`]] : [];
     for (const [label, value] of stats) {

@@ -22,7 +22,7 @@ catch (error) {
 }
 const target = { x: 0, y: 0, z: 0 };
 assert.ok(isCastWater(target.x, target.z, "mid"));
-const origin = { x: -5, y: 0.04, z: 0, yaw: 0, pitch: -0.4, view: "third-person" };
+const origin = { x: -2.5, y: 0.04, z: 0, yaw: 0, pitch: -0.4, view: "third-person" };
 function fixture(path = ":memory:") {
   let now = 1000;
   const store = new GameStore(path, { now: () => now });
@@ -73,7 +73,7 @@ test("approved cast, exact durable landing, idempotent replay and unchanged econ
   try {
     const before = f.store.profile(f.user.id), cast = f.start();
     assert.equal(cast.userId, f.user.id); assert.equal(cast.approvedAt, 1000);
-    assert.deepEqual(cast.origin, origin); assert.equal(cast.gear.lineLength, 8); assert.equal(cast.gear.floatDepth, 0.5);
+    assert.deepEqual(cast.origin, origin); assert.equal(cast.gear.lineLength, 4); assert.equal(cast.gear.floatDepth, 0.25);
     assert.equal(f.start().castId, cast.castId);
     rejects(() => f.land(cast.castId), "cast_conflict");
     f.advance(1000);
@@ -110,7 +110,7 @@ test("no blind landing, identity/session/connection, equipment, range, land, rep
     rejects(() => landCast(f.store, f.user.id, f.token, "connection_2", { castId: cast.castId, landing: target }), "cast_conflict");
     rejects(() => f.land(cast.castId, { ...target, x: 1 }), "cast_invalid_target");
     rejects(() => f.start("request_0001", { target: { ...target, x: 1 } }), "operation_conflict");
-    f.store.patch(f.user.id, { expectedRevision: f.store.profile(f.user.id).revision, patch: { settings: { floatDepth: 1 } } });
+    f.store.patch(f.user.id, { expectedRevision: f.store.profile(f.user.id).revision, patch: { settings: { floatDepth: 1, fishingUnitsVersion: 2 } } });
     rejects(() => f.land(cast.castId), "cast_conflict");
     cancelCast(f.store, f.user.id, f.token, "connection_1", { castId: cast.castId });
     rejects(() => f.land(cast.castId), "cast_expired");
@@ -170,7 +170,7 @@ test("real authenticated HTTP cast lifecycle requires the live lake session and 
     const restored = f.store.profile(f.user.id); restored.state.inventory.owned["bait.earthworm"] = 10;
     f.store.write(f.user.id, restored.state, restored.coins, restored.revision + 1);
     const cast = await adapter.beginCast(target);
-    const physics = new SnejCastSystem({ rodRange: 8, floatDepth: 0.5, getCastOrigin: () => ({ x: -5, y: 1.4, z: 0 }) });
+    const physics = new SnejCastSystem({ rodRange: 8, floatDepth: 0.25, getCastOrigin: () => ({ x: origin.x, y: 1.4, z: 0 }) });
     const ctx = { strictTarget: true, pos: origin, yaw: Math.PI / 2, pitch: -0.4,
       terrainHeightAt: () => -3, terrainDepthAt: () => 3, waterSurfaceY: () => 0,
       isWaterAt: (x, z) => isCastWater(x, z, "mid") };

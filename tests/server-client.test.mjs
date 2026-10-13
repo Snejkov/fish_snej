@@ -4,7 +4,7 @@ import { SnejServerClient, AccountError, editableProfile, profileDifference, cre
 import { setLanguage, t } from "../src/i18n.js";
 
 const profile = (revision = 1) => ({ user: { id: 2, name: "LakeTester", role: "player" }, revision, coins: 100,
-  state: { settings: { lang: "ru", volume: 0.7, bgm: 0, sens: 1, quality: "mid", shadow: true, floatDepth: 0.5, autoSprint: false },
+  state: { settings: { lang: "ru", volume: 0.7, bgm: 0, sens: 1, quality: "mid", shadow: true, floatDepth: 0.5, fishingUnitsVersion: 2, autoSprint: false },
     inventory: { owned: { bait: 0 }, equipped: { bait: "bait" }, clothing: {}, loadouts: [] } } });
 const response = (value, status = 200) => ({ ok: status === 200, status, json: async () => value });
 

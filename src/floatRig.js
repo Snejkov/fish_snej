@@ -1,7 +1,7 @@
 import { clamp, lerp } from "./util.js";
 
-export const DEFAULT_FLOAT_DEPTH = 0.5;
-export const MIN_UPPER_LINE = 0.25;
+export const DEFAULT_FLOAT_DEPTH = 0.25;
+export const MIN_UPPER_LINE = 0.125;
 export const FLOAT_RETRIEVE_FRACTION = 0.4;
 const LINE_STEP = 1 / 120;
 const WATER_DRAG = 7;
@@ -9,7 +9,7 @@ const MAX_FLOAT_SPEED = 3;
 
 export function rigForRod(length, depth = DEFAULT_FLOAT_DEPTH) {
   const rodLength = Number.isFinite(length) && length > 0 ? length : 4;
-  const lineLength = rodLength * 2;
+  const lineLength = rodLength;
   const maxDepth = Math.max(0, lineLength - MIN_UPPER_LINE);
   const floatDepth = clamp(Number.isFinite(depth) ? depth : DEFAULT_FLOAT_DEPTH, 0, maxDepth);
   return { lineLength, floatDepth, maxDepth, upperLine: lineLength - floatDepth,

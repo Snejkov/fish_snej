@@ -33,7 +33,7 @@ function fixture(hold = false) {
   });
   game.cast.tick(0, ctx);
   if (hold) { game.cast.onActionDown(); game.holdCasting = true; game.castHeading = 0; game.updateCast(1.5); }
-  else { game.cast.beginTargeting(); game.cast.selectTarget({ x: 0, z: 5 }); }
+  else { game.cast.beginTargeting(); assert.ok(game.cast.selectTarget({ x: 0, z: 3 })); }
   return { game, ctx, cancelled, landed, errors, starts, recorded, sounds,
     approve: (value, index = starts.length - 1) => starts[index].resolve(value),
     rejectStart: (index = starts.length - 1) => starts[index].reject(new Error("Server denied cast")),
@@ -97,7 +97,7 @@ test("actual landing travels to server once; an older failed response cannot ret
     assert.equal(f.game.cast.state.fs, "wait"); assert.equal(f.landed.length, 1);
     assert.equal(f.game.retrieveCast(), false, "Retrieval waits for the authoritative landing result.");
     assert.equal(f.landed[0].id, "landing_0001");
-    assert.ok(Math.hypot(f.landed[0].value.x, f.landed[0].value.z - 5) < 0.00001);
+    assert.ok(Math.hypot(f.landed[0].value.x, f.landed[0].value.z - 3) < 0.00001);
     Game.prototype.updateCast.call(f.game, 1 / 60); assert.equal(f.landed.length, 1);
     const sameState = f.game.cast.state; f.game.cast.reset(); f.game.cast.state.fs = "wait"; f.game.castEpoch += 1;
     assert.equal(f.game.cast.state, sameState, "Reset really reuses the state object.");
@@ -171,7 +171,7 @@ test("a delayed save cannot hold up visual release, start an obsolete request, o
 test("a stale start approval or denial cannot cancel a newer throw or report old errors", async () => {
   for (const outcome of ["approve", "reject"]) {
     const f = fixture(); f.game.endCastAction(); await flush(); f.game.cancelCastAction();
-    f.game.cast.beginTargeting(); f.game.cast.selectTarget({ x: 0, z: 4 }); f.game.castEpoch += 1;
+    f.game.cast.beginTargeting(); assert.ok(f.game.cast.selectTarget({ x: 0, z: 2.5 })); f.game.castEpoch += 1;
     f.game.endCastAction(); await flush(); const current = f.game.predictedServerCast;
     if (outcome === "approve") f.approve({ castId: "obsolete_start_001" }, 0);
     else f.rejectStart(0);

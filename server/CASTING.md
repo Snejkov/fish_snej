@@ -42,14 +42,17 @@ changes coins, equipment or profile progress.
 
 ## Units and presentation
 
-World/network/physics coordinates and existing saved depths are unchanged.
-Fishing display meters equal world units divided by two. Editable displayed
-depth converts back to world units by multiplying by two. This applies to
-cast range, line length, float depth and water-depth readouts, not player
-coordinates, nominal catalog rod names/lengths, chat or nameplate radii.
-Equipped line length is now twice nominal rod length; horizontal casting
-range is line length minus the raw selected float depth. Pole meshes are not
-stretched. The same circle is green for a valid point and red for an invalid
+One world unit is one fishing meter, matching the actual pole mesh. Total
+fixed line equals nominal pole length; the upper line and casting range are
+that length minus selected depth. A 4m pole with 1m depth therefore has 3m
+between tip and float, not 6 world units. Pole meshes are not stretched.
+Legacy saved depth is halved once, marked with `fishingUnitsVersion: 2`, to
+preserve the formerly displayed choice. Server reads normalize old profiles
+without modifying the database; the next ordinary profile/position write
+persists the normalized settings. Cached old clients cannot write unversioned
+depth and receive `client_update_required`. Player coordinates, inventory,
+balances, chat and nameplate radii are unchanged.
+The same circle is green for a valid point and red for an invalid
 point; an invalid point is never silently moved closer.
 
 PC holds the left mouse button (or optional C) to charge, then releases to cast. The

@@ -6,7 +6,7 @@ const TAU = Math.PI * 2;
 const HIP_HEIGHT = 0.91;
 const FIRST_PERSON_BONES = new Set(["RightForeArm", "RightHand", "RightHandTip"]);
 export const ROD_LIFT_ANGLE = 0.28;
-export const RETRIEVE_LIFT_ANGLE = 1.18;
+export const RETRIEVE_LIFT_ANGLE = Math.PI / 2;
 const GAITS = {
   idle: { swing: 0, knee: 0, arm: 0, bob: 0, lean: 0, stride: 1 },
   walk: { swing: 0.48, knee: 0.82, arm: 0.38, bob: 0.018, lean: 0.035, stride: 3.0 },
@@ -241,9 +241,9 @@ export class SnejAngler {
     else if (this.castHoldWeight > 0.9999) this.castHoldWeight = 1;
     const lifting = info.castRetrieving || (info.castState === "wait" && info.rodLiftHeld === true);
     // Lift the pole early in the return, before the rig swings back to the free hand.
-    const returnRate = info.castRetrieving ? 10 : 2.5;
+    const returnRate = info.castRetrieving ? 6 : 2.5;
     this.rodReturnWeight += ((info.castRetrieving ? 1 : 0) - this.rodReturnWeight) * (1 - Math.exp(-returnRate * Math.max(0, dt)));
-    const liftRate = !lifting && this.rodReturnWeight > 0.002 ? 2.5 : 9;
+    const liftRate = !lifting && this.rodReturnWeight > 0.002 ? 2 : 9;
     this.rodLiftWeight += ((lifting ? 1 : 0) - this.rodLiftWeight) * (1 - Math.exp(-liftRate * Math.max(0, dt)));
     if (this.rodLiftWeight < 0.0001) this.rodLiftWeight = 0;
     else if (this.rodLiftWeight > 0.9999) this.rodLiftWeight = 1;
@@ -312,8 +312,10 @@ export class SnejAngler {
       this.liftRotation.setFromAxisAngle(this.liftAxis, angle);
       this.liftTip.copy(this.liftOffset).applyQuaternion(this.liftRotation).add(this.liftPivot);
       // Reserve a little room for the float's existing surface bob animation.
+      // A manual pull may move the float; its water-path probe constrains the lifted tip.
       if (info.castBobber && Number.isFinite(info.castLineLength)
-        && this.liftTip.distanceTo(info.castBobber) > Math.max(0, info.castLineLength - 0.02)) return false;
+        && (info.rodLiftPullsFloat ? Math.abs(this.liftTip.y - info.castBobber.y)
+          : this.liftTip.distanceTo(info.castBobber)) > Math.max(0, info.castLineLength - 0.02)) return false;
       return !info.rodLiftAllowed || info.rodLiftAllowed(this.liftTip);
     };
     if (!fits(0)) return;

@@ -336,7 +336,7 @@ function withDesktopInput(view, callback) {
   finally { globalThis.window = previousWindow; globalThis.document = previousDocument; }
 }
 
-test("landed LMB lifts then retrieves without recasting; held input needs a fresh press", () => {
+test("a short landed LMB hold only pulls; a continued hold returns the rig without recasting", () => {
   for (const fps of [30, 60, 144]) withDesktopInput("first-person", ({ game, win, mouse }) => {
     game.canvas.emit("mousedown", mouse()); game.updateCast(2.2); win.emit("mouseup", mouse(), true);
     for (let i = 0; i < 600 && game.cast.state.fs !== "wait"; i++) game.updateCast(1 / 60);
@@ -346,15 +346,22 @@ test("landed LMB lifts then retrieves without recasting; held input needs a fres
     assert.equal(game.cast.state.fs, "wait"); assert.equal(game.rodLiftHeld, true);
     assert.equal(game.desktopCastHeld, false); assert.equal(game.beginHoldCast(), false);
     assert.equal(game.beginCastAction(), false); assert.equal(game.beginRodLift(), false);
+    for (let i = 0; i < Math.floor(fps * 0.2); i++) game.updateRodLift(1 / fps);
+    assert.equal(game.cast.state.fs, "wait", "A short empty pull must not retrieve.");
     game.updateRodLift(0.1); win.emit("mouseup", mouse(), true);
-    assert.equal(game.rodLiftHeld, true, "Releasing the click cannot cancel the one-shot empty retrieval.");
+    assert.equal(game.rodLiftHeld, false, "Releasing LMB lowers the pole without returning the rig.");
     assert.deepEqual(game.cast.state.bobber, bobber); assert.equal(game.castEpoch, epoch);
     for (let i = 0; i < fps * 3; i++) { game.updateRodLift(1 / fps); game.updateCast(1 / fps); }
-    assert.equal(game.cast.state.fs, "idle"); assert.equal(game.rodLiftHeld, false);
+    assert.equal(game.cast.state.fs, "wait"); assert.equal(game.rodLiftHeld, false);
     assert.equal(game.castEpoch, epoch); assert.equal(game.cast.state.retrieving, false);
-    assert.equal(baitChecks, 0, "Returning the attached rig needs no spare bait.");
+    assert.equal(baitChecks, 0, "Pulling the attached rig needs no spare bait.");
     for (let i = 0; i < fps; i++) { game.updateRodLift(1 / fps); game.updateCast(1 / fps); }
-    assert.equal(game.cast.state.fs, "idle", "Neither an old release nor repeated ticks may start a cast.");
+    assert.equal(game.cast.state.fs, "wait", "Neither an old release nor repeated ticks may retrieve or start a cast.");
+    game.canvas.emit("mousedown", mouse());
+    for (let i = 0; i < fps; i++) game.updateRodLift(1 / fps);
+    assert.equal(game.cast.state.retrieving, true, "Continuing the lift commits the full return.");
+    for (let i = 0; i < fps * 3; i++) game.updateCast(1 / fps);
+    assert.equal(game.cast.state.fs, "idle");
     game.inventory.countOf = () => 1;
     game.canvas.emit("mousedown", mouse()); assert.equal(game.cast.state.fs, "charge");
     assert.equal(game.castEpoch, epoch + 1);

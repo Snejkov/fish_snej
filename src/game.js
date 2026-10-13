@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { SnejAngler } from "./angler.js?v=pole-reach-1";
+import { SnejAngler, RETRIEVE_LIFT_ANGLE } from "./angler.js?v=rod-controls-2";
 import { RODS, rodForLength } from "./rods.js?v=0.0.5a";
 import { SnejInventory } from "./gear/inventory.js";
 import { SnejCatchLog } from "./game/catchLog.js";
@@ -9,12 +9,13 @@ import { SnejAudio, DEFAULT_AMBIENT_VOLUME, AMBIENT_DEFAULTS_VERSION, migrateAmb
 import {
   SnejCastSystem, SPLASH_BASE, SPLASH_MIN, SPLASH_SCALE,
   STARTLE_R, STARTLE_SEC, WAKE_BOB_AMP, WAKE_BOB_FREQ
-} from "./castSystem.js?v=pole-reach-1";
-import { DEFAULT_FLOAT_DEPTH, FLOAT_RETRIEVE_FRACTION, SnejFloatRig, limitLineEnd, writeFixedLine } from "./floatRig.js?v=pole-reach-1";
+} from "./castSystem.js?v=rod-controls-2";
+import { DEFAULT_FLOAT_DEPTH, SnejFloatRig, limitLineEnd, writeFixedLine } from "./floatRig.js?v=pole-reach-1";
+import { DEFAULT_ROD_SPEED, normalizeRodSpeed } from "./rodControls.js";
 import { SnejDesktopCursor, editableTarget } from "./desktopCursor.js?v=menu-retrieve-1";
 import { fishingMeters, fishingWorld, FISHING_UNITS_VERSION, migrateFishingSettings } from "./fishingUnits.js?v=line-scale-1";
 import { SnejAuth, SNEJKOV_ID, SNEJKOV_NAME } from "./auth.js";
-import { SnejServerClient, editableProfile } from "./serverClient.js?v=line-scale-1";
+import { SnejServerClient, editableProfile } from "./serverClient.js?v=rod-controls-1";
 import { DEFAULT_LANGUAGE, normalizeLanguage, setLanguage, t, translateText, errorMessage } from "./i18n.js";
 import { resolveLake } from "./lakeValidator.js";
 import { SNEJ_FIXED_SEED, WORLD_SIZE, WATER_REGION } from "./lake.js";
@@ -26,7 +27,7 @@ import { SnejSky } from "./sky.js";
 import { SPAWNS, SPAWN_INITIAL_NAME, SPAWN_NAMES } from "./spawns.js";
 import { SnejTerrain } from "./terrain.js";
 import { SnejTextureManager } from "./textureManager.js";
-import { SnejUI } from "./ui.js?v=line-scale-1";
+import { SnejUI } from "./ui.js?v=rod-controls-1";
 import { SnejMobileInput, movementInput, requestLandscape } from "./mobileInput.js?v=shoulder-view-1";
 import { SnejWater } from "./water.js?v=0.0.5a-hf3";
 import { clamp, clamp01, damp, lerp, moveDelta, resolveWalkableStart } from "./util.js?v=0.0.3-hf2.12";
@@ -43,7 +44,7 @@ const TOUCH_CAM_DIST = 3.3 * 0.7 * 0.8;
 const VIEW_TRANSITION_TIME = 0.18;
 const CAST_LOOK_SCALE = 0.06;
 const CAST_LOOK_SPEED = 0.12;
-export const ROD_LIFT_TIME = 0.4;
+export const ROD_PULL_TIME = 0.6;
 const NORMAL_FOV = 70;
 export function squintFov(weight = 1) {
   return 2 * Math.atan(Math.tan(NORMAL_FOV * Math.PI / 360) / (1 + 0.5 * clamp01(weight))) * 180 / Math.PI;
@@ -54,6 +55,7 @@ const DEFAULT_SETTINGS = {
   bgm: DEFAULT_AMBIENT_VOLUME,
   ambientDefaultsVersion: AMBIENT_DEFAULTS_VERSION,
   sens: 1.0,
+  rodSpeed: DEFAULT_ROD_SPEED,
   quality: "mid",
   shadow: true,
   autoSprint: false,
@@ -423,6 +425,10 @@ export class SnejFishingGame {
         this.keyboardCastHeld = this.beginHoldCast();
         return;
       }
+      if (event.code === "KeyR" && !event.repeat && this.canCast()) {
+        if (this.retrieveCast()) event.preventDefault();
+        return;
+      }
       if (event.code === "KeyV" && !this.firstPersonOnly && !event.repeat && this.mode === "playing" && !this.ui.buildOpen && !this.ui.profileOpen && !this.ui.inventoryOpen && !this.ui.modalOpen) {
         this.toggleView();
         return;
@@ -493,6 +499,7 @@ export class SnejFishingGame {
     }
     const releaseMouseCast = event => {
       if (this.isTouchCompatibilityEvent(event)) return;
+      if (event.button === 0) this.endRodLift();
       if (event.button === 0 && this.desktopCastHeld) { this.desktopCastHeld = false; this.endHoldCast(); }
     };
     // Pointer release survives a missing compatibility mouseup or a UI bubble stop.
@@ -556,9 +563,10 @@ export class SnejFishingGame {
       return;
     }
     if (!this.rodLiftAction) return;
-    this.rodLiftAction.elapsed += Math.max(0, dt);
-    // One click lifts, then returns the empty rig. A new cast needs a fresh press.
-    if (this.rodLiftAction.elapsed >= ROD_LIFT_TIME) this.retrieveCast();
+    // A short hold pulls through tension; continuing the hold commits a full pole return.
+    this.rodLiftAction.elapsed += Math.min(0.1, Math.max(0, Number.isFinite(dt) ? dt : 0))
+      * normalizeRodSpeed(this.settings?.rodSpeed) / DEFAULT_ROD_SPEED;
+    if (this.rodLiftHeld && this.rodLiftAction.elapsed >= ROD_PULL_TIME - 1e-8) this.retrieveCast();
   }
 
   canSquint() {
@@ -1342,7 +1350,8 @@ export class SnejFishingGame {
   }
 
   setSetting(key, value) {
-    this.settings[key] = key === "randomLake" ? false : key === "lang" ? normalizeLanguage(value) : value;
+    this.settings[key] = key === "randomLake" ? false : key === "lang" ? normalizeLanguage(value)
+      : key === "rodSpeed" ? normalizeRodSpeed(value) : value;
     if (key === "lang") setLanguage(this.settings.lang, { persist: false });
     if (key === "volume") this.audio.setVolume(value);
     if (key === "bgm") this.audio.setBgm(value);
@@ -1386,6 +1395,7 @@ export class SnejFishingGame {
       }
       : null;
     const settings = { ...DEFAULT_SETTINGS, ...migrateFishingSettings(migrateAmbientSettings(data.settings)), randomLake: false };
+    settings.rodSpeed = normalizeRodSpeed(settings.rodSpeed);
     settings.lang = normalizeLanguage(settings.lang);
     const inventory = new SnejInventory(data.player?.inventory);
     if (sourceVersion < 5 && !data.player?.inventory) {
@@ -1455,6 +1465,7 @@ export class SnejFishingGame {
         bgm: this.settings.bgm,
         ambientDefaultsVersion: this.settings.ambientDefaultsVersion,
         sens: this.settings.sens,
+        rodSpeed: normalizeRodSpeed(this.settings.rodSpeed),
         quality: this.settings.quality,
         shadow: this.settings.shadow,
         autoSprint: this.settings.autoSprint === true,
@@ -1628,10 +1639,11 @@ export class SnejFishingGame {
         castState: this.cast.state.fs,
         castRetrieving: this.cast.state.retrieving,
         rodLiftHeld: this.rodLiftHeld,
+        rodLiftPullsFloat: this.cast.state.fs === "wait" && this.rodLiftHeld === true,
         castBobber: this.cast.state.fs === "wait" || this.cast.state.retrieving ? this.cast.state.bobber : null,
         castLineLength: this.cast.state.retrieving ? this.cast.rig.lineLength - this.cast.state.retrieveDepth
           : this.cast.rig.upperLine,
-        rodLiftAllowed: this.rodLiftAllowed ||= tip => !this.lineObstruction(tip, this.cast.state.bobber, 0),
+        rodLiftAllowed: this.rodLiftAllowed ||= tip => this.canLiftRodTo(tip),
         cameraMode: this.cameraMode,
         viewBlend: this.viewBlend,
         camera: this.squintWeight > 0 || this.fishingFocusWeight > 0 ? this.castCamera : this.camera,
@@ -1715,11 +1727,7 @@ export class SnejFishingGame {
       this.castAdjusting = false;
       return;
     }
-    const wasAnchored = this.floatRig.anchored;
-    const previousReach = Math.hypot(state.bobber.x - this.pos.x, state.bobber.z - this.pos.z);
     const tip = this.angler.getRodTip(this.castTip);
-    const outwardAdjustment = wasAnchored && ((tip.x - this.floatRig.lastTip.x) * (state.bobber.x - this.pos.x)
-      + (tip.z - this.floatRig.lastTip.z) * (state.bobber.z - this.pos.z)) > 1e-8;
     const settling = Boolean(this.postCastPose);
     if (settling && dt > 0) {
       // Automatic body/arm settling is not a player's rod correction.
@@ -1736,16 +1744,17 @@ export class SnejFishingGame {
       this.floatRig.reset();
       this.audio.deny();
       this.ui.showToast("The float cannot reach this position.");
-    } else if (dt > 0 && wasAnchored && this.castAdjusting && !outwardAdjustment) {
-      const reach = Math.hypot(state.bobber.x - this.pos.x, state.bobber.z - this.pos.z);
-      // Inertia during an outward correction must not trigger the close-range return.
-      if (reach < previousReach - 1e-8 && reach < this.cast.rig.lineLength * FLOAT_RETRIEVE_FRACTION - 1e-8) {
-        this.cast.startRetrieve("close");
-        this.floatRig.reset();
-        this.ui.showToast("Retrieving rig.");
-      }
     }
     this.castAdjusting = false;
+  }
+
+  canLiftRodTo(tip) {
+    if (!this.rodLiftHeld || this.cast.state.fs !== "wait") return !this.lineObstruction(tip, this.cast.state.bobber, 0);
+    // Probe a water-constrained pull without moving the real float during pose selection.
+    const probe = this.rodLiftProbe ||= new SnejFloatRig();
+    probe.reset();
+    const endpoint = { ...this.cast.state.bobber };
+    return probe.follow(1 / 60, tip, endpoint, { ...this.cast.rig, upperLine: Math.max(0, this.cast.rig.upperLine - 0.02) }, this.floatContext);
   }
 
   updateCast(dt) {
@@ -1783,6 +1792,8 @@ export class SnejFishingGame {
       ? this.angler.getCastHoldTip(this.castCamera, this.castTip) : this.angler.getRodTip(this.castTip);
     Object.assign(this.castContext, { yaw: this.yaw, pitch: this.pitch, pos: this.pos, rodTip,
       retrieveTarget: this.angler.getRetrieveHand?.(this.retrieveHand ||= new THREE.Vector3()),
+      retrieveLiftReady: !this.cast.state.retrieving || !(this.angler.rodReturnWeight > 0) || !Number.isFinite(this.angler.rodLiftAngle)
+        || this.angler.rodLiftAngle >= RETRIEVE_LIFT_ANGLE - 0.01,
       retrieveDepth: this.floatRig?.actualDepth ?? this.cast.rig?.floatDepth,
       retrieveClearanceY: this.terrain?.groundMesh && this.water
         ? this.retrieveClearanceY ||= (x, z) => this.castMarkerHeight({ x, z }) : undefined });
@@ -2054,7 +2065,8 @@ export class SnejFishingGame {
       && this.cast.state.fs === "wait" && !this.cast.state.retrieving;
     this.mobileInput?.setStickMode?.(rodStick ? "rod" : "move", t(rodStick ? "Adjust fishing rod" : "Movement joystick"));
     const rod = rodStick ? this.mobileInput?.rodLook?.(dt) : null;
-    const sensitivity = this.settings.sens * 0.0022 * (adjusting ? CAST_LOOK_SCALE : 1);
+    const rodSpeed = normalizeRodSpeed(this.settings.rodSpeed);
+    const sensitivity = this.settings.sens * 0.0022 * (adjusting ? CAST_LOOK_SCALE * rodSpeed : 1);
     const touch = this.mobileInput?.takeLook() || { dx: 0, dy: 0 };
     if (this.cast.state.fs === "charge" && !this.castContext?.cameraAim
       && (this.cast.state.selectedTarget || this.castContext?.holdCast)) {
@@ -2062,10 +2074,10 @@ export class SnejFishingGame {
       this.castAdjusting = false;
       return;
     }
-    let dx = (this.mouse.dx + touch.dx) * sensitivity + (rod?.dx || 0);
-    let dy = (this.mouse.dy + touch.dy) * sensitivity + (rod?.dy || 0);
+    let dx = (this.mouse.dx + touch.dx) * sensitivity + (rod?.dx || 0) * rodSpeed;
+    let dy = (this.mouse.dy + touch.dy) * sensitivity + (rod?.dy || 0) * rodSpeed;
     if (adjusting) {
-      const amount = Math.hypot(dx, dy), limit = CAST_LOOK_SPEED * Math.max(0, dt);
+      const amount = Math.hypot(dx, dy), limit = CAST_LOOK_SPEED * rodSpeed * Math.max(0, dt);
       if (amount > limit) { dx *= limit / amount; dy *= limit / amount; }
     }
     this.castAdjusting = adjusting && (dx !== 0 || dy !== 0);

@@ -15,7 +15,7 @@ const close = (actual, expected, message) => assert.ok(Math.abs(actual - expecte
 
 function lookGame(fs, sens = 1) {
   return { releaseFishingView: SnejFishingGame.prototype.releaseFishingView,
-    cast: { state: { fs } }, settings: { sens }, yaw: 0, pitch: 0, mouse: { dx: 0, dy: 0 } };
+    cast: { state: { fs } }, settings: { sens, rodSpeed: 1 }, yaw: 0, pitch: 0, mouse: { dx: 0, dy: 0 } };
 }
 
 for (const fps of [30, 60, 144]) {
@@ -115,13 +115,14 @@ for (const length of [4, 5, 6]) {
         game.castAdjusting = true;
         SnejFishingGame.prototype.updateFloatRig.call(game, dt);
       }
-      assert.equal(game.cast.state.retrieving, true, "A tension-driven inward correction below 40% must retrieve for every rod and depth.");
-      assert.equal(game.cast.state.castObstruction, "close");
-      assert.equal(game.floatRig.anchored, false);
+      assert.equal(game.cast.state.fs, "wait", "Pulling a nearby float must not retrieve an empty rig.");
+      assert.equal(game.cast.state.retrieving, false);
+      assert.equal(game.cast.state.castObstruction, null);
+      assert.equal(game.floatRig.anchored, true);
       assert.equal(game.castAdjusting, false);
       assert.equal(effects.denied, 0, "Intentional retrieval is not a failed cast.");
-      assert.deepEqual(effects.toasts, ["Retrieving rig."]);
-      assert.equal(game.cast.startRetrieve("line"), false, "Recovery must not restart on every frame.");
+      assert.deepEqual(effects.toasts, []);
+      assert.equal(game.cast.startRetrieve("manual"), true, "Only an explicit return retrieves the empty rig.");
       for (let frame = 0; frame < fps * 2; frame += 1) game.cast.tick(dt, { rodTip: modelTip });
       assert.equal(game.cast.state.fs, "idle", "Recovery must finish and unlock movement.");
       assert.equal(game.cast.state.retrieving, false);
@@ -155,4 +156,4 @@ for (const fs of ["idle", "charge"]) {
   assert.equal(cast.state.fs, fs);
 }
 
-console.log("Slack-aware float adjustment, reversal, and tension-driven proximity retrieval tests passed.");
+console.log("Slack-aware float adjustment, reversal, and explicit-only retrieval tests passed.");

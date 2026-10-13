@@ -101,7 +101,10 @@ for (const guestOnly of [false, true]) test(`actual adapter API (${guestOnly ? "
     assert.equal(first.client.profile.state.settings.autoSprint, false);
     await assert.rejects(first.client.save({ ...editableProfile({ inventory: inv, settings: first.client.profile.state.settings }),
       settings: { ...first.client.profile.state.settings, autoSprint: "true" } }), { status: 400 });
-    const desired = editableProfile({ inventory: inv, settings: { ...first.client.profile.state.settings, lang: "en", floatDepth: 0.75, autoSprint: true } });
+    assert.equal(first.client.profile.state.settings.rodSpeed, 2);
+    await assert.rejects(first.client.save({ ...editableProfile({ inventory: inv, settings: first.client.profile.state.settings }),
+      settings: { rodSpeed: 4.01 } }), { status: 400 });
+    const desired = editableProfile({ inventory: inv, settings: { ...first.client.profile.state.settings, lang: "en", floatDepth: 0.75, autoSprint: true, rodSpeed: 3.25 } });
     await first.client.save(desired);
     await first.client.command("consume-bait", "bait.earthworm");
     const coins = first.client.profile.coins;
@@ -128,6 +131,7 @@ for (const guestOnly of [false, true]) test(`actual adapter API (${guestOnly ? "
     assert.equal(persisted.state.settings.lang, "en");
     assert.equal(persisted.state.settings.floatDepth, 0.75);
     assert.equal(persisted.state.settings.autoSprint, true);
+    assert.equal(persisted.state.settings.rodSpeed, 3.25);
     assert.equal(persisted.state.inventory.equipped.rod, "rod.fiberglass.5m");
     assert.equal(persisted.state.inventory.loadouts[0].name, "My Lakeside Set");
     const remembered = account(guestOnly ? second.cookie() : "");

@@ -517,6 +517,8 @@ export class SnejCastSystem {
       state.canRelease = !state.releaseBlock;
     } else if (state.fs === "flight" && state.retrieving && dt > 0) {
       this._retrieveElapsed += dt;
+      // Finish the airborne lift before the final hand catch, without a late position jump.
+      if (this._ctx?.retrieveLiftReady === false) this._retrieveElapsed = Math.min(this._retrieveElapsed, this._retrieveDuration * 0.85);
       const p = state.retrieveProgress = clamp01(this._retrieveElapsed / this._retrieveDuration);
       const lift = clamp01(p / 0.32), liftEase = lift * lift * lift * (lift * (lift * 6 - 15) + 10);
       const swing = clamp01((p - 0.18) / 0.82), swingEase = swing * swing * (3 - 2 * swing);

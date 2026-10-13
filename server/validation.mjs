@@ -2,6 +2,7 @@ import { findItem } from "../src/gear/catalog.js";
 import { SPAWNS } from "../src/spawns.js";
 import { rigForRod, DEFAULT_FLOAT_DEPTH } from "../src/floatRig.js";
 import { FISHING_UNITS_VERSION, migrateFishingSettings } from "../src/fishingUnits.js";
+import { DEFAULT_ROD_SPEED, MIN_ROD_SPEED, MAX_ROD_SPEED } from "../src/rodControls.js";
 
 export class RequestError extends Error {
   constructor(status, code) { super(code); this.status = status; this.code = code; }
@@ -32,12 +33,13 @@ export function position(value) {
     view: ["first-person", "third-person"].includes(value.view) ? value.view : reject() };
 }
 export function settings(value, previous = {}) {
-  object(value, ["volume", "bgm", "sens", "quality", "shadow", "floatDepth", "lang", "autoSprint", "fishingUnitsVersion"]);
+  object(value, ["volume", "bgm", "sens", "rodSpeed", "quality", "shadow", "floatDepth", "lang", "autoSprint", "fishingUnitsVersion"]);
   if (Object.hasOwn(value, "floatDepth") && value.fishingUnitsVersion !== FISHING_UNITS_VERSION) reject("client_update_required", 409);
-  const next = { ...previous };
+  const next = { rodSpeed: DEFAULT_ROD_SPEED, ...previous };
   for (const [key, item] of Object.entries(value)) {
     if (["volume", "bgm"].includes(key)) next[key] = number(item, 0, 1);
     else if (key === "sens") next[key] = number(item, 0.1, 3);
+    else if (key === "rodSpeed") next[key] = number(item, MIN_ROD_SPEED, MAX_ROD_SPEED);
     else if (key === "floatDepth") next[key] = number(item, 0, rigForRod(6).maxDepth);
     else if (key === "fishingUnitsVersion") next[key] = item === FISHING_UNITS_VERSION ? item : reject();
     else if (["shadow", "autoSprint"].includes(key)) next[key] = typeof item === "boolean" ? item : reject();
@@ -77,7 +79,7 @@ export function loadouts(value, inventory) {
   });
 }
 export function initialState() {
-  return { position: { ...SPAWNS.initial, view: "third-person" }, settings: { volume: 0.7, bgm: 0, sens: 1, quality: "mid", shadow: true, floatDepth: DEFAULT_FLOAT_DEPTH, fishingUnitsVersion: FISHING_UNITS_VERSION, lang: "ru", autoSprint: false },
+  return { position: { ...SPAWNS.initial, view: "third-person" }, settings: { volume: 0.7, bgm: 0, sens: 1, rodSpeed: DEFAULT_ROD_SPEED, quality: "mid", shadow: true, floatDepth: DEFAULT_FLOAT_DEPTH, fishingUnitsVersion: FISHING_UNITS_VERSION, lang: "ru", autoSprint: false },
     inventory: { owned: { "rod.bamboo.4m": 1, "line.mono.0.20": 1, "hook.single.8": 1, "bait.earthworm": 10 },
       equipped: { rod: "rod.bamboo.4m", line: "line.mono.0.20", hook: "hook.single.8", bait: "bait.earthworm", lure: null },
       clothing: clothing({}), loadouts: [] }, stats: {}, catchLog: [] };

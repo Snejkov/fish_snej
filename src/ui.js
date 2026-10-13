@@ -2,6 +2,7 @@ import { CATALOG, findItem } from "./gear/catalog.js";
 import { CLOTHING_SLOTS } from "./gear/inventory.js";
 import { SnejPlayerChat } from "./multiplayer/chat.js?v=menu-retrieve-1";
 import { fishingMeters } from "./fishingUnits.js?v=line-scale-1";
+import { MIN_ROD_SPEED, MAX_ROD_SPEED, normalizeRodSpeed } from "./rodControls.js";
 import { t, translateText, formatCoins, errorMessage, applyTranslations, onLanguageChange, getLanguage, setLanguage } from "./i18n.js";
 
 const GEAR_LABELS = Object.freeze({ rod: "Rod", bait: "Bait", line: "Line", hook: "Hook", lure: "Lure" });
@@ -482,6 +483,7 @@ export class SnejUI {
       { key: "volume", label: "Volume", type: "range", min: 0, max: 1, step: 0.01 },
       { key: "bgm", label: "Ambient", type: "range", min: 0, max: 1, step: 0.01 },
       { key: "sens", label: "Mouse Sensitivity", type: "range", min: 0.5, max: 2, step: 0.01 },
+      { key: "rodSpeed", label: "Fishing rod speed", type: "range", min: MIN_ROD_SPEED, max: MAX_ROD_SPEED, step: 0.05 },
       { key: "quality", label: "Quality", type: "select", options: [["low", "Low"], ["mid", "Mid"], ["high", "High"]] },
       { key: "shadow", label: "Shadows", type: "checkbox" },
       { key: "autoSprint", label: "Run without holding Shift", type: "checkbox" },
@@ -518,6 +520,12 @@ export class SnejUI {
         this.syncSettings();
       });
       label.append(span, input);
+      if (def.key === "rodSpeed") {
+        const output = document.createElement("output");
+        output.dataset.settingReadout = def.key;
+        output.textContent = `${normalizeRodSpeed(this.game.settings.rodSpeed).toFixed(2)}x`;
+        label.appendChild(output);
+      }
       root.appendChild(label);
     }
   }
@@ -536,6 +544,9 @@ export class SnejUI {
   syncSettings() {
     for (const input of document.querySelectorAll("[data-setting]")) {
       this.setInputValue(input, this.game.settings[input.dataset.setting]);
+    }
+    for (const output of document.querySelectorAll('[data-setting-readout="rodSpeed"]')) {
+      output.textContent = `${normalizeRodSpeed(this.game.settings.rodSpeed).toFixed(2)}x`;
     }
   }
 

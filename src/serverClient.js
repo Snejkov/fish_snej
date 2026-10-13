@@ -1,4 +1,5 @@
 import { FISHING_UNITS_VERSION } from "./fishingUnits.js";
+import { normalizeRodSpeed } from "./rodControls.js";
 
 const copy = (value) => JSON.parse(JSON.stringify(value));
 const same = (a, b) => {
@@ -37,6 +38,7 @@ export function editableProfile(game) {
   const { volume, bgm, sens, quality, shadow, floatDepth, lang } = game.settings;
   const { equipped, clothing, loadouts } = game.inventory.serialize();
   return copy({ settings: { volume, bgm, sens, quality, shadow, floatDepth, lang, fishingUnitsVersion: FISHING_UNITS_VERSION,
+    rodSpeed: normalizeRodSpeed(game.settings.rodSpeed),
     autoSprint: game.settings.autoSprint === true }, equipped, clothing, loadouts });
 }
 export function profileDifference(desired, profile) {

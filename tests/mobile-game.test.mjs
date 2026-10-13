@@ -16,7 +16,7 @@ const { setLanguage, t } = await import("../src/i18n.js");
 function movingGame(axes, autoSprint = false, keys = []) {
   const game = Object.create(SnejFishingGame.prototype);
   Object.assign(game, { pos: new THREE.Vector3(0, 0.04, 0), yaw: 0, pitch: 0,
-    settings: { sens: 1, autoSprint }, keys: new Set(keys), cast: { state: { fs: "idle" } },
+    settings: { sens: 1, rodSpeed: 1, autoSprint }, keys: new Set(keys), cast: { state: { fs: "idle" } },
     mouse: { dx: 0, dy: 0 }, moveAmt: 0, moveSpeed: 0, stepTimer: 0,
     mobileInput: { movement: () => axes, takeLook: () => ({ dx: 40, dy: -10 }) },
     terrain: { depthAt: () => 0, heightAt: () => 0, blockedAt: () => false }, audio: { ready: false, step() {} }

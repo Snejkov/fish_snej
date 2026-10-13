@@ -23,8 +23,10 @@ These rules apply to the SnejFishing repository and all sessions working on it.
 
 - Implement and keep the actual project files updated in C:\Snejfish, not only in GitHub or another checkout.
 - Run focused tests and verify user-facing changes before publishing. Report checks that could not be run.
-- Commit each completed, verified change with a clear English description of what changed and why, then push it to main immediately before ending the task.
-- The owner authorizes publishing project changes to the existing main branch without a new approval for each push. This does not authorize deleting or rewriting history.
+- Implement and test changes locally first, then provide a working local preview link for the owner's review before publication.
+- Wait for the owner's explicit acceptance of that local preview before committing and pushing the change to GitHub or deploying it to the VPS. Passing automated tests alone is not acceptance.
+- After acceptance, commit the completed, verified change with a clear English description of what changed and why, push it to main, and deploy only the accepted version.
+- Until acceptance, keep the work in the primary local folder and leave GitHub and the live VPS version unchanged. Never delete or rewrite history to undo a version already published before this rule changed.
 - Include only the current task's changes in its commit. Do not publish another session's unfinished work without agreement.
 - Fetch or inspect the latest remote head before publishing. Integrate concurrent changes without overwriting them; if there is a conflict, coordinate first.
 - Keep the local files and GitHub main synchronized, and verify the published commit. If either local updating or publication fails, explicitly report what was and was not saved.

@@ -43,7 +43,7 @@ test("Neutral, invalid and paused input stop instantly without inertia", () => {
 function gameFixture({ enabled = true, view = "first-person", fs = "wait", retrieving = false, sens = 1 } = {}) {
   const game = Object.create(Game.prototype), velocity = { mx: 0, mz: 0 }, calls = [];
   Object.assign(game, {
-    yaw: 0, pitch: 0, cameraMode: view, settings: { sens }, mouse: { dx: 0, dy: 0 },
+    yaw: 0, pitch: 0, cameraMode: view, settings: { sens, rodSpeed: 1 }, mouse: { dx: 0, dy: 0 },
     cast: { state: { fs, retrieving } }, pos: new THREE.Vector3(1, 2, 3),
     terrain: {}, moveAmt: 1, moveSpeed: 4, stepTimer: 1,
     mobileInput: { enabled, setStickMode: mode => calls.push(mode),

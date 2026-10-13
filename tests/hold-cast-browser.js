@@ -29,6 +29,8 @@ frame.onload = () => {
 frame.srcdoc = "<!doctype html>" + page.documentElement.outerHTML;
 button.onclick = () => {
   const win = frame.contentWindow, game = win.snejFishing;
+  const initialView = game.firstPersonOnly ? "first-person" : "third-person";
+  const initialBlend = game.firstPersonOnly ? 0 : 1;
   const check = (value, message) => { if (!value) throw new Error(message); };
   const press = () => {
     if (mobile) {
@@ -49,7 +51,7 @@ button.onclick = () => {
     check(game.castContext.holdCast && game.castContext.cameraAim, "Camera hold casting was not enabled");
     if (!button.dataset.ready) {
       game.cancelCastAction(); game.cast.reset(); game.desktopCursor.release();
-      game.cameraMode = "third-person"; game.viewBlend = 1; game.viewTransition = null;
+      game.cameraMode = initialView; game.viewBlend = initialBlend; game.viewTransition = null;
       const start = game.pos.clone(); let found = false;
       search: for (let dx = -18; dx <= 18; dx += 2) for (let dz = -18; dz <= 18; dz += 2) {
         const x = start.x + dx, z = start.z + dz;
@@ -74,7 +76,7 @@ button.onclick = () => {
         }
       }
       check(found, "No unobstructed camera shore cast spot");
-      game.cameraMode = "third-person"; game.viewBlend = 1; game.viewTransition = null;
+      game.cameraMode = initialView; game.viewBlend = initialBlend; game.viewTransition = null;
       game.updateCamera(10); game.ui.updateViewChip(game); game.updateCast(0);
       button.dataset.ready = "1"; button.textContent = "Check hold cast";
       report.textContent = mobile ? "Ready: native-touch hold/release/cancel checks" : "Ready: Backquote captures/releases; then check hold cast";
@@ -85,7 +87,7 @@ button.onclick = () => {
     const savedPitch = game.pitch, savedCamera = game.camera.position.clone(), savedYaw = game.yaw;
     let lift = press(); check(game.cast.state.fs === "charge", "Press did not charge from idle");
     game.updateCast(1); lift(true);
-    check(game.cast.state.fs === "idle" && game.cameraMode === "third-person", "Cancellation cast or changed view");
+    check(game.cast.state.fs === "idle" && game.cameraMode === initialView, "Cancellation cast or changed view");
     check(!game.holdCasting, "Cancellation left a held cast active");
     lift = press();
     let previous = 0;
@@ -94,7 +96,7 @@ button.onclick = () => {
       check(game.cast.state.charge >= previous - 1e-9, "Strength oscillated instead of holding max"); previous = game.cast.state.charge;
     }
     check(game.cast.state.fs === "charge" && game.cast.state.charge === 1, "Maximum auto-cast or did not cap");
-    check(game.cameraMode === "third-person" && game.pitch === savedPitch && game.yaw === savedYaw
+    check(game.cameraMode === initialView && game.pitch === savedPitch && game.yaw === savedYaw
       && game.camera.position.distanceTo(savedCamera) < 0.001, "Charging moved the original view");
     check(game.castMeter.getAttribute("aria-valuenow") === "100", "Strength UI did not show 100 percent");
     check(game.aimMarker.visible && game.aimMarker.material.color.getHex() === 0x54e58b, "Valid forward ring not green");
@@ -108,7 +110,7 @@ button.onclick = () => {
     } else game.mouse.dx = 12;
     game.updateLook(); game.updateCamera(10); game.updateCast(0);
     check(Math.hypot(game.cast.state.aimPoint.x - oldAim.x, game.cast.state.aimPoint.z - oldAim.z) > 0.01, "Held camera input did not move the preview");
-    check(game.castFacing === oldFacing && game.cameraMode === "third-person", "Aiming snapped the character or view");
+    check(game.castFacing === oldFacing && game.cameraMode === initialView, "Aiming snapped the character or view");
     const bar = game.castMeter.getBoundingClientRect(), barStyle = win.getComputedStyle(game.castMeter);
     check(bar.height <= 8 && bar.top <= 6 && Math.abs(bar.width / win.innerWidth - 0.2) < 0.002
       && Math.abs(bar.left + bar.width / 2 - win.innerWidth / 2) < 1

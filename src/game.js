@@ -26,7 +26,7 @@ import { SnejSky } from "./sky.js";
 import { SPAWNS, SPAWN_INITIAL_NAME, SPAWN_NAMES } from "./spawns.js";
 import { SnejTerrain } from "./terrain.js";
 import { SnejTextureManager } from "./textureManager.js";
-import { SnejUI } from "./ui.js?v=menu-retrieve-1";
+import { SnejUI } from "./ui.js?v=first-person-only-1";
 import { SnejMobileInput, movementInput, requestLandscape } from "./mobileInput.js?v=shoulder-view-1";
 import { SnejWater } from "./water.js?v=0.0.5a-hf3";
 import { clamp, clamp01, damp, lerp, moveDelta, resolveWalkableStart } from "./util.js?v=0.0.3-hf2.12";
@@ -86,8 +86,10 @@ export class SnejFishingGame {
     this.yaw = 0;
     this.pitch = -0.08;
     this.camDist = CAM_DIST;
-    this.cameraMode = "third-person";
-    this.viewBlend = 1;
+    // Temporarily keep only first person; retain the shoulder camera for later.
+    this.firstPersonOnly = true;
+    this.cameraMode = "first-person";
+    this.viewBlend = 0;
     this.viewTransition = null;
     this.keys = new Set();
     this.castOrigin = new THREE.Vector3();
@@ -420,7 +422,7 @@ export class SnejFishingGame {
         this.keyboardCastHeld = this.beginHoldCast();
         return;
       }
-      if (event.code === "KeyV" && !event.repeat && this.mode === "playing" && !this.ui.buildOpen && !this.ui.profileOpen && !this.ui.inventoryOpen && !this.ui.modalOpen) {
+      if (event.code === "KeyV" && !this.firstPersonOnly && !event.repeat && this.mode === "playing" && !this.ui.buildOpen && !this.ui.profileOpen && !this.ui.inventoryOpen && !this.ui.modalOpen) {
         this.toggleView();
         return;
       }
@@ -722,7 +724,7 @@ export class SnejFishingGame {
     if (squint) { squint.hidden = !enabled || fs !== "wait" || Boolean(this.cast.state.retrieving);
       squint.disabled = Boolean(this.castLanding); }
     const view = this.ui.el.mobileControls?.querySelector("[data-mobile-action='view']");
-    if (view) view.disabled = session;
+    if (view) { view.hidden = Boolean(this.firstPersonOnly); view.disabled = session || Boolean(this.firstPersonOnly); }
     const releasedInstruction = this.castRelease?.approved ? "" : "Waiting for server...";
     this.castInstruction.textContent = t(session ? this.castRelease ? releasedInstruction : this.castContext?.cameraAim
       ? "Hold to increase range. Aim with the camera, then release." : this.castContext?.holdCast
@@ -1010,7 +1012,9 @@ export class SnejFishingGame {
     this.pos.set(spawn.x, spawn.y, spawn.z);
     this.yaw = spawn.yaw;
     this.pitch = spawn.pitch;
-    this.cameraMode = "third-person";
+    this.cameraMode = this.firstPersonOnly ? "first-person" : "third-person";
+    this.viewBlend = this.firstPersonOnly ? 0 : 1;
+    this.viewTransition = null;
     this.camDist = CAM_DIST;
     this.hasProgress = true;
   }
@@ -1247,7 +1251,7 @@ export class SnejFishingGame {
     this.pitch = Number.isFinite(view.pitch)
       ? view.pitch
       : Number.isFinite(start.pitch) ? start.pitch : -0.08;
-    this.cameraMode = view.mode === "first-person" ? "first-person" : "third-person";
+    this.cameraMode = this.firstPersonOnly || view.mode === "first-person" ? "first-person" : "third-person";
     this.camDist = CAM_DIST;
     this.viewBlend = this.cameraMode === "third-person" ? 1 : 0;
     this.viewTransition = null;
@@ -1257,6 +1261,13 @@ export class SnejFishingGame {
   }
 
   toggleView() {
+    if (this.firstPersonOnly) {
+      this.cameraMode = "first-person";
+      this.viewBlend = 0;
+      this.viewTransition = null;
+      this.ui.updateViewChip(this);
+      return false;
+    }
     if (["aim", "charge"].includes(this.cast.state.fs)) return;
     this.releaseFishingView(true);
     this.resetSquint();
@@ -1313,7 +1324,7 @@ export class SnejFishingGame {
     const useInitialSpawn = usesLegacyDefault || (!sourcePosition && sourceVersion < 4);
     const positionSource = useInitialSpawn ? SPAWNS[SPAWN_INITIAL_NAME] : sourcePosition;
     const legacyView = data.player?.view || {};
-    const mode = legacyView.mode === "first-person" ? "first-person" : "third-person";
+    const mode = this.firstPersonOnly || legacyView.mode === "first-person" ? "first-person" : "third-person";
     const lastPosition = positionSource
       ? {
         x: Number(positionSource.x) || 0,
@@ -2079,6 +2090,11 @@ export class SnejFishingGame {
   }
 
   updateCamera(dt) {
+    if (this.firstPersonOnly) {
+      this.cameraMode = "first-person";
+      this.viewBlend = 0;
+      this.viewTransition = null;
+    }
     this.releaseFishingView();
     this.updateSquint(dt);
     const fishingFocus = this.canCast() && this.cameraMode === "first-person"

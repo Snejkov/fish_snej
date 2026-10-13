@@ -138,7 +138,7 @@ export class SnejUI {
       <div class="mobile-buttons">
         <button type="button" class="mobile-control-button" data-mobile-action="roster" aria-label="Players" title="Players"><span data-i18n-skip>&#9776;</span></button>
         <button type="button" class="mobile-control-button" data-mobile-action="inventory" aria-label="Inventory" title="Inventory"><span data-i18n-skip>&#9638;</span></button>
-        <button type="button" class="mobile-control-button mobile-view" data-mobile-action="view" aria-label="Camera view" title="Camera view" aria-pressed="false"><span data-mobile-view-label data-i18n-skip>3P</span></button>
+        <button type="button" class="mobile-control-button mobile-view" data-mobile-action="view" aria-label="Camera view" title="Camera view" aria-pressed="false" hidden><span data-mobile-view-label data-i18n-skip>1P</span></button>
         <button type="button" class="mobile-control-button" data-mobile-action="fullscreen" aria-label="Fullscreen" title="Fullscreen"><span data-i18n-skip>&#9974;</span></button>
         <button type="button" class="mobile-control-button" data-mobile-action="menu" aria-label="Menu" title="Menu"><span data-i18n-skip>&#9881;</span></button>
       </div>
@@ -157,6 +157,7 @@ export class SnejUI {
     controls.addEventListener("click", (event) => {
       const action = event.target.closest("[data-mobile-action]")?.dataset.mobileAction;
       if (!action || this.game.mode !== "playing") return;
+      if (action === "view" && this.game.firstPersonOnly) return;
       this.game.mobileInput?.reset();
       if (action === "menu") this.game.pause();
       if (action === "inventory") this.toggleInventory();
@@ -841,9 +842,11 @@ export class SnejUI {
 
   updateViewChip(game) {
     const label = t(game.cameraMode === "first-person" ? "First Person" : "Third Person");
+    this.el.viewChip.hidden = Boolean(game.firstPersonOnly);
     this.el.viewChip.textContent = t("[V] View: {view}", { view: label });
     const button = this.el.mobileControls?.querySelector("[data-mobile-action='view']");
     if (button) {
+      button.hidden = Boolean(game.firstPersonOnly);
       const first = game.cameraMode === "first-person";
       button.querySelector("[data-mobile-view-label]").textContent = first ? "1P" : "3P";
       button.setAttribute("aria-pressed", String(first));

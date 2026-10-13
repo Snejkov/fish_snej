@@ -7,9 +7,9 @@ test("fishing meters match the real pole mesh and editable depth is lossless", (
   for (const length of [4, 5, 6]) for (const depth of [0, 0.5, 2, length - 0.125]) {
     const rig = rigForRod(length, depth);
     assert.equal(fishingWorld(fishingMeters(depth)), depth);
-    assert.equal(fishingMeters(rig.castRange), fishingMeters(rig.lineLength) - fishingMeters(depth));
+    assert.equal(fishingMeters(rig.castRange), length + fishingMeters(rig.lineLength) - fishingMeters(depth));
     assert.equal(rig.lineLength, length);
-    assert.equal(rig.castRange, length - depth);
+    assert.equal(rig.castRange, length * 2 - depth);
     assert.equal(fishingMeters(rig.maxDepth), length - 0.125);
   }
 });

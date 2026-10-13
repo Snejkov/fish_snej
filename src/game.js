@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { SnejAngler } from "./angler.js?v=line-scale-1";
+import { SnejAngler } from "./angler.js?v=pole-reach-1";
 import { RODS, rodForLength } from "./rods.js?v=0.0.5a";
 import { SnejInventory } from "./gear/inventory.js";
 import { SnejCatchLog } from "./game/catchLog.js";
@@ -9,8 +9,8 @@ import { SnejAudio, DEFAULT_AMBIENT_VOLUME, AMBIENT_DEFAULTS_VERSION, migrateAmb
 import {
   SnejCastSystem, SPLASH_BASE, SPLASH_MIN, SPLASH_SCALE,
   STARTLE_R, STARTLE_SEC, WAKE_BOB_AMP, WAKE_BOB_FREQ
-} from "./castSystem.js?v=line-scale-1";
-import { DEFAULT_FLOAT_DEPTH, FLOAT_RETRIEVE_FRACTION, SnejFloatRig, limitLineEnd, writeFixedLine } from "./floatRig.js?v=line-scale-1";
+} from "./castSystem.js?v=pole-reach-1";
+import { DEFAULT_FLOAT_DEPTH, FLOAT_RETRIEVE_FRACTION, SnejFloatRig, limitLineEnd, writeFixedLine } from "./floatRig.js?v=pole-reach-1";
 import { SnejDesktopCursor, editableTarget } from "./desktopCursor.js?v=menu-retrieve-1";
 import { fishingMeters, fishingWorld, FISHING_UNITS_VERSION, migrateFishingSettings } from "./fishingUnits.js?v=line-scale-1";
 import { SnejAuth, SNEJKOV_ID, SNEJKOV_NAME } from "./auth.js";
@@ -762,7 +762,9 @@ export class SnejFishingGame {
     const yaw = Math.atan2(target.x - this.pos.x, target.z - this.pos.z);
     const start = this.castFacing ?? this.yaw + (this.angler.heading || 0);
     const delta = Math.atan2(Math.sin(yaw - start), Math.cos(yaw - start));
+    const lineTip = this.cast.getLineTip();
     const release = { epoch: this.castEpoch, power: state.charge, target, yaw, pitch: this.pitch,
+      range: this.cast.castRange, minDistance: state.minCastDist, lineTip: lineTip ? { ...lineTip } : null,
       origin: { x: this.pos.x, z: this.pos.z }, approved: !this.server?.enabled };
     this.castRelease = release;
     this.castTurn = { release, start, delta, elapsed: 0, duration: clamp(Math.abs(delta) / 5, 0.16, 0.65), launched: false };
@@ -1723,6 +1725,11 @@ export class SnejFishingGame {
       // Automatic body/arm settling is not a player's rod correction.
       this.castAdjusting = false;
       if (!this.castTurn && this.angler.castHoldWeight === 1) this.postCastPose = false;
+    }
+    if (settling && Math.hypot(tip.x - state.bobber.x, tip.y - state.bobber.y, tip.z - state.bobber.z) > this.cast.rig.upperLine + 1e-6) {
+      // Preserve the chosen water anchor while the automatic turn reaches the predicted release pose.
+      this.floatRig.reset();
+      return;
     }
     if (!this.floatRig.follow(dt, tip, state.bobber, this.cast.rig, this.floatContext, { settle: settling })) {
       this.cast.startRetrieve("line");

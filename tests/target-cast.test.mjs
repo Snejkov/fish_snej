@@ -20,7 +20,7 @@ for (const length of [4, 5, 6]) for (const depth of [0, 0.5, 1.5]) {
         isWaterAt: () => true, lineObstruction: () => null };
       const cast = new SnejCastSystem({ rodRange: length * 2, floatDepth: depth,
         getCastOrigin: () => ({ x: 13.32, y: 1.29, z: -8.56 }) });
-      close(cast.castRange, length - depth, "Maximum throw is equipped line length minus selected depth.");
+      close(cast.castRange, length * 2 - depth, "Maximum throw includes the pole plus line minus selected depth.");
       cast.tick(0, ctx);
       assert.equal(cast.beginTargeting(), true);
       assert.equal(cast.state.fs, "aim");
@@ -59,11 +59,11 @@ cast.beginTargeting();
 assert.equal(cast.selectTarget({ x: NaN, z: 2 }), false);
 assert.equal(cast.selectTarget({ x: 0, z: 100 }), true);
 assert.equal(cast.state.aimCapped, true);
-close(cast.state.aimDist, 3.5);
+close(cast.state.aimDist, 7.5);
 cast.state.charge = 1;
 assert.equal(cast.onActionUp(), true);
 for (let i = 0; i < 600 && cast.state.fs === "flight"; i += 1) cast.tick(1 / 60, ctx);
-close(cast.state.castDist, 3.5);
+close(cast.state.castDist, 7.5);
 assert.equal(cast.beginTargeting(), true, "Recast replaces a waiting float.");
 cast.cancelCharge();
 assert.equal(cast.state.fs, "idle");
@@ -94,7 +94,7 @@ cast.reset();
 cast.beginTargeting();
 cast.cancelCharge();
 cast.setRodRange(12, 1.5);
-close(cast.castRange, 4.5);
+close(cast.castRange, 10.5);
 
 const camera = new THREE.PerspectiveCamera(70, 844 / 390, 0.05, 1800);
 camera.position.set(0, 1.62, 0); camera.lookAt(0, 0, 2.5);

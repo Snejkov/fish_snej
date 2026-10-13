@@ -39,7 +39,7 @@ test("Direct release lands on the circle with an offset grip at every frame rate
         `${length}m/depth ${depth}, power ${factor}, yaw ${yaw}, min ${cast.state.minCastDist}: ${cast.state.releaseBlock}`);
       close(Math.hypot(circle.x - ctx.pos.x, circle.z - ctx.pos.z), cast.state.aimDist);
       assert.ok(cast.state.aimDist <= length - depth + 1e-8);
-      assert.equal(cast.castRange, length - depth);
+      assert.equal(cast.castRange, length * 2 - depth);
       assert.equal(game.endCastAction(), true);
       assert.equal(cast.state.fs, "flight");
       assert.equal(releases(), 1);

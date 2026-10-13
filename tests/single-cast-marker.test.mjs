@@ -21,7 +21,7 @@ for (const length of [4, 5, 6]) for (const depth of [0, 0.5, 1.5]) {
     cast.tick(0, context);
     assert.equal(cast.state.targetValid, true, "Idle must have a ready ballistic marker before charging.");
     assert.equal(cast.state.targetLanding.water, true);
-    const maximum = length - depth;
+    const maximum = length * 2 - depth;
     assert.ok(Math.abs(distance(cast.state.targetLanding, context.pos) - maximum) < 0.0001);
     const idlePoint = { ...cast.state.targetLanding };
     cast.onActionDown();

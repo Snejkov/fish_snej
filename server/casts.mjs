@@ -51,6 +51,7 @@ export function approveCast(store, userId, token, connectionId, input) {
       return publicCast(row);
     }
     const profile = store.profile(userId), equipment = gear(profile), origin = profile.state.position;
+    // The body-origin envelope includes the pole; only the line beyond its tip loses depth.
     const range = Math.hypot(target.x - origin.x, target.z - origin.z);
     if (range < 1 || range > equipment.castRange + 1e-6 || !isCastWater(target.x, target.z, equipment.quality)) reject("cast_invalid_target");
     store.db.prepare("UPDATE casts SET status='cancelled' WHERE user_id=? AND status='approved'").run(userId);

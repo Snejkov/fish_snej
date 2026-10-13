@@ -13,7 +13,22 @@ export function rigForRod(length, depth = DEFAULT_FLOAT_DEPTH) {
   const maxDepth = Math.max(0, lineLength - MIN_UPPER_LINE);
   const floatDepth = clamp(Number.isFinite(depth) ? depth : DEFAULT_FLOAT_DEPTH, 0, maxDepth);
   return { lineLength, floatDepth, maxDepth, upperLine: lineLength - floatDepth,
-    castRange: lineLength - floatDepth, rodReach: rodLength + lineLength - floatDepth };
+    castRange: rodLength + lineLength - floatDepth, rodReach: rodLength + lineLength - floatDepth };
+}
+
+// Intersect the aiming ray on water with the fixed upper-line sphere around the real pole tip.
+export function castLimitsForTip(player, tip, length, yaw, surface = 0, maximum = Infinity) {
+  if (![player.x, player.z, tip.x, tip.y, tip.z, length, yaw, surface].every(Number.isFinite) || length < 0) {
+    return { min: 0, max: 0 };
+  }
+  const dx = tip.x - player.x, dz = tip.z - player.z;
+  const forward = dx * Math.sin(yaw) + dz * Math.cos(yaw);
+  const sideways2 = Math.max(0, dx * dx + dz * dz - forward * forward);
+  const radius2 = length * length - (tip.y - surface) ** 2 - sideways2;
+  if (radius2 < 0) return { min: 0, max: 0 };
+  const radius = Math.sqrt(radius2);
+  const min = Math.max(0, forward - radius), max = Math.min(maximum, forward + radius);
+  return max >= min ? { min, max } : { min: 0, max: 0 };
 }
 
 const point = () => ({ x: 0, y: 0, z: 0 });
@@ -128,7 +143,7 @@ export class SnejFloatRig {
         }
         const player = ctx.playerOrigin;
         const reach = player ? Math.hypot(this.target.x - player.x, this.target.z - player.z) : 0;
-        // Casting uses the line budget; later corrections retain the physical pole-plus-line span.
+        // Casting and later corrections retain the same physical pole-plus-line span.
         if (reach > rig.rodReach) {
           const scale = rig.rodReach / reach;
           this.target.x = player.x + (this.target.x - player.x) * scale;

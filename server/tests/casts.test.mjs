@@ -123,6 +123,24 @@ test("no blind landing, identity/session/connection, equipment, range, land, rep
   } finally { f.store.close(); }
 });
 
+test("a far cast includes pole reach but never doubles the fixed line or bypasses selected depth", () => {
+  const f = fixture();
+  try {
+    f.store.updatePosition(f.user.id, { ...origin, x: -6.95 });
+    f.store.patch(f.user.id, { expectedRevision: f.store.profile(f.user.id).revision,
+      patch: { settings: { floatDepth: 1, fishingUnitsVersion: 2 } } });
+    const before = f.store.profile(f.user.id), cast = f.start("far_pole_0001");
+    assert.equal(cast.gear.castRange, 7);
+    assert.equal(cast.gear.lineLength, 4); assert.equal(cast.gear.floatDepth, 1);
+    f.advance(1000); assert.equal(f.land(cast.castId).applied, true);
+    assert.deepEqual(f.store.profile(f.user.id), before);
+    rejects(() => f.start("far_pole_0002", { target: { x: 0.1, y: 0, z: 0 } }), "cast_invalid_target");
+    f.store.patch(f.user.id, { expectedRevision: before.revision,
+      patch: { settings: { floatDepth: 2, fishingUnitsVersion: 2 } } });
+    rejects(() => f.start("far_pole_0003"), "cast_invalid_target");
+  } finally { f.store.close(); }
+});
+
 test("one remaining bait supports repeated unbitten casts without refunds, duplication or profile writes", () => {
   const f = fixture();
   try {

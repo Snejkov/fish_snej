@@ -57,7 +57,7 @@ assert.equal(charge.state.fs, "idle");
 
 for (const [power, acc, perfect] of [[0.5, 1, true], [0.56, 1, true], [0.6, 5 / 6, false], [0.8, 0, false]]) {
   const c = make();
-  const accuracyContext = { ...context, aimRay: { origin: { x: 0, y: 3, z: 0 }, direction: { x: 0, y: -3, z: 15 } } };
+  const accuracyContext = { ...context, aimRay: { origin: { x: 0, y: 3, z: 0 }, direction: { x: 0, y: -3, z: 30 } } };
   c.onActionDown();
   c.tick(0, accuracyContext);
   c.state.charge = power;
@@ -100,7 +100,7 @@ for (const pitch of [-Math.PI / 2, -0.5, 0, Math.PI / 2]) {
   c.tick(0, { ...context, pitch });
   assert.ok(Number.isFinite(c.state.aimDist) && Number.isFinite(c.state.targetPower));
   assert.equal(c.state.aimCapped, pitch >= 0);
-  assert.ok(c.state.aimDist >= c.state.minCastDist && c.state.aimDist <= 30);
+  assert.ok(c.state.aimDist >= c.state.minCastDist && c.state.aimDist <= 60);
 }
 
 for (let index = 0; index < 50; index += 1) {
@@ -139,14 +139,14 @@ for (const { range, length } of RODS) {
       c.onActionDown();
       c.state.charge = fraction;
       c.tick(0, ctx);
-      assert.equal(c.state.requestedDist, length * fraction);
+      assert.equal(c.state.requestedDist, range * fraction);
       assert.equal(c.onActionUp(), true);
       let seconds = 0;
       while (c.state.fs === "flight" && seconds < 10) { c.tick(1 / 60, ctx); seconds += 1 / 60; }
       assert.equal(c.state.fs, "wait");
-      assert.ok(Math.abs(c.state.castDist - length * fraction) < 0.0001,
+      assert.ok(Math.abs(c.state.castDist - range * fraction) < 0.0001,
         `${length} m range at ${fraction * 100}% must correspond to landing distance.`);
-      assert.ok(c.state.castDist <= length, "Full charge cannot exceed the rod limit.");
+      assert.ok(c.state.castDist <= range, "Full charge cannot exceed the pole-plus-line limit.");
       if (fraction === 1 && pitch === -0.03) assert.ok(seconds > 0.75, "A meter-scaled flight must remain visibly animated.");
     }
   }
@@ -163,7 +163,7 @@ for (const yaw of [0, Math.PI / 2, Math.PI]) {
       assert.equal(c.onActionUp(), fraction > 0, "A zero-distance release cannot launch even with a rotated origin.");
       if (fraction > 0) {
         for (let i = 0; i < 600 && c.state.fs === "flight"; i += 1) c.tick(1 / 60, ctx);
-        assert.ok(Math.abs(c.state.castDist - 30 * fraction) < 0.0001);
+        assert.ok(Math.abs(c.state.castDist - 60 * fraction) < 0.0001);
       }
     }
   }
@@ -209,7 +209,7 @@ assert.equal(changing.setRodRange(8), true);
 assert.equal(changing.state.fs, "idle");
 assert.equal(changing.maxLine, 4);
 changing.tick(0, context);
-assert.equal(changing.state.aimDist, 4);
+assert.equal(changing.state.aimDist, 8);
 assert.equal(changing.state.targetPower, 1);
 
 // Collision recovery remains a safeguard if scenery changes after a valid launch.
@@ -287,5 +287,5 @@ flatLine.onActionDown();
 flatLine.state.charge = 1;
 assert.equal(flatLine.onActionUp(), true, "A fixed sideways line must not be checked against obsolete vertical sag.");
 assert.equal(new SnejCastSystem().getCastOriginLocal().y, 1.4);
-assert.equal(new SnejCastSystem().castRange, 4);
+assert.equal(new SnejCastSystem().castRange, 8);
 console.log("Stage 4 cast physics tests passed.");

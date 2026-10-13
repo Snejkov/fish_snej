@@ -1,6 +1,6 @@
 import { clamp, clamp01, lerp } from "./util.js";
 import { RODS } from "./rods.js?v=0.0.4-hf2";
-import { rigForRod } from "./floatRig.js?v=line-scale-1";
+import { rigForRod, castLimitsForTip } from "./floatRig.js?v=pole-reach-1";
 
 // Stage 4 cast analysis, sections 1, 4, 5, 9, and 10. No fish behavior is active.
 const GRAVITY = 9.8;
@@ -23,6 +23,7 @@ const FLIGHT_TIME_SCALE = 0.65;
 const CAST_DISTANCE_MIN = 1;
 const RETRIEVE_SPEED = 9;
 const RETRIEVE_CATCH_TIME = 0.18;
+const LINE_POSE_CLEARANCE = 0.02;
 
 const elevFor = (pitch) => clamp(0.46 + pitch * 0.55, 0.16, 0.95);
 
@@ -100,7 +101,7 @@ export class SnejCastSystem {
       fs: "idle", charge: 0, chargeDir: 1,
       castLead: 0, // Reserved for Stage 4.5 swing synchronization.
       castPower: 0, castPerfect: false, castAcc: 0, castDist: 0,
-      castOrigin: point(), bobber: point(), bobberVel: point(),
+      castOrigin: point(), castLineTip: null, bobber: point(), bobberVel: point(),
       castPlayerOrigin: point(), requestedDist: 0, aimValid: false, canRelease: false,
       lastRejection: null,
       targetPower: 0, minCastDist: 0, aimPoint: point(), aimDist: 0, aimYaw: null,
@@ -174,6 +175,8 @@ export class SnejCastSystem {
     state.castLead = 0;
     state.castObstruction = null;
     state.retrieving = false;
+    const lineTip = this.getLineTip();
+    state.castLineTip = lineTip ? { ...lineTip } : null;
     state.fs = "flight";
     copy(state.castOrigin, this.getCastOriginLocal());
     copy(state.castPlayerOrigin, this._ctx?.pos || point());
@@ -270,6 +273,28 @@ export class SnejCastSystem {
     return this._origin;
   }
 
+  getLineTip() {
+    return this._ctx?.frozenCast?.lineTip || this._ctx?.rodTipForYaw?.(this.state.aimYaw) || this._ctx?.rodTip;
+  }
+
+  updateCastLimits(yaw, surface) {
+    const frozen = this._ctx?.frozenCast;
+    this.castRange = this.rig.castRange;
+    if (Number.isFinite(frozen?.range) && Number.isFinite(frozen?.minDistance)) {
+      this.castRange = Math.min(this.castRange, frozen.range);
+      this.state.minCastDist = frozen.minDistance;
+      return;
+    }
+    const tip = this.getLineTip();
+    if (!tip) return;
+    // Reserve the same small margin as the rod pose for surface bobbing and automatic grip settling.
+    const limits = castLimitsForTip(this._ctx?.pos || point(), tip, Math.max(0, this.rig.upperLine - LINE_POSE_CLEARANCE),
+      yaw, surface, this.rig.castRange);
+    // Keep division finite for an unreachable pose; the minimum then blocks release.
+    this.castRange = Math.max(1e-8, limits.max);
+    this.state.minCastDist = Math.max(this.state.minCastDist, limits.min);
+  }
+
   computeCastVelocityLocal(power, out = point()) {
     const yaw = finite(this.state.aimYaw, finite(this._ctx?.yaw));
     const elev = elevFor(finite(this._ctx?.frozenCast?.pitch, finite(this._ctx?.pitch)));
@@ -337,6 +362,7 @@ export class SnejCastSystem {
         if (Math.hypot(dx, dz) > 0.00001) heading = Math.atan2(dx, dz);
       }
       state.aimYaw = frozen ? Math.atan2(frozen.target.x - finite(pos.x), frozen.target.z - finite(pos.z)) : heading;
+      this.updateCastLimits(state.aimYaw, surface);
       state.targetPower = frozen ? frozen.power : state.fs === "charge" ? clamp01(state.charge) : 1;
       state.aimDist = state.targetPower * this.castRange;
       state.aimHasPoint = true;
@@ -352,6 +378,7 @@ export class SnejCastSystem {
       const target = state.selectedTarget;
       const dx = target.x - finite(pos.x), dz = target.z - finite(pos.z), look = Math.hypot(dx, dz);
       state.aimYaw = Math.atan2(dx, dz);
+      this.updateCastLimits(state.aimYaw, ctx.waterSurfaceY?.(target.x, target.z) ?? surface);
       state.aimCapped = look > this.castRange;
       state.aimHasPoint = true;
       state.aimDist = ctx.strictTarget ? look : Math.min(look, this.castRange);
@@ -364,7 +391,6 @@ export class SnejCastSystem {
         && this.isWaterAt(target) && this.isWaterAt(state.aimPoint);
       return;
     }
-    const aimMax = this.castRange;
     const ray = ctx.aimRay;
     const eye = ray?.origin || { x: finite(pos.x), y: finite(pos.y) + 1.62, z: finite(pos.z) };
     const direction = ray?.direction || {
@@ -385,6 +411,8 @@ export class SnejCastSystem {
       if (look > 0.00001) state.aimYaw = Math.atan2(dx, dz);
     }
     const fx = Math.sin(state.aimYaw), fz = Math.cos(state.aimYaw);
+    this.updateCastLimits(state.aimYaw, surface);
+    const aimMax = this.castRange;
     state.aimHasPoint = Number.isFinite(look);
     if (ctx.strictTarget) {
       state.aimCapped = false;
@@ -432,7 +460,9 @@ export class SnejCastSystem {
     if (depth <= 0) return "terrain";
     if (!this.isWaterAt(end)) return "terrain";
     // The fixed rig bows sideways; obsolete vertical sag can falsely intersect the lake bed.
-    const lineTip = ctx.rodTipForYaw?.(this.state.aimYaw) || ctx.rodTip || origin;
+    const fixedTip = this.state.fs === "flight" ? this.state.castLineTip : this.getLineTip();
+    if (fixedTip && distance(fixedTip, end) > this.rig.upperLine + 1e-6) return "line";
+    const lineTip = fixedTip || origin;
     const lineHit = ctx.lineObstruction?.(lineTip, end, 0);
     return lineHit ? (lineHit === "land" ? "terrain" : lineHit) : "water";
   }

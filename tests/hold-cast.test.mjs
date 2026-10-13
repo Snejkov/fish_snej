@@ -37,7 +37,7 @@ test("hold grows monotonically, caps without auto-cast, and release lands forwar
       previous = game.cast.state.charge;
     }
     assert.equal(game.cast.state.fs, "charge", "Reaching maximum never throws automatically.");
-    const power = Math.min(1, Math.round(fps * seconds) / fps * 0.48), distance = 3.5 * power;
+    const power = Math.min(1, Math.round(fps * seconds) / fps * 0.48), distance = 7.5 * power;
     assert.ok(Math.abs(game.cast.state.charge - power) < 1e-9);
     assert.ok(Math.abs(game.cast.state.aimYaw - f.expectedYaw) < 1e-9);
     const preview = { ...game.cast.state.predictedLanding };

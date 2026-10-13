@@ -1,7 +1,7 @@
 const finite = (value) => Number.isFinite(value) ? value : 0;
 const limit = (value, low, high) => Math.min(high, Math.max(low, value));
 
-export const ROD_JOYSTICK_SPEED = 0.035;
+export const ROD_JOYSTICK_SPEED = 0.07;
 const ROD_JOYSTICK_RESPONSE = 10;
 
 export function rodJoystickDelta(axes, velocity, dt) {

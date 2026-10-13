@@ -80,19 +80,25 @@ Release restores the normal view. Retrieval, menus, blur, resize, disconnect
 and view changes clear zoom; a fresh press is needed. Text input, modified
 shortcuts and key repeat cannot start squinting. No saved settings are changed.
 The normal landed first-person view also smoothly centers the float and moves
-only the observer 0.15 world units left, framing the same physical hand/rod to
+only the observer 0.155 to 0.22 world units left (less on narrow portrait screens),
+framing the same physical hand/rod to
 the right. It does not pose or relocate the grip, tip, player or casting camera.
 Choosing third person restores the independent orbit; joystick rod corrections
 keep their existing physical line constraints.
 On phones and tablets, the first-person joystick gently adjusts the rod after
-landing, without walking. It has a separate 0.035 rad/s analog rate and a smooth
+landing, without walking. It has a separate 0.07 rad/s analog rate and a smooth
 0.1 second response, independent of camera sensitivity. Combined swipe/mouse
-and joystick corrections retain the existing 0.06 rad/s cap and float-line
+and joystick corrections share a 0.12 rad/s cap and the existing float-line
 physics. Release, pause and input cancellation stop immediately without drift.
 Changing between rod and movement modes clears only the held joystick touch:
 a fresh touch is needed, while a separate camera finger remains independent.
-Third person and desktop input keep their existing behavior.
-ordinary screen swipes still look around. Strength grows monotonically to
+Both analog rod adjustment and post-cast mouse/swipe sensitivity are twice
+their previous rates; the smooth response and immediate stop are unchanged.
+Walking and pre-cast camera sensitivity are unchanged. Touch-enabled phones
+and tablets use a closer 3.3 world-unit third-person orbit, while desktop keeps
+4.6. The same terrain and obstacle pull-in checks apply to the chosen orbit.
+First-person physics, fixed targets and manual view transitions are unchanged.
+Ordinary screen swipes still look around. Strength grows monotonically to
 the maximum in about 2.08 seconds (20 percent faster accumulation) and stays
 there without automatically throwing.
 Casting follows the rendered camera ray projected to the water plane, then

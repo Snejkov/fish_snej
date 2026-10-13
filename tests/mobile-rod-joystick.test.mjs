@@ -80,7 +80,31 @@ test("Rod sensitivity is independent of saved camera sensitivity and shares the 
     assert.equal(game.settings.sens, sens);
     const before = [game.yaw, game.pitch];
     game.mouse.dx = game.mouse.dy = 10000; game.updateLook(1 / 60);
-    near(Math.hypot(game.yaw - before[0], game.pitch - before[1]), 0.06 / 60);
+    near(Math.hypot(game.yaw - before[0], game.pitch - before[1]), 0.12 / 60);
+  }
+});
+
+test("Post-cast analog and mouse response are exactly twice the prior rates, not just a higher cap", () => {
+  assert.equal(ROD_JOYSTICK_SPEED, 0.07);
+  for (const fps of [30, 60, 144]) {
+    const velocity = { mx: 0, mz: 0 };
+    let sum = 0;
+    for (let i = 0; i < fps; i++) sum += rodJoystickDelta({ mx: 0.5, mz: 0 }, velocity, 1 / fps).dx;
+    const previous = 0.5 * 0.035 * (1 - (1 - Math.exp(-10)) / 10);
+    near(sum, previous * 2);
+    for (const enabled of [false, true]) for (const fs of ["idle", "aim", "charge", "flight", "wait"]) {
+      const { game } = gameFixture({ enabled, fs });
+      game.mobileInput.rodLook = () => ({ dx: 0, dy: 0 });
+      game.mouse.dx = 1;
+      game.updateLook(1 / fps);
+      near(-game.yaw, 0.0022 * (["flight", "wait"].includes(fs) ? 0.03 * 2 : 1));
+      if (["flight", "wait"].includes(fs)) {
+        const before = game.yaw;
+        game.mouse.dx = 10000;
+        game.updateLook(1 / fps);
+        near(before - game.yaw, 0.06 * 2 / fps);
+      }
+    }
   }
 });
 

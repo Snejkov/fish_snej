@@ -53,7 +53,7 @@ const origin = game.pos.clone(), yaw = game.yaw;
 game.updateMove(0.1);
 assert.deepEqual(game.pos, origin, "Mobile sprint cannot bypass cast movement lock.");
 game.updateLook(1 / 60);
-assert.ok(Math.abs(game.yaw - yaw) <= 0.001, "Touch look retains the released-cast correction cap.");
+assert.ok(Math.abs(game.yaw - yaw) <= 0.002, "Touch look retains the doubled released-cast correction cap.");
 
 game.auth = new SnejAuth();
 for (const value of [undefined, false, true]) {

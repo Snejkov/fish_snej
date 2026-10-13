@@ -24,8 +24,8 @@ for (const fps of [30, 60, 144]) {
       game.mouse.dx = 1;
       game.mouse.dy = -0.5;
       SnejFishingGame.prototype.updateLook.call(game, 1 / fps);
-      close(game.yaw, -sens * 0.0022 * (active ? 0.03 : 1), "Only released casts reduce sensitivity.");
-      close(game.pitch, sens * 0.0011 * (active ? 0.03 : 1));
+      close(game.yaw, -sens * 0.0022 * (active ? 0.06 : 1), "Only released casts reduce sensitivity.");
+      close(game.pitch, sens * 0.0011 * (active ? 0.06 : 1));
       assert.equal(game.settings.sens, sens, "Temporary sensitivity must not overwrite saved settings.");
       assert.deepEqual(game.mouse, { dx: 0, dy: 0 });
       assert.equal(game.castAdjusting, active);
@@ -35,7 +35,7 @@ for (const fps of [30, 60, 144]) {
         game.mouse.dx = game.mouse.dy = 10000;
         SnejFishingGame.prototype.updateLook.call(game, 1 / fps);
       }
-      close(Math.hypot(game.yaw, game.pitch), 0.06, "The combined angular cap must be independent of frame rate.");
+      close(Math.hypot(game.yaw, game.pitch), 0.12, "The combined angular cap must be independent of frame rate.");
       const yaw = game.yaw;
       game.mouse.dx = -1;
       SnejFishingGame.prototype.updateLook.call(game, 1 / fps);

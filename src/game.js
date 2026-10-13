@@ -27,7 +27,7 @@ import { SPAWNS, SPAWN_INITIAL_NAME, SPAWN_NAMES } from "./spawns.js";
 import { SnejTerrain } from "./terrain.js";
 import { SnejTextureManager } from "./textureManager.js";
 import { SnejUI } from "./ui.js?v=rod-lift-1";
-import { SnejMobileInput, movementInput, requestLandscape } from "./mobileInput.js?v=rod-lift-1";
+import { SnejMobileInput, movementInput, requestLandscape } from "./mobileInput.js?v=closer-view-1";
 import { SnejWater } from "./water.js?v=0.0.5a-hf3";
 import { clamp, clamp01, damp, lerp, moveDelta, resolveWalkableStart } from "./util.js?v=0.0.3-hf2.12";
 
@@ -39,9 +39,10 @@ const PLAYER_RADIUS = 0.34;
 const MAX_WADE_DEPTH = 1.0;
 const CAM_PULL_MIN = 1.1;
 const CAM_DIST = 4.6;
+const TOUCH_CAM_DIST = 3.3;
 const VIEW_TRANSITION_TIME = 0.18;
-const CAST_LOOK_SCALE = 0.03;
-const CAST_LOOK_SPEED = 0.06;
+const CAST_LOOK_SCALE = 0.06;
+const CAST_LOOK_SPEED = 0.12;
 export const ROD_LIFT_TIME = 0.4;
 const NORMAL_FOV = 70;
 export function squintFov(weight = 1) {
@@ -1979,7 +1980,7 @@ export class SnejFishingGame {
       0.35 - Math.sin(this.pitch) * 0.6,
       -Math.cos(this.yaw) * Math.cos(this.pitch)
     ).normalize();
-    let distance = CAM_DIST;
+    let distance = this.mobileInput?.enabled ? TOUCH_CAM_DIST : CAM_DIST;
     const probe = eye.clone().addScaledVector(back, distance);
     const top = this.terrain.obstacleTopAt(probe.x, probe.z);
     const ground = this.terrain.heightAt(probe.x, probe.z);
@@ -2007,8 +2008,10 @@ export class SnejFishingGame {
       this.castCamera.lookAt(firstTarget);
     }
     // Shift only the observer slightly left: the same physical hand/rod appear right.
+    // Keep the hand visible on narrow portrait screens while widening the offset elsewhere.
+    const rodViewOffset = lerp(0.155, 0.22, clamp01((this.camera.aspect - 0.5) / 0.5));
     desiredPosition.addScaledVector(new THREE.Vector3(-Math.cos(this.yaw), 0, Math.sin(this.yaw)),
-      -0.15 * this.fishingFocusWeight * (1 - this.viewBlend));
+      -rodViewOffset * this.fishingFocusWeight * (1 - this.viewBlend));
     const desiredTarget = firstTarget.lerp(eye, this.viewBlend);
     // Zoom only the rendered view; the physical grip and casting camera stay unchanged.
     const focusWeight = Math.max(this.squintWeight || 0, this.fishingFocusWeight);

@@ -3,7 +3,15 @@ import { clamp, lerp } from "./util.js";
 export const DEFAULT_FLOAT_DEPTH = 0.5;
 export const MIN_UPPER_LINE = 0.25;
 export const FLOAT_RETRIEVE_FRACTION = 0.4;
-const MAX_ADJUSTMENT_SLACK = 0.12;
+const LINE_STEP = 1 / 120;
+const LINE_STIFFNESS = 95;
+const WATER_DRAG = 7;
+const MAX_FLOAT_SPEED = 3;
+
+// A small elastic reserve absorbs pole motion; it never enlarges the casting budget.
+export const lineStretchLimit = length => Math.min(0.25, Math.max(0, length) * 0.025);
+export const elasticLineLength = (tip, end, length) => Math.min(length + lineStretchLimit(length),
+  Math.max(length, distance(tip, end)));
 
 export function rigForRod(length, depth = DEFAULT_FLOAT_DEPTH) {
   const rodLength = Number.isFinite(length) && length > 0 ? length : 4;
@@ -67,76 +75,101 @@ export class SnejFloatRig {
     this.sample = point();
     this.previous = point();
     this.hook = point();
-    this.adjustmentTravel = { x: 0, z: 0 };
+    this.stepTip = point();
+    this.velocity = point();
     this.anchored = false;
     this.actualDepth = 0;
     this.bottomSlack = 0;
+    this.extension = this.tension = this.slack = 0;
+    this.effectiveLength = 0;
   }
 
   reset() {
     this.anchored = false;
-    this.adjustmentTravel.x = 0;
-    this.adjustmentTravel.z = 0;
+    copy(this.velocity, point());
     this.actualDepth = 0;
     this.bottomSlack = 0;
+    this.extension = this.tension = this.slack = 0;
+    this.effectiveLength = 0;
   }
 
-  adjustmentDelta(axis, delta) {
-    const travel = this.adjustmentTravel[axis];
-    if (travel * delta < 0) {
-      const takeUp = Math.min(Math.abs(travel), Math.abs(delta)) * Math.sign(delta);
-      this.adjustmentTravel[axis] = travel + takeUp;
-      delta -= takeUp;
-    }
-    this.adjustmentTravel[axis] = clamp(this.adjustmentTravel[axis] + delta, -MAX_ADJUSTMENT_SLACK, MAX_ADJUSTMENT_SLACK);
-    return delta;
-  }
-
-  follow(dt, tip, bobber, rig, ctx, adjustmentTip = tip) {
-    if (dt <= 0) return true;
+  follow(dt, tip, bobber, rig, ctx, { settle = false } = {}) {
+    if (!Number.isFinite(dt) || dt <= 0) return true;
+    if (![tip.x, tip.y, tip.z, bobber.x, bobber.y, bobber.z, rig.upperLine].every(Number.isFinite)
+      || rig.upperLine <= 0) return false;
+    const elapsed = Math.min(dt, 0.1), steps = Math.ceil(elapsed / LINE_STEP), step = elapsed / steps;
+    const rest = rig.upperLine, stretch = lineStretchLimit(rest), maxLength = rest + stretch;
     const surfaceY = (p) => ctx.surfaceY(p.x, p.z);
-    copy(this.target, bobber);
-    if (this.anchored) {
-      // Reversing first takes up bounded free play; only new travel nudges the float.
-      this.target.x += this.adjustmentDelta("x", adjustmentTip.x - this.lastTip.x);
-      this.target.z += this.adjustmentDelta("z", adjustmentTip.z - this.lastTip.z);
+    if (!this.anchored || settle) {
+      copy(this.lastTip, tip);
+      copy(this.velocity, point());
     }
-    // The float stays on the surface, inside the sphere allowed by the upper line.
-    for (let i = 0; i < 32; i += 1) {
-      this.target.y = surfaceY(this.target);
-      const vertical = tip.y - this.target.y;
-      if (Math.abs(vertical) > rig.upperLine) return false;
-      const radius = Math.sqrt(Math.max(0, rig.upperLine * rig.upperLine - vertical * vertical));
-      const dx = this.target.x - tip.x, dz = this.target.z - tip.z, d = Math.hypot(dx, dz);
-      if (d > radius) {
-        const scale = radius / d;
-        this.target.x = tip.x + dx * scale;
-        this.target.z = tip.z + dz * scale;
+    for (let frame = 1; frame <= steps; frame++) {
+      const progress = frame / steps;
+      this.stepTip.x = lerp(this.lastTip.x, tip.x, progress);
+      this.stepTip.y = lerp(this.lastTip.y, tip.y, progress);
+      this.stepTip.z = lerp(this.lastTip.z, tip.z, progress);
+      copy(this.target, bobber);
+      const span = distance(this.stepTip, bobber), extension = Math.max(0, span - rest);
+      if (!Number.isFinite(span)) return false;
+      // Slack transmits no push. Once taut, a spring pulls against water drag and float inertia.
+      const pull = !settle && span > 1e-8 ? LINE_STIFFNESS * extension / span : 0;
+      const ax = (this.stepTip.x - bobber.x) * pull, az = (this.stepTip.z - bobber.z) * pull;
+      const decay = Math.exp(-WATER_DRAG * step), response = (1 - decay) / WATER_DRAG;
+      this.target.x += this.velocity.x * response + ax * (step - response) / WATER_DRAG;
+      this.target.z += this.velocity.z * response + az * (step - response) / WATER_DRAG;
+      this.velocity.x = this.velocity.x * decay + ax * response;
+      this.velocity.z = this.velocity.z * decay + az * response;
+      const speed = Math.hypot(this.velocity.x, this.velocity.z);
+      if (speed > MAX_FLOAT_SPEED) {
+        this.velocity.x *= MAX_FLOAT_SPEED / speed;
+        this.velocity.z *= MAX_FLOAT_SPEED / speed;
       }
-      const player = ctx.playerOrigin;
-      const reach = player ? Math.hypot(this.target.x - player.x, this.target.z - player.z) : 0;
-      // Casting uses the line budget; later pole corrections use the physical pole-plus-line span.
-      if (reach > rig.rodReach) {
-        const scale = rig.rodReach / reach;
-        this.target.x = player.x + (this.target.x - player.x) * scale;
-        this.target.z = player.z + (this.target.z - player.z) * scale;
-      } else if (d <= radius + 1e-8) break;
+      // The bounded elastic reserve is a safety constraint, not a delayed copy of the pole.
+      for (let i = 0; i < 32; i++) {
+        this.target.y = surfaceY(this.target);
+        const vertical = this.stepTip.y - this.target.y;
+        if (!Number.isFinite(vertical) || Math.abs(vertical) > maxLength) return false;
+        const radius = Math.sqrt(Math.max(0, maxLength * maxLength - vertical * vertical));
+        const dx = this.target.x - this.stepTip.x, dz = this.target.z - this.stepTip.z, d = Math.hypot(dx, dz);
+        if (d > radius) {
+          const scale = radius / d;
+          this.target.x = this.stepTip.x + dx * scale;
+          this.target.z = this.stepTip.z + dz * scale;
+        }
+        const player = ctx.playerOrigin;
+        const reach = player ? Math.hypot(this.target.x - player.x, this.target.z - player.z) : 0;
+        // Casting uses the line budget; later corrections retain the physical pole-plus-line span.
+        if (reach > rig.rodReach) {
+          const scale = rig.rodReach / reach;
+          this.target.x = player.x + (this.target.x - player.x) * scale;
+          this.target.z = player.z + (this.target.z - player.z) * scale;
+        } else if (d <= radius + 1e-8) break;
+      }
+      copy(this.previous, bobber);
+      const sweep = Math.max(1, Math.ceil(Math.hypot(this.target.x - bobber.x, this.target.z - bobber.z) / 0.05));
+      for (let i = 1; i <= sweep; i += 1) {
+        const t = i / sweep;
+        this.sample.x = lerp(bobber.x, this.target.x, t);
+        this.sample.z = lerp(bobber.z, this.target.z, t);
+        this.sample.y = surfaceY(this.sample);
+        if (!Number.isFinite(this.sample.y) || !ctx.isWaterAt(this.sample) || ctx.lineObstruction?.(this.previous, this.sample, 0)) {
+          copy(this.velocity, point());
+          break;
+        }
+        copy(this.previous, this.sample);
+      }
+      if (!ctx.isWaterAt(this.previous) || distance(this.stepTip, this.previous) > maxLength + 1e-6
+        || ctx.lineObstruction?.(this.stepTip, this.previous, 0)) return false;
+      copy(bobber, this.previous);
     }
-    copy(this.previous, bobber);
-    const steps = Math.max(1, Math.ceil(Math.hypot(this.target.x - bobber.x, this.target.z - bobber.z) / 0.15));
-    for (let i = 1; i <= steps; i += 1) {
-      const t = i / steps;
-      this.sample.x = lerp(bobber.x, this.target.x, t);
-      this.sample.z = lerp(bobber.z, this.target.z, t);
-      this.sample.y = surfaceY(this.sample);
-      if (!ctx.isWaterAt(this.sample) || ctx.lineObstruction?.(this.previous, this.sample, 0)) break;
-      copy(this.previous, this.sample);
-    }
-    if (!ctx.isWaterAt(this.previous) || distance(tip, this.previous) > rig.upperLine + 1e-6
-      || ctx.lineObstruction?.(tip, this.previous, 0)) return false;
-    copy(bobber, this.previous);
-    copy(this.lastTip, adjustmentTip);
+    copy(this.lastTip, tip);
     this.anchored = true;
+    const span = distance(tip, bobber);
+    this.extension = Math.max(0, span - rest);
+    this.tension = stretch > 0 ? clamp(this.extension / stretch, 0, 1) : 0;
+    this.slack = Math.max(0, rest - span);
+    this.effectiveLength = rest + this.extension;
     copy(this.hook, bobber);
     const bed = ctx.bedY?.(bobber.x, bobber.z);
     // Bottom contact leaves reserved lower-line slack instead of changing the cast budget.

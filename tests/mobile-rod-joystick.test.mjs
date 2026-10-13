@@ -108,7 +108,7 @@ test("Post-cast analog and mouse response are exactly twice the prior rates, not
   }
 });
 
-test("Joystick corrections use the existing smooth float follow and fixed line budget", () => {
+test("Joystick corrections consume slack without teleporting the float or changing the line budget", () => {
   const { game } = gameFixture(), rig = rigForRod(4, 0.5), follower = new SnejFloatRig();
   const tip = { x: 0, y: 0.1, z: 5 }, bobber = { x: 0, y: 0, z: 5 };
   const context = { surfaceY: () => 0, isWaterAt: () => true };
@@ -123,5 +123,6 @@ test("Joystick corrections use the existing smooth float follow and fixed line b
     assert.ok(Math.hypot(bobber.x - previous.x, bobber.z - previous.z) < 0.01);
     assert.ok(Math.hypot(bobber.x - tip.x, bobber.y - tip.y, bobber.z - tip.z) <= rig.upperLine);
   }
-  assert.ok(bobber.x < 0, "The existing rig follows the corrected rod, not a teleported target.");
+  assert.equal(bobber.x, 0, "A slack rope cannot transmit a sideways push to the float.");
+  assert.ok(follower.slack > 7);
 });

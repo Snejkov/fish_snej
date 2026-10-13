@@ -56,7 +56,8 @@ for (const fps of [30, 60, 144]) {
 }
 
 function floatGame(length, depth = 0.5, reach = length * 2 * 0.4 + 0.03) {
-  const tip = new THREE.Vector3(0, 0.1, reach), effects = { denied: 0, toasts: [] };
+  const rig = rigForRod(length, depth);
+  const tip = new THREE.Vector3(0, 0.1, reach - Math.sqrt(rig.upperLine ** 2 - 0.01)), effects = { denied: 0, toasts: [] };
   const game = {
     cast: new SnejCastSystem({ rodRange: length * 2, floatDepth: depth }),
     floatRig: new SnejFloatRig(), castTip: new THREE.Vector3(), pos: new THREE.Vector3(),
@@ -77,42 +78,44 @@ for (const length of [4, 5, 6]) {
     assert.equal(follower.follow(dt, tip, bobber, rig, ctx), true);
     tip.x = -0.06;
     follower.follow(dt, tip, bobber, rig, ctx);
-    close(bobber.x, -0.06);
+    close(bobber.x, 0, "The float stays put while a sideways correction only changes the slack rope.");
     tip.x = -0.02;
     follower.follow(dt, tip, bobber, rig, ctx);
-    close(bobber.x, -0.06, "A reversal must first take up previous sideways free play.");
+    close(bobber.x, 0, "A slack reversal cannot push the float.");
     tip.x = 0;
     follower.follow(dt, tip, bobber, rig, ctx);
-    close(bobber.x, -0.06, "Returning to neutral must not already nudge the float backwards.");
+    close(bobber.x, 0);
     tip.x = 0.01;
     follower.follow(dt, tip, bobber, rig, ctx);
-    close(bobber.x, -0.05, "New opposite travel must move the float after slack is taken up.");
+    close(bobber.x, 0);
     tip.x = 1;
     follower.follow(dt, tip, bobber, rig, ctx);
     const previousX = bobber.x;
     tip.x = 0.87;
     follower.follow(dt, tip, bobber, rig, ctx);
-    close(bobber.x, previousX - 0.01, "Free play must stay bounded to 0.12 m, not grow forever.");
+    close(bobber.x, previousX, "Unconsumed line slack remains physical, not an artificial backlash counter.");
     const line = new Float32Array(33 * 3);
     assert.equal(writeFixedLine(tip, bobber, rig.upperLine, line), true);
     let sum = 0;
     for (let i = 3; i < line.length; i += 3) sum += Math.hypot(line[i] - line[i - 3], line[i + 1] - line[i - 2], line[i + 2] - line[i - 1]);
     assert.ok(Math.abs(sum - rig.upperLine) < 1e-5, "Reversal cannot stretch the fixed line.");
     follower.reset();
-    assert.deepEqual(follower.adjustmentTravel, { x: 0, z: 0 });
+    assert.deepEqual(follower.velocity, { x: 0, y: 0, z: 0 });
 
     for (const depth of [0, 0.5, length - 0.25]) {
       const { game, tip: modelTip, effects } = floatGame(length, depth);
       const threshold = game.cast.rig.lineLength * FLOAT_RETRIEVE_FRACTION;
       SnejFishingGame.prototype.updateFloatRig.call(game, dt);
-      modelTip.z = threshold;
+      modelTip.z = threshold - Math.sqrt(game.cast.rig.upperLine ** 2 - 0.01);
       game.castAdjusting = true;
       SnejFishingGame.prototype.updateFloatRig.call(game, dt);
-      assert.equal(game.cast.state.fs, "wait", "Exactly 40% is not closer than 40%.");
-      modelTip.z -= 0.01;
-      game.castAdjusting = true;
-      SnejFishingGame.prototype.updateFloatRig.call(game, dt);
-      assert.equal(game.cast.state.retrieving, true, "An inward correction below 40% must retrieve for every rod and depth.");
+      assert.equal(game.cast.state.fs, "wait", "Starting to pull at 40% cannot instantly copy the pole.");
+      modelTip.z -= 0.08;
+      for (let frame = 0; frame < fps * 2 && game.cast.state.fs === "wait"; frame++) {
+        game.castAdjusting = true;
+        SnejFishingGame.prototype.updateFloatRig.call(game, dt);
+      }
+      assert.equal(game.cast.state.retrieving, true, "A tension-driven inward correction below 40% must retrieve for every rod and depth.");
       assert.equal(game.cast.state.castObstruction, "close");
       assert.equal(game.floatRig.anchored, false);
       assert.equal(game.castAdjusting, false);
@@ -152,4 +155,4 @@ for (const fs of ["idle", "charge"]) {
   assert.equal(cast.state.fs, fs);
 }
 
-console.log("Fine float adjustment, bounded reversal, and proximity retrieval tests passed.");
+console.log("Slack-aware float adjustment, reversal, and tension-driven proximity retrieval tests passed.");

@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { SnejAngler } from "./angler.js?v=menu-retrieve-1";
+import { SnejAngler } from "./angler.js?v=elastic-pole-1";
 import { RODS, rodForLength } from "./rods.js?v=0.0.5a";
 import { SnejInventory } from "./gear/inventory.js";
 import { SnejCatchLog } from "./game/catchLog.js";
@@ -9,8 +9,8 @@ import { SnejAudio, DEFAULT_AMBIENT_VOLUME, AMBIENT_DEFAULTS_VERSION, migrateAmb
 import {
   SnejCastSystem, SPLASH_BASE, SPLASH_MIN, SPLASH_SCALE,
   STARTLE_R, STARTLE_SEC, WAKE_BOB_AMP, WAKE_BOB_FREQ
-} from "./castSystem.js?v=menu-retrieve-1";
-import { DEFAULT_FLOAT_DEPTH, FLOAT_RETRIEVE_FRACTION, SnejFloatRig, limitLineEnd, writeFixedLine } from "./floatRig.js?v=rod-lift-1";
+} from "./castSystem.js?v=elastic-pole-1";
+import { DEFAULT_FLOAT_DEPTH, FLOAT_RETRIEVE_FRACTION, SnejFloatRig, lineStretchLimit, elasticLineLength, limitLineEnd, writeFixedLine } from "./floatRig.js?v=elastic-pole-1";
 import { SnejDesktopCursor, editableTarget } from "./desktopCursor.js?v=menu-retrieve-1";
 import { fishingMeters, fishingWorld } from "./fishingUnits.js?v=shore-cast-2";
 import { SnejAuth, SNEJKOV_ID, SNEJKOV_NAME } from "./auth.js";
@@ -1625,7 +1625,8 @@ export class SnejFishingGame {
         castRetrieving: this.cast.state.retrieving,
         rodLiftHeld: this.rodLiftHeld,
         castBobber: this.cast.state.fs === "wait" || this.cast.state.retrieving ? this.cast.state.bobber : null,
-        castLineLength: this.cast.state.retrieving ? this.cast.rig.lineLength - this.cast.state.retrieveDepth : this.cast.rig.upperLine,
+        castLineLength: this.cast.state.retrieving ? this.cast.rig.lineLength - this.cast.state.retrieveDepth
+          : this.cast.rig.upperLine + lineStretchLimit(this.cast.rig.upperLine),
         rodLiftAllowed: this.rodLiftAllowed ||= tip => !this.lineObstruction(tip, this.cast.state.bobber, 0),
         cameraMode: this.cameraMode,
         viewBlend: this.viewBlend,
@@ -1713,21 +1714,22 @@ export class SnejFishingGame {
     const wasAnchored = this.floatRig.anchored;
     const previousReach = Math.hypot(state.bobber.x - this.pos.x, state.bobber.z - this.pos.z);
     const tip = this.angler.getRodTip(this.castTip);
-    const adjustmentTip = this.angler.rodAdjustmentTip || tip;
-    if (this.postCastPose && dt > 0) {
+    const outwardAdjustment = wasAnchored && ((tip.x - this.floatRig.lastTip.x) * (state.bobber.x - this.pos.x)
+      + (tip.z - this.floatRig.lastTip.z) * (state.bobber.z - this.pos.z)) > 1e-8;
+    const settling = Boolean(this.postCastPose);
+    if (settling && dt > 0) {
       // Automatic body/arm settling is not a player's rod correction.
-      if (wasAnchored) Object.assign(this.floatRig.lastTip, { x: adjustmentTip.x, y: adjustmentTip.y, z: adjustmentTip.z });
       this.castAdjusting = false;
       if (!this.castTurn && this.angler.castHoldWeight === 1) this.postCastPose = false;
     }
-    if (!this.floatRig.follow(dt, tip, state.bobber, this.cast.rig, this.floatContext, adjustmentTip)) {
+    if (!this.floatRig.follow(dt, tip, state.bobber, this.cast.rig, this.floatContext, { settle: settling })) {
       this.cast.startRetrieve("line");
       this.floatRig.reset();
       this.audio.deny();
       this.ui.showToast("The float cannot reach this position.");
-    } else if (dt > 0 && wasAnchored && this.castAdjusting) {
+    } else if (dt > 0 && wasAnchored && this.castAdjusting && !outwardAdjustment) {
       const reach = Math.hypot(state.bobber.x - this.pos.x, state.bobber.z - this.pos.z);
-      // Only a player's correction triggers this rule, not a short landing or a view transition.
+      // Inertia during an outward correction must not trigger the close-range return.
       if (reach < previousReach - 1e-8 && reach < this.cast.rig.lineLength * FLOAT_RETRIEVE_FRACTION - 1e-8) {
         this.cast.startRetrieve("close");
         this.floatRig.reset();
@@ -1928,7 +1930,8 @@ export class SnejFishingGame {
     const tip = this.angler.getRodTip(this.castTip);
     const end = this.castMesh.position;
     const points = this.castLine.geometry.attributes.position;
-    const length = state.fs === "wait" ? this.cast.rig.upperLine : this.cast.rig.lineLength - (state.retrieving ? depth : 0);
+    const rest = state.fs === "wait" ? this.cast.rig.upperLine : this.cast.rig.lineLength - (state.retrieving ? depth : 0);
+    const length = state.fs === "wait" ? elasticLineLength(tip, end, rest) : rest;
     limitLineEnd(tip, end, length, end);
     writeFixedLine(tip, end, length, points.array, this.time);
     points.needsUpdate = true;

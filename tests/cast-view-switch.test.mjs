@@ -89,7 +89,7 @@ for (const length of [4, 5, 6]) {
     castCamera.lookAt(new THREE.Vector3(0.2, 1.62, 0).addScaledVector(look, 8));
     frame(1);
     assert.equal(float.follow(1 / fps, angler.getRodTip(), bobber, rig, context), true);
-    assert.ok(bobber.x > initial.x + 0.19, "Actual rod movement must still adjust the float.");
+    assert.ok(Math.abs(bobber.x - initial.x) < 1e-6, "Actual rod movement first consumes slack instead of copying the float.");
     const beforePitch = angler.getRodTip();
     const correctedLook = forward.clone().multiplyScalar(Math.cos(pitch - 0.2));
     correctedLook.y = Math.sin(pitch - 0.2);

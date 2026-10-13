@@ -240,7 +240,8 @@ export class SnejAngler {
     if (this.castHoldWeight < 0.0001) this.castHoldWeight = 0;
     else if (this.castHoldWeight > 0.9999) this.castHoldWeight = 1;
     const lifting = info.castRetrieving || (info.castState === "wait" && info.rodLiftHeld === true);
-    const returnRate = info.castRetrieving ? 5 : 2.5;
+    // Lift the pole early in the return, before the rig swings back to the free hand.
+    const returnRate = info.castRetrieving ? 10 : 2.5;
     this.rodReturnWeight += ((info.castRetrieving ? 1 : 0) - this.rodReturnWeight) * (1 - Math.exp(-returnRate * Math.max(0, dt)));
     const liftRate = !lifting && this.rodReturnWeight > 0.002 ? 2.5 : 9;
     this.rodLiftWeight += ((lifting ? 1 : 0) - this.rodLiftWeight) * (1 - Math.exp(-liftRate * Math.max(0, dt)));

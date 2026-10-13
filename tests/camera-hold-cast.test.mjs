@@ -254,8 +254,9 @@ test("post-launch turning completes even when a short flight lands first, with a
           game.angler.update(1 / fps, { state: "playing", speed: 0, camera: game.castCamera, castCamera: game.castCamera,
             viewBlend: 0, castState: "wait" });
           game.castAdjusting = true; game.updateFloatRig(1 / fps);
-          assert.ok(Math.hypot(game.cast.state.bobber.x - before.x, game.cast.state.bobber.z - before.z) > 1e-5,
-            "After settling, an intentional rod correction must still move the float.");
+          assert.ok(Math.hypot(game.cast.state.bobber.x - before.x, game.cast.state.bobber.z - before.z) < 1e-5,
+            "After settling, a small correction consumes slack instead of dragging the float immediately.");
+          assert.ok(game.floatRig.slack > 0);
         }
       }
     }

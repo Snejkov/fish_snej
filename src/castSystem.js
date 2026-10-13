@@ -1,6 +1,6 @@
 import { clamp, clamp01, lerp } from "./util.js";
 import { RODS } from "./rods.js?v=0.0.4-hf2";
-import { rigForRod } from "./floatRig.js?v=shore-cast-2";
+import { rigForRod } from "./floatRig.js?v=elastic-pole-1";
 
 // Stage 4 cast analysis, sections 1, 4, 5, 9, and 10. No fish behavior is active.
 const GRAVITY = 9.8;
@@ -216,7 +216,7 @@ export class SnejCastSystem {
     const target = this._ctx?.retrieveTarget || this._ctx?.rodTip || this.getCastOriginLocal();
     const span = distance(state.bobber, target);
     this._retrieveDuration = clamp(span / RETRIEVE_SPEED, 0.65, 1.6);
-    this._retrieveArc = clamp(span * 0.13, 0.3, 1.2);
+    this._retrieveArc = clamp(span * 0.25, 0.7, 2);
     this._retrieveDepth = clamp(finite(this._ctx?.retrieveDepth, this.rig.floatDepth), 0, this.rig.floatDepth);
     const floor = this._ctx?.retrieveClearanceY?.(state.bobber.x, state.bobber.z);
     this._retrieveSubmerged = Number.isFinite(floor) ? Math.max(0, floor + this._retrieveDepth + 0.04 - state.bobber.y) : 0;
@@ -487,13 +487,16 @@ export class SnejCastSystem {
     } else if (state.fs === "flight" && state.retrieving && dt > 0) {
       this._retrieveElapsed += dt;
       const p = state.retrieveProgress = clamp01(this._retrieveElapsed / this._retrieveDuration);
-      const u = p * p * (3 - 2 * p);
+      const lift = clamp01(p / 0.32), liftEase = lift * lift * lift * (lift * (lift * 6 - 15) + 10);
+      const swing = clamp01((p - 0.18) / 0.82), swingEase = swing * swing * (3 - 2 * swing);
+      // A fixed-line pole lifts the rig out first, then swings it to the hand; no reel shortening.
+      const u = 0.04 * liftEase + 0.96 * swingEase;
       const target = this._ctx?.retrieveTarget || this._ctx?.rodTip || this.getCastOriginLocal();
       const endDepth = Math.min(this._retrieveDepth, 0.12);
       state.retrieveDepth = lerp(this._retrieveDepth, endDepth, u);
       state.bobber.x = lerp(this._retrieveFrom.x, target.x, u);
       state.bobber.z = lerp(this._retrieveFrom.z, target.z, u);
-      state.bobber.y = lerp(this._retrieveFrom.y, target.y + endDepth, u) + 4 * this._retrieveArc * u * (1 - u);
+      state.bobber.y = lerp(this._retrieveFrom.y, target.y + endDepth, u) + this._retrieveArc * liftEase * (1 - u);
       // Return the rig through the air to the grip, never along the ground to the rod tip.
       const floor = this._ctx?.retrieveClearanceY?.(state.bobber.x, state.bobber.z);
       // Ease the initially submerged hook out of the water instead of snapping it above the surface.

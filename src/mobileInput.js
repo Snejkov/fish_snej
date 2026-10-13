@@ -1,6 +1,26 @@
 const finite = (value) => Number.isFinite(value) ? value : 0;
 const limit = (value, low, high) => Math.min(high, Math.max(low, value));
 
+export const ROD_JOYSTICK_SPEED = 0.035;
+const ROD_JOYSTICK_RESPONSE = 10;
+
+export function rodJoystickDelta(axes, velocity, dt) {
+  const step = limit(finite(dt), 0, 0.1);
+  const { mx, mz } = combinedMovement(0, 0, axes);
+  if (!step || (!mx && !mz)) {
+    velocity.mx = velocity.mz = 0;
+    return { dx: 0, dy: 0 };
+  }
+  const blend = -Math.expm1(-ROD_JOYSTICK_RESPONSE * step);
+  const integrate = (axis, target) => {
+    const previous = finite(velocity[axis]);
+    velocity[axis] = previous + (target - previous) * blend;
+    // Integrate the smooth ramp, rather than making sensitivity depend on FPS.
+    return target * step + (previous - target) * blend / ROD_JOYSTICK_RESPONSE;
+  };
+  return { dx: integrate("mx", mx * ROD_JOYSTICK_SPEED), dy: -integrate("mz", mz * ROD_JOYSTICK_SPEED) };
+}
+
 export function touchControlsAvailable(environment = globalThis) {
   const coarse = environment.matchMedia?.("(pointer: coarse)").matches;
   const anyCoarse = environment.matchMedia?.("(any-pointer: coarse)").matches;
@@ -156,6 +176,8 @@ export class SnejMobileInput {
     this.listeners = [];
     this.active = false;
     this.enabled = false;
+    this.stickMode = "move";
+    this.rodVelocity = { mx: 0, mz: 0 };
     this.touchSeen = false;
     this.useTouchEvents = "ontouchstart" in environment
       || (typeof environment.TouchEvent === "function" && environment.navigator?.maxTouchPoints > 0);
@@ -298,6 +320,26 @@ export class SnejMobileInput {
     this.canvas.classList.toggle("mobile-input-active", this.enabled && active);
   }
 
+  setStickMode(mode, label) {
+    mode = mode === "rod" ? "rod" : "move";
+    if (mode !== this.stickMode) {
+      // A held movement finger must not become a rod correction, or vice versa.
+      if (this.state.stick) this.release(this.state.stick.id);
+      this.rodVelocity.mx = this.rodVelocity.mz = 0;
+      this.stickMode = mode;
+      this.paintStick();
+    }
+    if (label) {
+      this.stick.setAttribute?.("aria-label", label);
+      this.stick.setAttribute?.("title", label);
+    }
+  }
+
+  rodLook(dt) {
+    const axes = this.available() && this.stickMode === "rod" ? this.state.axes : {};
+    return rodJoystickDelta(axes, this.rodVelocity, dt);
+  }
+
   available(event) {
     return this.enabled && this.active && this.canInteract()
       && !this.environment.document?.hidden
@@ -385,6 +427,7 @@ export class SnejMobileInput {
 
   release(id) {
     const role = this.state.endPointer(id);
+    if (role === "stick") this.rodVelocity.mx = this.rodVelocity.mz = 0;
     const target = this.captures.get(id);
     this.captures.delete(id);
     this.uncaptured.delete(id);
@@ -430,6 +473,7 @@ export class SnejMobileInput {
     const casting = this.state.castId !== null;
     const aiming = this.state.look?.aiming;
     this.state.reset();
+    this.rodVelocity.mx = this.rodVelocity.mz = 0;
     for (const [id, target] of this.captures) {
       this.releaseCapture(id, target);
     }

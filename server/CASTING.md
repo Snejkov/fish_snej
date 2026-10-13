@@ -62,6 +62,14 @@ after landing, Run and Cast are replaced by one Retrieve button. Retrieval
 is a single tap, works with the last bait, and does not charge another cast.
 It is disabled while landing confirmation or retrieval is in progress;
 Run and Cast return when the float reaches the rod. PC controls are unchanged.
+On phones and tablets, the first-person joystick gently adjusts the rod after
+landing, without walking. It has a separate 0.035 rad/s analog rate and a smooth
+0.1 second response, independent of camera sensitivity. Combined swipe/mouse
+and joystick corrections retain the existing 0.06 rad/s cap and float-line
+physics. Release, pause and input cancellation stop immediately without drift.
+Changing between rod and movement modes clears only the held joystick touch:
+a fresh touch is needed, while a separate camera finger remains independent.
+Third person and desktop input keep their existing behavior.
 ordinary screen swipes still look around. Strength grows monotonically to
 the maximum in about 2.08 seconds (20 percent faster accumulation) and stays
 there without automatically throwing.

@@ -437,6 +437,48 @@ for (const native of [false, true]) {
 }
 controls.querySelector = retrieveQuery;
 
+// Both Safari native touches and pointer-only tablets require a fresh mode gesture.
+for (const native of [false, true]) {
+  const modeEnvironment = native ? nativeEnvironment : environment;
+  const modes = new SnejMobileInput({ canvas, controls, environment: modeEnvironment, canInteract: () => interactive });
+  modes.setActive(true);
+  const send = (type, id, x, y, target = stick) => {
+    if (native) (type === "pointerdown" ? target : modeEnvironment.document).dispatchEvent(
+      touchEvent({ pointerdown: "touchstart", pointermove: "touchmove", pointerup: "touchend" }[type], [id, x, y]));
+    else target.dispatchEvent(pointer(type, id, x, y));
+  };
+  send("pointerdown", 200, 101, 66);
+  send("pointerdown", 201, 500, 200, lookZone);
+  assert.ok(modes.movement().mx > 0);
+  modes.setStickMode("rod", "Adjust fishing rod");
+  assert.equal(modes.state.stick, null);
+  assert.equal(modes.state.look.id, native ? "touch:201" : 201, "Mode changes preserve the separate look finger.");
+  send("pointermove", 200, 101, 66);
+  assert.deepEqual(modes.rodLook(1 / 60), { dx: 0, dy: 0 }, "The old finger cannot become a rod correction.");
+  send("pointerup", 200, 101, 66);
+  send("pointerdown", 202, 101, 66);
+  assert.ok(modes.rodLook(1 / 60).dx > 0);
+  send("pointerup", 202, 101, 66);
+  assert.deepEqual(modes.rodLook(1 / 60), { dx: 0, dy: 0 }, "Release stops without drift.");
+  send("pointerdown", 203, 101, 66);
+  modes.setStickMode("move");
+  send("pointermove", 203, 101, 66);
+  near(modes.movement().mx, 0, "Retrieval/view change cannot reuse a rod finger for walking.");
+  send("pointerup", 203, 101, 66);
+  send("pointerdown", 204, 101, 66);
+  assert.ok(modes.movement().mx > 0, "A fresh touch restores ordinary walking.");
+  modes.setStickMode("rod");
+  for (const cancel of [() => modes.reset(), () => modeEnvironment.dispatchEvent(new Event("blur")),
+    () => modes.setActive(false), () => { interactive = false; modes.takeLook(); interactive = true; }]) {
+    modes.setActive(true); send("pointerdown", 205, 101, 66);
+    assert.ok(modes.rodLook(1 / 60).dx > 0);
+    cancel();
+    assert.deepEqual(modes.rodLook(1 / 60), { dx: 0, dy: 0 });
+    assert.deepEqual(modes.rodVelocity, { mx: 0, mz: 0 });
+  }
+  modes.destroy();
+}
+
 const document = { fullscreenElement: null };
 const supported = {
   document,

@@ -27,7 +27,7 @@ import { SPAWNS, SPAWN_INITIAL_NAME, SPAWN_NAMES } from "./spawns.js";
 import { SnejTerrain } from "./terrain.js";
 import { SnejTextureManager } from "./textureManager.js";
 import { SnejUI } from "./ui.js?v=mobile-retrieve-1";
-import { SnejMobileInput, movementInput, requestLandscape } from "./mobileInput.js?v=mobile-retrieve-1";
+import { SnejMobileInput, movementInput, requestLandscape } from "./mobileInput.js?v=rod-joystick-1";
 import { SnejWater } from "./water.js?v=0.0.5a-hf3";
 import { clamp, clamp01, damp, lerp, moveDelta, resolveWalkableStart } from "./util.js?v=0.0.3-hf2.12";
 
@@ -1771,6 +1771,10 @@ export class SnejFishingGame {
 
   updateLook(dt = 1 / 60) {
     const adjusting = this.cast.state.fs === "flight" || this.cast.state.fs === "wait";
+    const rodStick = this.mobileInput?.enabled && this.cameraMode === "first-person"
+      && this.cast.state.fs === "wait" && !this.cast.state.retrieving;
+    this.mobileInput?.setStickMode?.(rodStick ? "rod" : "move", t(rodStick ? "Adjust fishing rod" : "Movement joystick"));
+    const rod = rodStick ? this.mobileInput?.rodLook?.(dt) : null;
     const sensitivity = this.settings.sens * 0.0022 * (adjusting ? CAST_LOOK_SCALE : 1);
     const touch = this.mobileInput?.takeLook() || { dx: 0, dy: 0 };
     if (this.cast.state.fs === "charge" && !this.castContext?.cameraAim
@@ -1779,7 +1783,8 @@ export class SnejFishingGame {
       this.castAdjusting = false;
       return;
     }
-    let dx = (this.mouse.dx + touch.dx) * sensitivity, dy = (this.mouse.dy + touch.dy) * sensitivity;
+    let dx = (this.mouse.dx + touch.dx) * sensitivity + (rod?.dx || 0);
+    let dy = (this.mouse.dy + touch.dy) * sensitivity + (rod?.dy || 0);
     if (adjusting) {
       const amount = Math.hypot(dx, dy), limit = CAST_LOOK_SPEED * Math.max(0, dt);
       if (amount > limit) { dx *= limit / amount; dy *= limit / amount; }

@@ -119,6 +119,19 @@
 .mobile-run.pressed { background: rgba(50, 130, 100, 0.8); border-color: #91dac6; }
 .mobile-cast.pressed { background: rgba(126, 156, 56, 0.8); border-color: #bce58c; }
 .mobile-retrieve { width: 160px; border-radius: 36px; }
+.mobile-squint {
+  position: absolute;
+  z-index: 1;
+  right: max(22px, env(safe-area-inset-right));
+  bottom: calc(max(28px, env(safe-area-inset-bottom)) + 82px);
+  width: 160px;
+  border-radius: 22px;
+  font-size: 13px;
+  pointer-events: auto;
+  touch-action: none;
+}
+.mobile-squint.pressed { background: rgba(50, 130, 100, 0.8); border-color: #91dac6; }
+.mobile-squint:disabled { opacity: 0.5; }
 .mobile-cast:disabled, .mobile-run:disabled { opacity: 0.5; }
 .mobile-orientation {
   position: fixed;
@@ -163,6 +176,7 @@
 @media (max-height: 430px) {
   .mobile-cast { width: 64px; height: 64px; bottom: max(18px, env(safe-area-inset-bottom)); }
   .mobile-retrieve { width: 160px; }
+  .mobile-squint { bottom: calc(max(18px, env(safe-area-inset-bottom)) + 74px); }
   .mobile-run { bottom: max(18px, env(safe-area-inset-bottom)); }
   .mobile-buttons .mobile-control-button { width: 40px; height: 40px; min-height: 40px; }
 }

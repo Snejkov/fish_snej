@@ -231,6 +231,72 @@ function withDesktopInput(view, callback) {
   finally { globalThis.window = previousWindow; globalThis.document = previousDocument; }
 }
 
+test("landed LMB lifts then retrieves without recasting; held input needs a fresh press", () => {
+  for (const fps of [30, 60, 144]) withDesktopInput("first-person", ({ game, win, mouse }) => {
+    game.canvas.emit("mousedown", mouse()); game.updateCast(2.2); win.emit("mouseup", mouse(), true);
+    for (let i = 0; i < 600 && game.cast.state.fs !== "wait"; i++) game.updateCast(1 / 60);
+    const bobber = { ...game.cast.state.bobber }, epoch = game.castEpoch;
+    let baitChecks = 0; game.inventory.countOf = () => { baitChecks++; return 0; };
+    game.canvas.emit("mousedown", mouse());
+    assert.equal(game.cast.state.fs, "wait"); assert.equal(game.rodLiftHeld, true);
+    assert.equal(game.desktopCastHeld, false); assert.equal(game.beginHoldCast(), false);
+    assert.equal(game.beginCastAction(), false); assert.equal(game.beginRodLift(), false);
+    game.updateRodLift(0.1); win.emit("mouseup", mouse(), true);
+    assert.equal(game.rodLiftHeld, true, "Releasing the click cannot cancel the one-shot empty retrieval.");
+    assert.deepEqual(game.cast.state.bobber, bobber); assert.equal(game.castEpoch, epoch);
+    for (let i = 0; i < fps * 3; i++) { game.updateRodLift(1 / fps); game.updateCast(1 / fps); }
+    assert.equal(game.cast.state.fs, "idle"); assert.equal(game.rodLiftHeld, false);
+    assert.equal(game.castEpoch, epoch); assert.equal(game.cast.state.retrieving, false);
+    assert.equal(baitChecks, 0, "Returning the attached rig needs no spare bait.");
+    for (let i = 0; i < fps; i++) { game.updateRodLift(1 / fps); game.updateCast(1 / fps); }
+    assert.equal(game.cast.state.fs, "idle", "Neither an old release nor repeated ticks may start a cast.");
+    game.inventory.countOf = () => 1;
+    game.canvas.emit("mousedown", mouse()); assert.equal(game.cast.state.fs, "charge");
+    assert.equal(game.castEpoch, epoch + 1);
+  });
+});
+
+test("pending landing and lost interaction cancel lifting without resetting the cast", () => {
+  withDesktopInput("first-person", ({ game, win, doc, mouse }) => {
+    game.cast.state.fs = "wait"; game.castLanding = {};
+    game.canvas.emit("mousedown", mouse()); assert.equal(game.rodLiftAction, undefined);
+    game.castLanding = null;
+    for (const reason of ["blur", "hidden", "blocked", "pointercancel"]) {
+      game.allowed = true; doc.hidden = false;
+      game.canvas.emit("mousedown", mouse()); assert.equal(game.rodLiftHeld, true);
+      if (reason === "hidden") { doc.hidden = true; doc.emit("visibilitychange", {}); }
+      else if (reason === "blocked") { game.allowed = false; game.updateRodLift(1); }
+      else win.emit(reason, {});
+      assert.equal(game.rodLiftHeld, false); assert.equal(game.rodLiftAction, null);
+      assert.equal(game.cast.state.fs, "wait");
+    }
+  });
+});
+
+test("physical Z squints only after landing and always clears on release, blur and hidden page", () => {
+  withDesktopInput("first-person", ({ game, win, doc }) => {
+    game.resize = () => {};
+    const key = extra => ({ code: "KeyZ", preventDefault() {}, ...extra });
+    win.emit("keydown", key()); assert.equal(game.keyboardSquintHeld, false);
+    game.cast.state.fs = "wait";
+    for (const modifier of ["ctrlKey", "altKey", "metaKey", "isComposing", "defaultPrevented"]) {
+      win.emit("keydown", key({ [modifier]: true })); assert.equal(game.keyboardSquintHeld, false);
+    }
+    win.emit("keydown", key({ target: { tagName: "INPUT" } })); assert.equal(game.keyboardSquintHeld, false);
+    win.emit("keydown", key()); assert.equal(game.keyboardSquintHeld, true);
+    game.updateSquint(1); assert.ok(game.camera.fov < 70);
+    win.emit("keyup", key({ target: { tagName: "INPUT" } })); assert.equal(game.keyboardSquintHeld, false);
+    game.updateSquint(1); assert.equal(game.camera.fov, 70);
+    for (const reason of ["blur", "resize", "hidden"]) {
+      win.emit("keydown", key()); game.updateSquint(1);
+      if (reason === "hidden") { doc.hidden = true; doc.emit("visibilitychange", {}); }
+      else win.emit(reason, {});
+      assert.equal(game.keyboardSquintHeld, false); assert.equal(game.camera.fov, 70);
+      win.emit("keydown", key({ repeat: true })); assert.equal(game.keyboardSquintHeld, false);
+    }
+  });
+});
+
 test("captured primary pointer release launches exactly once without a bubbling mouseup in both views", () => {
   for (const view of ["first-person", "third-person"]) withDesktopInput(view, ({ game, win, mouse, counts }) => {
     game.canvas.emit("mousedown", mouse()); assert.equal(game.cast.state.fs, "charge");

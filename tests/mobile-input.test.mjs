@@ -480,6 +480,44 @@ for (const native of [false, true]) {
 }
 
 const document = { fullscreenElement: null };
+// Squint owns its finger independently of look and must never produce a cast/retrieve.
+const squintButton = new Element(), squintQuery = controls.querySelector;
+controls.querySelector = selector => selector === "[data-mobile-squint]" ? squintButton : squintQuery(selector);
+for (const native of [false, true]) {
+  const squintEnvironment = native ? nativeEnvironment : environment, zoom = [];
+  const input = new SnejMobileInput({ canvas, controls, environment: squintEnvironment, canInteract: () => interactive,
+    onSquintChange: held => zoom.push(held), onCastStart: () => assert.fail("Squint cannot cast"),
+    onRetrieve: () => assert.fail("Squint cannot retrieve") });
+  input.setActive(true); squintButton.hidden = squintButton.disabled = false;
+  const send = (type, id, target = squintButton) => {
+    if (native) (type === "pointerdown" ? target : squintEnvironment.document).dispatchEvent(
+      touchEvent({ pointerdown: "touchstart", pointerup: "touchend", pointercancel: "touchcancel" }[type], [id]));
+    else target.dispatchEvent(pointer(type, id));
+  };
+  send("pointerdown", 310); send("pointerdown", 311); send("pointerup", 311);
+  assert.deepEqual(zoom, [true]); assert.equal(squintButton.classes.has("pressed"), true);
+  send("pointerdown", 312, lookZone); assert.ok(input.state.look);
+  send("pointerup", 310); assert.deepEqual(zoom, [true, false]); assert.ok(input.state.look);
+  send("pointercancel", 312, lookZone);
+  for (const cancel of [() => input.reset(), () => squintEnvironment.dispatchEvent(new Event("blur")),
+    () => squintEnvironment.dispatchEvent(new Event("resize")), () => input.setActive(false),
+    () => { squintEnvironment.document.hidden = true; squintEnvironment.document.dispatchEvent(new Event("visibilitychange")); squintEnvironment.document.hidden = false; }]) {
+    input.setActive(true); send("pointerdown", 313); cancel(); send("pointerup", 313);
+    assert.equal(zoom.at(-1), false); assert.equal(input.state.squintId, null);
+    assert.equal(squintButton.classes.has("pressed"), false);
+  }
+  input.setActive(true);
+  for (const property of ["hidden", "disabled"]) {
+    const count = zoom.length; squintButton[property] = true; send("pointerdown", 314); send("pointerup", 314);
+    assert.equal(zoom.length, count); squintButton[property] = false;
+  }
+  const keyboard = code => Object.assign(new Event("keydown", { cancelable: true }), { code });
+  const down = keyboard("Space"); squintButton.dispatchEvent(down); assert.equal(down.defaultPrevented, true);
+  assert.equal(zoom.at(-1), true);
+  squintEnvironment.dispatchEvent(Object.assign(new Event("keyup"), { code: "Space" })); assert.equal(zoom.at(-1), false);
+  input.destroy(); send("pointerdown", 315); assert.equal(input.state.squintId, null);
+}
+controls.querySelector = squintQuery;
 const supported = {
   document,
   screen: { orientation: { lock: async (mode) => { order.push(mode); } } }

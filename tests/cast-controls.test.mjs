@@ -52,9 +52,9 @@ test("Cast instructions and cancellation show only during an active cast session
 test("Mobile landed and retrieving states expose one Retrieve action and restore Run/Cast only on idle", () => {
   const originalDocument = globalThis.document;
   globalThis.document = { documentElement: { classList: classes() } };
-  const mobile = { dataset: {} }, run = {}, retrieve = {}, view = {};
+  const mobile = { dataset: {} }, run = {}, retrieve = {}, view = {}, squint = {};
   const controls = { querySelector: selector => ({ "[data-mobile-cast]": mobile, "[data-mobile-run]": run,
-    "[data-mobile-retrieve]": retrieve, "[data-mobile-action='view']": view })[selector] };
+    "[data-mobile-retrieve]": retrieve, "[data-mobile-action='view']": view, "[data-mobile-squint]": squint })[selector] };
   const game = { cast: { state: {} }, castActions: { classList: classes() }, castCancelButton: { classList: classes() },
     castInstruction: {}, ui: { el: { mobileControls: controls } } };
   try {
@@ -68,10 +68,13 @@ test("Mobile landed and retrieving states expose one Retrieve action and restore
       assert.equal(mobile.hidden, retrieval); assert.equal(run.hidden, retrieval);
       assert.equal(retrieve.hidden, !retrieval);
       assert.equal(retrieve.disabled, !enabled || fs !== "wait" || pending);
+      assert.equal(squint.hidden, !enabled || fs !== "wait" || retrieving);
+      assert.equal(squint.disabled, pending);
     }
     for (const lang of ["ru", "en"]) {
       setLanguage(lang, { persist: false });
       assert.equal(t("Retrieve"), lang === "en" ? "Retrieve" : "\u0412\u044b\u0442\u0430\u0449\u0438\u0442\u044c");
+      assert.equal(t("Squint"), lang === "en" ? "Squint" : "\u041f\u0440\u0438\u0449\u0443\u0440\u0438\u0442\u044c\u0441\u044f");
     }
   } finally { globalThis.document = originalDocument; setLanguage("ru", { persist: false }); }
 });

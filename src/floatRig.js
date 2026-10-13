@@ -27,21 +27,24 @@ export function limitLineEnd(tip, end, length, out) {
   return out;
 }
 
-// Solve the length of the actual rendered polyline, including its sideways slack bow.
-export function writeFixedLine(tip, end, length, positions) {
+// Gravity sag and gentle sway are visual only. Solve the actual polyline's fixed length.
+export function writeFixedLine(tip, end, length, positions, time = 0) {
   const count = positions.length / 3;
   const straight = distance(tip, end);
-  if (count < 2 || straight > length + 1e-6) return false;
+  if (!Number.isInteger(count) || count < 2 || !Number.isFinite(straight)
+    || !Number.isFinite(length) || length < 0 || straight > length + 1e-6) return false;
+  time = Number.isFinite(time) ? time : 0;
   const dx = end.x - tip.x, dz = end.z - tip.z, horizontal = Math.hypot(dx, dz);
   const nx = horizontal > 1e-8 ? -dz / horizontal : 1;
   const nz = horizontal > 1e-8 ? dx / horizontal : 0;
   const fill = (bow, write) => {
     let sum = 0, px = tip.x, py = tip.y, pz = tip.z;
     for (let i = 0; i < count; i += 1) {
-      const t = i / (count - 1), offset = 4 * t * (1 - t) * bow;
-      const x = lerp(tip.x, end.x, t) + nx * offset;
-      const y = lerp(tip.y, end.y, t);
-      const z = lerp(tip.z, end.z, t) + nz * offset;
+      const t = i / (count - 1), sag = 4 * t * (1 - t) * bow;
+      const sway = sag * (0.14 + 0.08 * Math.sin(time * 1.2 + t * 3));
+      const x = lerp(tip.x, end.x, t) + nx * sway;
+      const y = lerp(tip.y, end.y, t) - sag;
+      const z = lerp(tip.z, end.z, t) + nz * sway;
       if (i > 0) sum += Math.hypot(x - px, y - py, z - pz);
       if (write) { positions[i * 3] = x; positions[i * 3 + 1] = y; positions[i * 3 + 2] = z; }
       px = x; py = y; pz = z;
@@ -89,14 +92,14 @@ export class SnejFloatRig {
     return delta;
   }
 
-  follow(dt, tip, bobber, rig, ctx) {
+  follow(dt, tip, bobber, rig, ctx, adjustmentTip = tip) {
     if (dt <= 0) return true;
     const surfaceY = (p) => ctx.surfaceY(p.x, p.z);
     copy(this.target, bobber);
     if (this.anchored) {
       // Reversing first takes up bounded free play; only new travel nudges the float.
-      this.target.x += this.adjustmentDelta("x", tip.x - this.lastTip.x);
-      this.target.z += this.adjustmentDelta("z", tip.z - this.lastTip.z);
+      this.target.x += this.adjustmentDelta("x", adjustmentTip.x - this.lastTip.x);
+      this.target.z += this.adjustmentDelta("z", adjustmentTip.z - this.lastTip.z);
     }
     // The float stays on the surface, inside the sphere allowed by the upper line.
     for (let i = 0; i < 32; i += 1) {
@@ -132,7 +135,7 @@ export class SnejFloatRig {
     if (!ctx.isWaterAt(this.previous) || distance(tip, this.previous) > rig.upperLine + 1e-6
       || ctx.lineObstruction?.(tip, this.previous, 0)) return false;
     copy(bobber, this.previous);
-    copy(this.lastTip, tip);
+    copy(this.lastTip, adjustmentTip);
     this.anchored = true;
     copy(this.hook, bobber);
     const bed = ctx.bedY?.(bobber.x, bobber.z);

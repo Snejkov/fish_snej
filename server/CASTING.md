@@ -61,7 +61,29 @@ Mobile/tablet users hold the mobile-only Cast button, then release to cast;
 after landing, Run and Cast are replaced by one Retrieve button. Retrieval
 is a single tap, works with the last bait, and does not charge another cast.
 It is disabled while landing confirmation or retrieval is in progress;
-Run and Cast return when the float reaches the rod. PC controls are unchanged.
+Run and Cast return when the float reaches the rod. On PC, LMB after landing
+first raises the rod smoothly for 0.4 seconds, then retrieves the empty rig.
+The same held click or release cannot start a new cast: a fresh press is needed
+after retrieval finishes. C cannot reset a landed rig into another charged cast.
+Landing confirmation disables this action; blur, menus, pointer cancellation
+and disconnect cancel a pending lift. This is not a fish-resistance minigame.
+The lift uses the same wrist and is bounded by the real upper-line budget and
+obstruction checks. Float corrections follow the unlifted grip, so the visual
+lift alone does not move an anchored float.
+The rendered line now has gravity sag and slow sway with fixed endpoints.
+Its actual polyline length still equals the approved budget, even as slack
+takes up; the visual animation does not stretch equipment or change physics.
+After landing, phones/tablets show a hold-to-Squint button; PC holds physical Z.
+It smoothly magnifies the float 1.5x using FOV and a rendered-only look target.
+The physical casting camera, player look, position and cast range stay unchanged.
+Release restores the normal view. Retrieval, menus, blur, resize, disconnect
+and view changes clear zoom; a fresh press is needed. Text input, modified
+shortcuts and key repeat cannot start squinting. No saved settings are changed.
+The normal landed first-person view also smoothly centers the float and moves
+only the observer 0.15 world units left, framing the same physical hand/rod to
+the right. It does not pose or relocate the grip, tip, player or casting camera.
+Choosing third person restores the independent orbit; joystick rod corrections
+keep their existing physical line constraints.
 On phones and tablets, the first-person joystick gently adjusts the rod after
 landing, without walking. It has a separate 0.035 rad/s analog rate and a smooth
 0.1 second response, independent of camera sensitivity. Combined swipe/mouse

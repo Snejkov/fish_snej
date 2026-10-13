@@ -5,6 +5,7 @@ import { createCharacterModel } from "./characterModel.js?v=0.0.5a-hf5";
 const TAU = Math.PI * 2;
 const HIP_HEIGHT = 0.91;
 const FIRST_PERSON_BONES = new Set(["RightForeArm", "RightHand", "RightHandTip"]);
+export const ROD_LIFT_ANGLE = 0.28;
 const GAITS = {
   idle: { swing: 0, knee: 0, arm: 0, bob: 0, lean: 0, stride: 1 },
   walk: { swing: 0.48, knee: 0.82, arm: 0.38, bob: 0.018, lean: 0.035, stride: 3.0 },
@@ -30,6 +31,14 @@ export class SnejAngler {
     this.firstPersonWeight = 0;
     this.carryMoveWeight = 0;
     this.castHoldWeight = 0;
+    this.rodLiftWeight = 0;
+    this.rodLiftAngle = 0;
+    this.rodAdjustmentTip = new THREE.Vector3();
+    this.liftPivot = new THREE.Vector3();
+    this.liftOffset = new THREE.Vector3();
+    this.liftAxis = new THREE.Vector3();
+    this.liftTip = new THREE.Vector3();
+    this.liftRotation = new THREE.Quaternion();
     this.castDirection = new THREE.Vector3();
     this.castPreviewPoint = new THREE.Vector3();
     this.castPreviewRotation = new THREE.Quaternion();
@@ -228,6 +237,10 @@ export class SnejAngler {
     this.castHoldWeight += ((castHeld ? 1 : 0) - this.castHoldWeight) * blend;
     if (this.castHoldWeight < 0.0001) this.castHoldWeight = 0;
     else if (this.castHoldWeight > 0.9999) this.castHoldWeight = 1;
+    const lifting = info.castState === "wait" && !info.castRetrieving && info.rodLiftHeld === true;
+    this.rodLiftWeight += ((lifting ? 1 : 0) - this.rodLiftWeight) * (1 - Math.exp(-9 * Math.max(0, dt)));
+    if (this.rodLiftWeight < 0.0001) this.rodLiftWeight = 0;
+    else if (this.rodLiftWeight > 0.9999) this.rodLiftWeight = 1;
     const cadence = moving ? speed / GAITS[state].stride : 0;
     for (const [name, action] of Object.entries(this.actions)) {
       this.weights[name] += ((name === state ? 1 : 0) - this.weights[name]) * blend;
@@ -263,6 +276,9 @@ export class SnejAngler {
       this.applyCastHoldPose(info.castCamera || info.camera);
       this.applyHorizontalCarry();
     }
+    this.getRodTip(this.rodAdjustmentTip);
+    this.rodLiftAngle = 0;
+    if (castHeld && this.rodLiftWeight > 0) this.applyRodLiftPose(info);
     this.updatePreview();
     this.skeleton.update();
     this.group.visible = true;
@@ -278,6 +294,35 @@ export class SnejAngler {
     this.castDirection.y = 0;
     if (this.castDirection.lengthSq() < 1e-8) this.castDirection.set(0, 0, 1);
     else this.castDirection.normalize();
+    this.applyRodDirection(this.castDirection, this.castHoldWeight);
+  }
+
+  applyRodLiftPose(info) {
+    const requested = ROD_LIFT_ANGLE * this.rodLiftWeight;
+    this.bones.RightHand.getWorldPosition(this.liftPivot);
+    this.liftOffset.copy(this.rodAdjustmentTip).sub(this.liftPivot);
+    this.liftAxis.set(-this.castDirection.z, 0, this.castDirection.x).normalize();
+    const fits = angle => {
+      this.liftRotation.setFromAxisAngle(this.liftAxis, angle);
+      this.liftTip.copy(this.liftOffset).applyQuaternion(this.liftRotation).add(this.liftPivot);
+      // Reserve a little room for the float's existing surface bob animation.
+      if (info.castBobber && Number.isFinite(info.castLineLength)
+        && this.liftTip.distanceTo(info.castBobber) > Math.max(0, info.castLineLength - 0.02)) return false;
+      return !info.rodLiftAllowed || info.rodLiftAllowed(this.liftTip);
+    };
+    if (!fits(0)) return;
+    let angle = requested;
+    if (!fits(angle)) {
+      let lo = 0, hi = angle;
+      for (let i = 0; i < 16; i++) {
+        const mid = (lo + hi) / 2;
+        if (fits(mid)) lo = mid; else hi = mid;
+      }
+      angle = lo;
+    }
+    this.rodLiftAngle = angle;
+    this.liftRotation.setFromAxisAngle(this.liftAxis, angle);
+    this.castDirection.applyQuaternion(this.liftRotation);
     this.applyRodDirection(this.castDirection, this.castHoldWeight);
   }
 

@@ -58,7 +58,7 @@ export function movementInput(keys, stick = {}, autoSprint = false) {
 export class MobileInputState {
   constructor() { this.reset(); }
 
-  owns(id) { return this.stick?.id === id || this.look?.id === id || this.castId === id || this.runId === id || this.retrieveId === id; }
+  owns(id) { return this.stick?.id === id || this.look?.id === id || this.castId === id || this.runId === id || this.retrieveId === id || this.squintId === id; }
   canClaim(id) { return (Number.isInteger(id) || (typeof id === "string" && /^touch:-?\d+$/.test(id))) && !this.owns(id); }
 
   beginStick(id, x, y, centerX, centerY, radius) {
@@ -110,6 +110,12 @@ export class MobileInputState {
     return true;
   }
 
+  beginSquint(id) {
+    if (this.squintId !== null || !this.canClaim(id)) return false;
+    this.squintId = id;
+    return true;
+  }
+
   endPointer(id) {
     if (this.stick?.id === id) {
       this.stick = null;
@@ -120,6 +126,7 @@ export class MobileInputState {
     if (this.castId === id) { this.castId = null; return "cast"; }
     if (this.runId === id) { this.runId = null; return "run"; }
     if (this.retrieveId === id) { this.retrieveId = null; return "retrieve"; }
+    if (this.squintId === id) { this.squintId = null; return "squint"; }
     return null;
   }
 
@@ -134,6 +141,7 @@ export class MobileInputState {
     this.castId = null;
     this.runId = null;
     this.retrieveId = null;
+    this.squintId = null;
     this.axes = joystickAxes(0, 0, 1);
     this.dx = this.dy = 0;
   }
@@ -155,7 +163,7 @@ export async function requestLandscape(environment = globalThis, element = envir
 }
 
 export class SnejMobileInput {
-  constructor({ canvas, controls, canInteract, onCastStart, onCastEnd, onCastCancel, onRetrieve, onTap, onAim, onAimCancel, onTargetStart, isTargeting, onAvailability, environment = globalThis }) {
+  constructor({ canvas, controls, canInteract, onCastStart, onCastEnd, onCastCancel, onRetrieve, onSquintChange, onTap, onAim, onAimCancel, onTargetStart, isTargeting, onAvailability, environment = globalThis }) {
     this.canvas = canvas;
     this.controls = controls;
     this.environment = environment;
@@ -164,6 +172,7 @@ export class SnejMobileInput {
     this.onCastEnd = onCastEnd;
     this.onCastCancel = onCastCancel;
     this.onRetrieve = onRetrieve;
+    this.onSquintChange = onSquintChange;
     this.onTap = onTap;
     this.onAim = onAim;
     this.onAimCancel = onAimCancel;
@@ -186,6 +195,7 @@ export class SnejMobileInput {
     this.castButton = controls.querySelector("[data-mobile-cast]");
     this.runButton = controls.querySelector("[data-mobile-run]");
     this.retrieveButton = controls.querySelector("[data-mobile-retrieve]");
+    this.squintButton = controls.querySelector("[data-mobile-squint]");
     this.lookZone = controls.querySelector("[data-mobile-look]") || canvas;
     // A real touch can recover from an inaccurate primary-pointer media query.
     this.listen(environment.document, "pointerdown", (event) => {
@@ -225,11 +235,27 @@ export class SnejMobileInput {
     this.listen(this.castButton, "pointerdown", pointerStart(this.beginCast));
     this.listen(this.runButton, "pointerdown", pointerStart(this.beginRun));
     this.listen(this.retrieveButton, "pointerdown", pointerStart(this.beginRetrieve));
+    this.listen(this.squintButton, "pointerdown", pointerStart(this.beginSquint));
+    this.listen(this.squintButton, "keydown", (event) => {
+      if (!["Space", "Enter"].includes(event.code) || !this.available() || this.squintButton.hidden || this.squintButton.disabled) return;
+      event.preventDefault();
+      if (event.repeat || this.keyboardSquint) return;
+      this.keyboardSquint = true;
+      if (this.onSquintChange?.(true) === false) this.keyboardSquint = false;
+      this.paintSquint();
+    });
+    this.listen(environment, "keyup", (event) => {
+      if (this.keyboardSquint && ["Space", "Enter"].includes(event.code)) {
+        this.keyboardSquint = false;
+        this.onSquintChange?.(this.state.squintId !== null);
+        this.paintSquint();
+      }
+    });
     this.listen(this.retrieveButton, "click", (event) => {
       if (event.detail === 0 && this.available() && !this.retrieveButton.hidden && !this.retrieveButton.disabled) this.onRetrieve?.();
     });
     for (const [target, start] of [[this.stick, this.beginStick], [this.lookZone, this.beginLook],
-      [this.castButton, this.beginCast], [this.runButton, this.beginRun], [this.retrieveButton, this.beginRetrieve]]) {
+      [this.castButton, this.beginCast], [this.runButton, this.beginRun], [this.retrieveButton, this.beginRetrieve], [this.squintButton, this.beginSquint]]) {
       this.listen(target, "touchstart", (event) => {
         if (!this.useTouchEvents || !this.available()) return;
         // A captured stylus keeps its pointer stream; do not cancel it with duplicate touch events.
@@ -275,7 +301,7 @@ export class SnejMobileInput {
         if (this.uncaptured.has(event.pointerId)) this.finish(event, type === "pointercancel");
       }, { capture: true });
     }
-    for (const target of [canvas, this.lookZone, this.stick, this.castButton, this.runButton, this.retrieveButton]) {
+    for (const target of [canvas, this.lookZone, this.stick, this.castButton, this.runButton, this.retrieveButton, this.squintButton]) {
       for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) {
         this.listen(target, type, (event) => this.finish(event, type !== "pointerup"));
       }
@@ -425,6 +451,14 @@ export class SnejMobileInput {
     this.retrieveButton.classList.add("pressed");
   }
 
+  beginSquint(event) {
+    if (!this.available(event) || !this.squintButton || this.squintButton.hidden || this.squintButton.disabled
+      || !this.state.beginSquint(event.pointerId)) return;
+    this.capture(event, this.squintButton);
+    if (this.onSquintChange?.(true) === false) this.release(event.pointerId);
+    this.paintSquint();
+  }
+
   release(id) {
     const role = this.state.endPointer(id);
     if (role === "stick") this.rodVelocity.mx = this.rodVelocity.mz = 0;
@@ -438,6 +472,11 @@ export class SnejMobileInput {
   finish(event, cancelled) {
     const look = this.state.look?.id === event.pointerId ? this.state.look : null;
     const role = this.release(event.pointerId);
+    if (role === "squint") {
+      this.onSquintChange?.(Boolean(this.keyboardSquint));
+      this.paintSquint();
+      return;
+    }
     if (role === "retrieve") {
       this.retrieveButton.classList.remove("pressed");
       if (!cancelled && this.available() && !this.retrieveButton.hidden && !this.retrieveButton.disabled) this.onRetrieve?.();
@@ -469,9 +508,17 @@ export class SnejMobileInput {
     this.runButton?.setAttribute?.("aria-pressed", String(held));
   }
 
+  paintSquint() {
+    const held = this.state.squintId !== null || Boolean(this.keyboardSquint);
+    this.squintButton?.classList.toggle("pressed", held);
+    this.squintButton?.setAttribute?.("aria-pressed", String(held));
+  }
+
   reset() {
     const casting = this.state.castId !== null;
     const aiming = this.state.look?.aiming;
+    const squinting = this.state.squintId !== null || this.keyboardSquint;
+    this.keyboardSquint = false;
     this.state.reset();
     this.rodVelocity.mx = this.rodVelocity.mz = 0;
     for (const [id, target] of this.captures) {
@@ -481,10 +528,12 @@ export class SnejMobileInput {
     this.uncaptured.clear();
     this.paintStick();
     this.paintRun();
+    this.paintSquint();
     this.castButton.classList.remove("pressed");
     this.retrieveButton?.classList.remove("pressed");
     if (casting) this.onCastCancel?.();
     if (aiming) this.onAimCancel?.();
+    if (squinting) this.onSquintChange?.(false);
   }
 
   takeLook() {

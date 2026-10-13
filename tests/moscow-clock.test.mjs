@@ -42,6 +42,7 @@ function makeGame(mode, drawer) {
     sky: new SnejSky(new THREE.Scene()),
     ui: { buildOpen: false, profileOpen: false, inventoryOpen: false, modalOpen: false, updateHUD: noop },
     updateLook: noop, updateMove: noop, updateCamera: noop,
+    cast: { state: { fs: "idle" } }, endRodLift: Game.prototype.endRodLift, updateRodLift: Game.prototype.updateRodLift,
     updateCast(dt) { this.castDt = dt; }, canCast: Game.prototype.canCast,
     updateFloatRig: noop, updateCastVisuals: noop, remoteRoom: { update: noop },
     updateMultiplayer: noop, lastSave: 0, save: noop

@@ -1,15 +1,20 @@
 # Casting contract
 
 The browser previews a forward target from held cast strength. Online casting requires an
-authenticated, current WebSocket lake connection and server approval before
-the local flight starts. Static/offline hosting keeps local casting.
+authenticated, current WebSocket lake connection. Release immediately starts
+a predicted local flight to the frozen circle while approval runs in parallel.
+A denial or connection loss clears that prediction without altering progress.
+Static/offline hosting keeps local casting.
 
 - `POST /api/cast/start`: `{requestId,target:{x,y,z}}`. The server assigns the
   cast ID, identity, approval time, accepted player origin, owned gear and
   depth snapshot. It checks finite coordinates, rendered shoreline, dock,
   exposed rocks, minimum distance and the equipped line-minus-depth budget.
 - `POST /api/cast/land`: `{castId,landing:{x,y,z}}`, sent only when the actual
-  simulated float transitions from flight to water. The server requires the
+  simulated float transitions from flight to water and approval has arrived.
+  An early local landing waits for approval and the minimum age before reporting
+  its captured endpoint; retrieval stays disabled until confirmation. The server
+  requires the
   same session and connection, live approved intent, unchanged gear/depth,
   age 50 ms to 30 seconds, and a landing within 0.03 world units of the
   approved point and still within the range budget.
@@ -111,17 +116,24 @@ clamped. Strength appears as an accessible, slim framed bar centered at the top,
 20 percent of viewport width, with a safe-area inset and no bulky text/card.
 Too-short releases report insufficient strength rather than blaming open water.
 
-Release freezes the target, power and flight pitch. The character smoothly
-turns by the shortest angle over 0.16 to 0.65 seconds; the flight waits for
-both that turn and server approval. Turning is entirely client-side. The
-turning instruction ends when that animation finishes, even without approval;
-any remaining network wait is explicitly labeled Waiting for server.
+Release freezes the target, power and flight pitch and launches immediately.
+The character then smoothly turns by the shortest angle over 0.16 to 0.65
+seconds. Turning and predicted flight are entirely client-side and never wait
+for the save/request queue. The server still approves the exact target, gear,
+depth and range before accepting a landing. Success is recorded only after
+that landing is confirmed. Rejection resets only the current prediction;
+obsolete replies cannot revive it or cancel a newer throw. A short flight
+may reach water before approval, but it cannot report success or retrieve
+until the server confirms. Ordinary pause or menus freeze the launched
+flight; connection loss, reset or changed player origin invalidate it.
 Other players receive this visual facing,
 not the independent aiming camera angle. Later camera changes cannot retarget
 the throw. Prediction uses the future turned grip; the final physical throw
-uses that same aligned grip and exact endpoint. Touch cancellation, blur,
-menus, disconnect and changed player origin invalidate the pending turn and
-any late approval. Third person changes to first person only after launch.
+uses that same aligned grip and exact endpoint. Touch cancellation, blur and
+menus cancel an unreleased charge, not an already flying prediction. Disconnect,
+reset and changed player origin invalidate the prediction and any late approval.
+All devices currently stay in first person; the retained
+third-person camera cannot be selected.
 
 ## Authority boundary
 

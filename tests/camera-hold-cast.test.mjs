@@ -102,15 +102,19 @@ test("camera ray drives both views; launch precedes the smooth turn and exact la
   } finally { globalThis.window = previousWindow; }
 });
 
-test("pending cast can be paused; reset cannot revive it and delayed saves cannot start an obsolete intent", async () => {
+test("predicted flight freezes while paused; reset and delayed saves cannot revive an obsolete intent", async () => {
   const previousDocument = globalThis.document; globalThis.document = {};
   try {
     const f = fixture("third-person", true), game = f.game;
     game.beginHoldCast(); game.updateCast(1); game.endHoldCast(); await flush();
-    assert.equal(game.cast.state.fs, "charge"); game.pause(); await flush();
+    assert.equal(game.cast.state.fs, "flight");
+    const bobber = { ...game.cast.state.bobber };
+    game.pause(); game.updateCast(0); await flush();
     f.approve({ castId: "approved_cancel_001" }); await flush();
-    assert.equal(game.cast.state.fs, "idle"); assert.equal(game.castRelease, null);
-    assert.deepEqual(f.cancelled, ["approved_cancel_001"]); assert.equal(game.cameraMode, "third-person");
+    assert.equal(game.cast.state.fs, "flight"); assert.equal(game.castRelease, null);
+    assert.deepEqual(game.cast.state.bobber, bobber); assert.deepEqual(f.cancelled, []);
+    assert.equal(game.cameraMode, "first-person");
+    game.cancelCastAction(); await flush(); assert.deepEqual(f.cancelled, ["approved_cancel_001"]);
     const delayed = fixture("first-person", true), next = delayed.game;
     let saveDone, starts = 0;
     next.server.save = () => new Promise(resolve => { saveDone = resolve; });
@@ -133,23 +137,23 @@ test("turning across the -PI/PI boundary follows the short arc without a snap", 
   } finally { globalThis.window = previousWindow; }
 });
 
-test("delayed approval freezes target/power and facing; approval launches without waiting for a turn", async () => {
+test("delayed approval never delays flight or turning and cannot retarget or relaunch it", async () => {
   const previousWindow = globalThis.window; globalThis.window = {};
   try {
     for (const view of ["third-person", "first-person"]) {
       const f = fixture(view, true), game = f.game; game.beginHoldCast(); game.updateCast(1.5);
       const target = { ...game.cast.state.aimPoint }, power = game.cast.state.charge, facing = game.castFacing;
-      game.endHoldCast(); await flush(); game.updateCast(2);
-      assert.equal(game.cast.state.fs, "charge"); assert.equal(game.cameraMode, view);
+      game.endHoldCast(); await flush();
+      assert.equal(game.cast.state.fs, "flight"); assert.equal(game.cameraMode, "first-person");
       assert.equal(game.castFacing, facing); assert.equal(game.castTurn.elapsed, 0);
-      game.camera.lookAt(new THREE.Vector3(-10, 0, -10)); game.updateCast(2);
-      assert.deepEqual(game.cast.state.aimPoint, target); assert.equal(game.cast.state.charge, power);
-      assert.equal(game.castFacing, facing); assert.equal(game.castTurn.elapsed, 0);
+      game.camera.lookAt(new THREE.Vector3(-10, 0, -10)); game.updateCast(1 / 60);
+      assert.deepEqual(game.cast.state.aimPoint, target); assert.equal(game.cast.state.castPower, power);
+      assert.notEqual(game.castFacing, facing); assert.ok(game.castTurn.elapsed > 0);
+      const beforeApproval = { ...game.cast.state.bobber }, elapsed = game.castTurn.elapsed;
       f.approve({ castId: "camera_approved_001" }); await flush();
+      game.predictedServerCast.receivedAt -= 100;
       assert.equal(game.cast.state.fs, "flight");
-      assert.equal(game.castFacing, facing); assert.equal(game.castTurn.elapsed, 0);
-      game.updateCast(1 / 60);
-      assert.notEqual(game.castFacing, facing, "Only a launched cast starts turning.");
+      assert.deepEqual(game.cast.state.bobber, beforeApproval); assert.equal(game.castTurn.elapsed, elapsed);
       for (let i = 0; i < 600 && game.cast.state.fs === "flight"; i += 1) game.updateCast(1 / 60);
       await flush(); assert.equal(f.landed.length, 1);
       assert.ok(Math.hypot(f.landed[0].value.x - target.x, f.landed[0].value.z - target.z) < 0.00001);
@@ -164,11 +168,11 @@ test("cancel, disconnect and changed origin invalidate a pending cast and late a
       const f = fixture("third-person", true), game = f.game;
       game.beginHoldCast(); game.updateCast(1); game.endHoldCast(); await flush(); game.updateCast(0.05);
       if (interruption === "cancel") game.cancelCastAction();
-      if (interruption === "disconnect") { game.allowed = false; game.updateCast(0.05); }
+      if (interruption === "disconnect") { game.multiplayer = { connected: false }; game.allowed = false; game.updateCast(0.05); }
       if (interruption === "origin") { game.pos.x += 1; game.updateCast(0.05); }
       f.approve({ castId: "late_camera_001" }); await flush();
       assert.equal(game.cast.state.fs, "idle"); assert.equal(game.castTurn, null); assert.equal(game.castRelease, null);
-      assert.equal(game.cameraMode, "third-person"); assert.deepEqual(f.cancelled, ["late_camera_001"]);
+      assert.equal(game.cameraMode, "first-person"); assert.deepEqual(f.cancelled, ["late_camera_001"]);
       assert.deepEqual(f.landed, []);
     }
   } finally { globalThis.document = previousDocument; }
@@ -499,7 +503,7 @@ test("authoritative empty-bait rejection overrides a positive client count and c
   game.server.beginCast = async () => { throw new AccountError("bait_unavailable", 409); };
   assert.ok(game.beginHoldCast()); game.updateCast(2.2); assert.ok(game.endHoldCast()); await flush();
   assert.deepEqual(messages, ["No bait."]);
-  assert.equal(game.cast.state.fs, "idle"); assert.equal(game.cameraMode, "third-person");
+  assert.equal(game.cast.state.fs, "idle"); assert.equal(game.cameraMode, "first-person");
   assert.equal(game.castApproval, null); assert.equal(game.castTurn, null);
   assert.equal(game.inventory.countOf("bait.earthworm"), 10, "A denial cannot invent a stock adjustment.");
 });
@@ -514,7 +518,10 @@ test("the last unbitten bait survives local and online landing, repeated retriev
       game.inventory.consumeBait = () => { throw new Error("No bite can consume bait."); };
       for (let cast = 0; cast < 2; cast += 1) {
         assert.ok(game.beginHoldCast()); game.updateCast(2.2); assert.ok(game.endHoldCast());
-        if (online) { await flush(); f.approve({ castId: `unbitten_000${cast}` }); await flush(); }
+        if (online) {
+          await flush(); f.approve({ castId: `unbitten_000${cast}` }); await flush();
+          game.predictedServerCast.receivedAt -= 100;
+        }
         for (let i = 0; i < 600 && game.cast.state.fs !== "wait"; i += 1) game.updateCast(1 / 60);
         await flush(); assert.equal(game.cast.state.fs, "wait"); assert.equal(bait, 1);
         assert.ok(game.retrieveCast()); assert.equal(game.retrieveCast(), false);

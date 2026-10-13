@@ -253,7 +253,7 @@ export class SnejFishingGame {
       onCastEnd: () => this.endHoldCast(),
       onRetrieve: () => this.retrieveCast(),
       onSquintChange: (held) => this.setSquint(held, "mobile"),
-      onCastCancel: () => { if (this.holdCasting || this.castApproval) this.cancelCastAction(); },
+      onCastCancel: () => { if (this.holdCasting || ["aim", "charge"].includes(this.cast.state.fs)) this.cancelCastAction(); },
       onAvailability: (enabled) => document.documentElement.classList.toggle("touch-device", enabled)
     });
     this.resize();
@@ -750,23 +750,7 @@ export class SnejFishingGame {
     }
     if (this.server?.enabled) {
       const point = this.castContext?.holdCast ? this.cast.state.predictedLanding : this.cast.state.aimPoint;
-      const pending = { selected: this.cast.state.selectedTarget, power: this.cast.state.charge,
-        target: { x: point.x, y: point.y, z: point.z } };
-      this.castApproval = pending;
-      this.server.save(editableProfile(this)).then(() => this.server.beginCast(pending.target)).then(ticket => {
-        if (this.castApproval !== pending || this.cast.state.fs !== "charge"
-          || this.cast.state.selectedTarget !== pending.selected || !this.canCast()) {
-          void this.server.cancelCast(ticket.castId).catch(() => {});
-          return;
-        }
-        this.activeServerCast = ticket;
-        this.cast.state.charge = pending.power;
-        this.releaseCast();
-        if (this.cast.state.fs !== "flight") this.cancelServerCast();
-      }).catch(error => {
-        if (this.castApproval === pending) { this.cancelCastAction(); this.handleAccountError(error); }
-      }).finally(() => { if (this.castApproval === pending) this.castApproval = null; });
-      return true;
+      return this.predictServerCast(point);
     }
     return this.releaseCast();
   }
@@ -783,22 +767,76 @@ export class SnejFishingGame {
     this.castTurn = { release, start, delta, elapsed: 0, duration: clamp(Math.abs(delta) / 5, 0.16, 0.65), launched: false };
     this.updateCast(0);
     if (this.server?.enabled) {
-      this.castApproval = release;
-      this.server.save(editableProfile(this)).then(() => this.castRelease === release && this.castEpoch === release.epoch
-        && this.cast.state.fs === "charge" && this.canCast() ? this.server.beginCast(target) : null).then(ticket => {
-        if (!ticket) return;
-        if (this.castRelease !== release || this.castEpoch !== release.epoch || this.cast.state.fs !== "charge" || !this.canCast()) {
-          void this.server.cancelCast(ticket.castId).catch(() => {});
-          return;
-        }
-        this.activeServerCast = ticket;
-        release.approved = true;
-        this.updateCast(0);
-      }).catch(error => {
-        if (this.castRelease === release) { this.cancelCastAction(); this.handleAccountError(error); }
-      }).finally(() => { if (this.castApproval === release) this.castApproval = null; });
+      return this.predictServerCast(target);
     }
     return true;
+  }
+
+  predictServerCast(target) {
+    const prediction = { epoch: this.castEpoch, origin: { x: this.pos.x, z: this.pos.z },
+      target: { x: target.x, y: target.y, z: target.z }, ticket: null, landing: null };
+    const desired = editableProfile(this);
+    this.predictedServerCast = this.castApproval = prediction;
+    // Flight is visual prediction only; no successful landing is recorded without approval.
+    if (!this.releaseCast()) { this.cancelServerCast(); return false; }
+    this.server.save(desired).then(() => this.isCurrentCastPrediction(prediction)
+      ? this.server.beginCast(prediction.target) : null).then(ticket => {
+      if (!ticket) return;
+      if (!this.isCurrentCastPrediction(prediction)) {
+        void this.server.cancelCast(ticket.castId).catch(() => {});
+        return;
+      }
+      prediction.ticket = this.activeServerCast = ticket;
+      prediction.receivedAt = performance.now();
+      if (this.castApproval === prediction) this.castApproval = null;
+      this.confirmPredictedLanding(prediction);
+    }).catch(error => {
+      if (this.predictedServerCast === prediction && this.castEpoch === prediction.epoch) {
+        this.cancelCastAction();
+        this.handleAccountError(error);
+      }
+    }).finally(() => { if (this.castApproval === prediction) this.castApproval = null; });
+    return true;
+  }
+
+  isCurrentCastPrediction(prediction) {
+    return this.predictedServerCast === prediction && this.castEpoch === prediction.epoch
+      && ["flight", "wait"].includes(this.cast.state.fs) && !this.cast.state.retrieving
+      && Math.hypot(this.pos.x - prediction.origin.x, this.pos.z - prediction.origin.z) < 0.00001
+      && (!this.multiplayer || this.multiplayer.connected);
+  }
+
+  confirmPredictedLanding(prediction) {
+    if (!this.isCurrentCastPrediction(prediction) || !prediction.ticket || !prediction.landing || prediction.confirming) return;
+    // A short visual flight can finish before approval; respect the server's 50 ms minimum age.
+    const remaining = 60 - (performance.now() - prediction.receivedAt);
+    if (remaining > 0) {
+      if (!prediction.timer) prediction.timer = setTimeout(() => {
+        prediction.timer = null;
+        this.confirmPredictedLanding(prediction);
+      }, remaining);
+      return;
+    }
+    if (prediction.timer) { clearTimeout(prediction.timer); prediction.timer = null; }
+    prediction.confirming = true;
+    this.activeServerCast = null;
+    this.server.landCast(prediction.ticket.castId, prediction.landing).then(() => {
+      if (!this.isCurrentCastPrediction(prediction)) return;
+      this.predictedServerCast = null;
+      if (this.castLanding === prediction) this.castLanding = null;
+      this.stats.recordCast(true);
+      this.ui.refreshInventory();
+      this.ui.refreshProfile();
+      this.save();
+    }).catch(error => {
+      if (this.predictedServerCast === prediction && this.castEpoch === prediction.epoch) {
+        this.cancelCastAction();
+        this.handleAccountError(error);
+      }
+    }).finally(() => {
+      if (this.predictedServerCast === prediction) this.cancelServerCast();
+      if (this.castLanding === prediction) this.castLanding = null;
+    });
   }
 
   updateCastTurn(dt) {
@@ -874,6 +912,8 @@ export class SnejFishingGame {
   }
 
   cancelCastAction() {
+    const rollback = this.predictedServerCast && this.castEpoch === this.predictedServerCast.epoch
+      && ["flight", "wait"].includes(this.cast.state.fs);
     this.endRodLift();
     this.resetSquint();
     this.holdCasting = this.desktopCastHeld = this.keyboardCastHeld = false;
@@ -883,7 +923,8 @@ export class SnejFishingGame {
     this.castFacing = null;
     this.postCastPose = false;
     this.cancelServerCast();
-    this.cast.cancelCharge();
+    if (rollback) { this.cast.reset(); this.floatRig?.reset(); }
+    else this.cast.cancelCharge();
     this.castPointer = null;
     this.mobileInput?.reset();
     this.keys.clear();
@@ -893,8 +934,13 @@ export class SnejFishingGame {
   }
 
   cancelServerCast() {
-    const ticket = this.activeServerCast;
+    const prediction = this.predictedServerCast;
+    const ticket = this.activeServerCast || prediction?.ticket;
     this.activeServerCast = null;
+    this.predictedServerCast = null;
+    if (prediction?.timer) clearTimeout(prediction.timer);
+    if (this.castApproval === prediction) this.castApproval = null;
+    if (this.castLanding === prediction) this.castLanding = null;
     if (ticket && this.server?.enabled) void this.server.cancelCast(ticket.castId).catch(() => {});
   }
 
@@ -1205,7 +1251,7 @@ export class SnejFishingGame {
     this.mode = "paused";
     this.releaseDesktopCursor();
     if (this.ui.inventoryOpen) this.ui.closeInventory();
-    if (this.holdCasting || this.castApproval || ["aim", "charge"].includes(this.cast.state.fs)) this.cancelCastAction();
+    if (this.holdCasting || ["aim", "charge"].includes(this.cast.state.fs)) this.cancelCastAction();
     else this.cast.cancelCharge();
     this.castMeter.classList.add("hidden");
     this.ui.el.toast.classList.add("hidden");
@@ -1481,6 +1527,7 @@ export class SnejFishingGame {
   }
 
   disconnectMultiplayer() {
+    if (this.predictedServerCast) this.cancelCastAction();
     this.endRodLift();
     this.resetSquint();
     this.intentionalDisconnect = true;
@@ -1628,7 +1675,7 @@ export class SnejFishingGame {
   }
 
   equipGear(itemId) {
-    if (["aim", "charge", "flight"].includes(this.cast.state.fs)) {
+    if (this.castLanding || ["aim", "charge", "flight"].includes(this.cast.state.fs)) {
       return { ok: false, message: "Equipment is locked during the cast." };
     }
     if (this.server.enabled) return this.serverCommand("equip", itemId);
@@ -1645,7 +1692,7 @@ export class SnejFishingGame {
 
   selectFloatDepth(depth) {
     if (!Number.isFinite(depth) || depth < 0 || depth > this.cast.rig.maxDepth
-      || ["aim", "charge", "flight"].includes(this.cast.state.fs)) return false;
+      || this.castLanding || ["aim", "charge", "flight"].includes(this.cast.state.fs)) return false;
     this.settings.floatDepth = depth;
     this.applyRod(rodForLength(this.settings.rodLength));
     this.updateCast(0);
@@ -1691,6 +1738,7 @@ export class SnejFishingGame {
   }
 
   updateCast(dt) {
+    if (this.predictedServerCast && !this.isCurrentCastPrediction(this.predictedServerCast)) this.cancelCastAction();
     if (this.inventory && this.cast.state.fs === "idle" && this.settings.rodLength !== this.inventory.equippedRod().length) {
       this.applyRod(this.inventory.equippedRod());
       this.ui.refreshRodLine();
@@ -1736,7 +1784,7 @@ export class SnejFishingGame {
     const previous = this.cast.state.fs;
     const wasRetrieving = this.cast.state.retrieving;
     const state = this.cast.tick(dt, this.castContext);
-    this.floatDepthInput.disabled = ["aim", "charge", "flight"].includes(state.fs);
+    this.floatDepthInput.disabled = Boolean(this.castLanding) || ["aim", "charge", "flight"].includes(state.fs);
     this.updateCastControls?.(enabled);
     const holdPreview = this.castContext.holdCast && state.fs === "charge" && enabled;
     this.castMeter.classList.toggle("hidden", !holdPreview || Boolean(this.castRelease));
@@ -1758,24 +1806,22 @@ export class SnejFishingGame {
       this.placeCastMarker(this.aimMarker, markerPoint, 0.05);
     }
     if (previous === "flight" && state.fs === "wait") {
-      this.stats.recordCast(true);
+      if (!this.server?.enabled) this.stats.recordCast(true);
       // With no bite mechanic yet, the attached bait survives landing and retrieval.
       const hasBait = this.inventory.countOf(this.inventory.state.equipped.bait) > 0;
       if (this.server?.enabled) {
-        const ticket = this.activeServerCast;
-        this.activeServerCast = null;
         const landing = { ...state.bobber };
-        const epoch = this.castEpoch;
-        if (!ticket) this.cast.startRetrieve("bait");
-        else {
-          const pending = { epoch }; this.castLanding = pending;
-          this.updateCastControls?.(enabled);
-          this.server.landCast(ticket.castId, landing).catch(error => {
-            // Do not alter a newer cast when an older response finishes late.
-            if (this.castEpoch === epoch && this.cast.state.fs === "wait") this.cast.startRetrieve("bait");
-            this.handleAccountError(error);
-          }).finally(() => { if (this.castLanding === pending) this.castLanding = null; });
+        const prediction = this.predictedServerCast;
+        if (prediction) {
+          prediction.landing = landing;
+          this.castLanding = prediction;
+          this.confirmPredictedLanding(prediction);
         }
+        else {
+          this.cancelServerCast();
+          this.cast.startRetrieve("bait");
+        }
+        this.updateCastControls?.(enabled);
       }
       this.ui.refreshInventory();
       this.ui.refreshProfile();

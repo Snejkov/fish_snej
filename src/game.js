@@ -1,5 +1,6 @@
 import * as THREE from "three";
-import { SnejAngler, RETRIEVE_LIFT_ANGLE } from "./angler.js?v=rod-controls-2";
+import { SnejAngler, RETRIEVE_LIFT_ANGLE } from "./angler.js?v=uploaded-skin-4";
+import { createUploadedSkin } from "./uploadedSkin.js?v=uploaded-skin-4";
 import { RODS, rodForLength } from "./rods.js?v=0.0.5a";
 import { SnejInventory } from "./gear/inventory.js";
 import { SnejCatchLog } from "./game/catchLog.js";
@@ -978,7 +979,7 @@ export class SnejFishingGame {
     this.terrain = new SnejTerrain(this.lake, this.settings);
     this.water = new SnejWater(this.settings, this.lake);
     this.sky = new SnejSky(this.scene);
-    this.angler = new SnejAngler();
+    this.angler = new SnejAngler({ modelFactory: createUploadedSkin });
     this.cast.reset();
     this.applyRod(this.inventory.equippedRod());
     if (!this.castMesh) {

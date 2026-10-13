@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Uploaded Angler</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: Arial, sans-serif; color: #28332e; background: #e8ece9; }
+    #skin-canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+    header { position: fixed; inset: 0 0 auto; z-index: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 16px; background: rgba(248,250,249,.94); border-bottom: 1px solid #c8d0ca; }
+    strong { font-size: 16px; margin-right: auto; }
+    .poses { display: flex; flex-wrap: wrap; gap: 2px; }
+    .poses label { cursor: pointer; padding: 6px 8px; border-bottom: 2px solid transparent; font-size: 13px; }
+    .poses label:has(input:checked) { border-color: #2f8773; background: #e3eee8; }
+    .poses input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+    .poses label:has(input:focus-visible) { outline: 2px solid #2f8773; }
+    button { border: 1px solid #b6c2bb; border-radius: 4px; padding: 7px 10px; background: white; color: inherit; cursor: pointer; }
+    .equipment { display: flex; align-items: center; gap: 5px; font-size: 13px; }
+    footer { position: fixed; bottom: 12px; left: 16px; font-size: 12px; color: #52615a; display: flex; gap: 14px; pointer-events: none; }
+    @media (max-width: 600px) { header { gap: 8px; padding: 8px; } strong { width: 100%; } .poses { flex: 1 1 100%; } footer { left: 10px; bottom: 10px; font-size: 11px; } }
+  </style>
+  <script type="importmap">{"imports":{"three":"../vendor/three.module.min.js"}}</script>
+</head>
+<body>
+  <canvas id="skin-canvas" aria-label="Uploaded angler model"></canvas>
+  <header>
+    <strong>Uploaded Angler</strong>
+    <div class="poses" role="group" aria-label="Pose">
+      <label><input type="radio" name="pose" value="idle" checked>Idle</label>
+      <label><input type="radio" name="pose" value="walk">Walk</label>
+      <label><input type="radio" name="pose" value="run">Run</label>
+      <label><input type="radio" name="pose" value="wade">Wade</label>
+      <label><input type="radio" name="pose" value="hold">Hold</label>
+      <label><input type="radio" name="pose" value="cast">Cast</label>
+      <label><input type="radio" name="pose" value="retrieve">Retrieve</label>
+    </div>
+    <div class="poses" role="group" aria-label="View">
+      <label><input type="radio" name="view" value="body" checked>Body</label>
+      <label><input type="radio" name="view" value="hand">Hand</label>
+    </div>
+    <label class="equipment"><input id="equipment" type="checkbox">Equipment</label>
+    <button id="front" type="button">Front</button>
+    <button id="back" type="button">Back</button>
+  </header>
+  <footer><span id="load-status" role="status">Loading</span><span>6,847 triangles</span><span>5 textures</span></footer>
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "./vendor/OrbitControls.js";
+    import { SnejAngler } from "./angler.js?v=uploaded-skin-4";
+    import { createUploadedSkin } from "./uploadedSkin.js?v=uploaded-skin-4";
+    const canvas = document.getElementById("skin-canvas");
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1;
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xe8ece9);
+    const camera = new THREE.PerspectiveCamera(38, 1, 0.05, 50);
+    const poseCamera = new THREE.PerspectiveCamera(70, 1, 0.05, 50);
+    poseCamera.position.set(0, 1.66, 0);
+    poseCamera.lookAt(0, 1.66, 1);
+    const handTarget = new THREE.Vector3();
+    camera.position.set(2.5, 1.55, 3.3);
+    const controls = new OrbitControls(camera, canvas);
+    controls.target.set(0, 1.01, 0);
+    controls.enableDamping = true;
+    controls.minDistance = 1.1;
+    controls.maxDistance = 10;
+    controls.maxPolarAngle = Math.PI * 0.49;
+    scene.add(new THREE.HemisphereLight(0xffffff, 0xa5b9a6, 2.1));
+    const sun = new THREE.DirectionalLight(0xffffff, 2.4);
+    sun.position.set(3, 6, 4);
+    scene.add(sun);
+    const fill = new THREE.DirectionalLight(0xe3edf8, 0.7);
+    fill.position.set(-3, 2, -2);
+    scene.add(fill);
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshStandardMaterial({ color: 0xe3e8e4, roughness: 1 }));
+    floor.rotation.x = -Math.PI / 2;
+    scene.add(floor);
+    const grid = new THREE.GridHelper(10, 20, 0xc1cbc4, 0xd3dbd5);
+    grid.position.y = 0.001;
+    scene.add(grid);
+    const angler = new SnejAngler({ modelFactory: createUploadedSkin });
+    angler.group.position.y = 0.04;
+    scene.add(angler.group);
+    let pose = "idle", handView = false, previous = performance.now();
+    for (const input of document.querySelectorAll('[name="pose"]')) input.addEventListener("change", () => { pose = input.value; });
+    const equipment = document.getElementById("equipment");
+    function updateView() {
+      handView = document.querySelector('[name="view"]:checked').value === "hand";
+      controls.enabled = !handView;
+      document.getElementById("front").disabled = document.getElementById("back").disabled = handView;
+      camera.fov = handView ? 45 : 38;
+      camera.layers.mask = handView ? 3 : 1;
+      if (handView) { camera.position.set(0, 1.66, 0); camera.lookAt(0, 1.66, 1); }
+      else setView(false);
+      camera.updateProjectionMatrix();
+    }
+    for (const input of document.querySelectorAll('[name="view"]')) input.addEventListener("change", updateView);
+    if (new URLSearchParams(location.search).get("view") === "hand") document.querySelector('[name="view"][value="hand"]').checked = true;
+    updateView();
+    function setView(back) {
+      camera.position.set(0, 1.5, back ? -4 : 4);
+      controls.target.set(0, 1.01, 0);
+      controls.update();
+    }
+    document.getElementById("front").onclick = () => setView(false);
+    document.getElementById("back").onclick = () => setView(true);
+    function resize() {
+      renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));
+      renderer.setSize(innerWidth, innerHeight, false);
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+    }
+    addEventListener("resize", resize);
+    resize();
+    const loaded = await angler.model.ready;
+    document.getElementById("load-status").textContent = loaded.every(Boolean) ? "Ready" : "Texture load failed";
+    function frame(now) {
+      const dt = Math.min(0.05, (now - previous) / 1000);
+      previous = now;
+      const animationCamera = handView ? poseCamera : camera;
+      angler.update(dt, { state: "playing", speed: { walk: 4, run: 6.8, wade: 1.6 }[pose] || 0,
+        depth: pose === "wade" ? 0.5 : 0, directionX: 0, directionZ: 1,
+        camera: animationCamera, castCamera: animationCamera, cameraMode: handView ? "first-person" : "third-person", viewBlend: handView ? 0 : 1,
+        castState: ["cast", "retrieve"].includes(pose) ? "flight" : pose === "hold" ? "wait" : "idle",
+        castRetrieving: pose === "retrieve" });
+      angler.carry.rod.visible = handView || equipment.checked;
+      angler.carry.tackleBox.visible = !handView && equipment.checked;
+      if (handView) {
+        // Frame the diagnostic close-up without feeding its camera back into the gameplay pose.
+        angler.skeleton.getBoneByName("RightHand").getWorldPosition(handTarget);
+        camera.position.copy(handTarget).add(new THREE.Vector3(0.22, 0.20, -0.55));
+        handTarget.y += 0.04;
+        camera.lookAt(handTarget);
+      }
+      if (!handView) controls.update();
+      renderer.render(scene, camera);
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>

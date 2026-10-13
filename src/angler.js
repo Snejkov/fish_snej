@@ -15,7 +15,8 @@ const GAITS = {
 };
 
 export class SnejAngler {
-  constructor() {
+  constructor({ modelFactory = createCharacterModel } = {}) {
+    this.modelFactory = modelFactory;
     this.group = new THREE.Group();
     this.group.name = "SnejCharacter";
     this.rig = new THREE.Group();
@@ -102,7 +103,7 @@ export class SnejAngler {
     this.skeleton = new THREE.Skeleton(Object.values(this.bones));
     this.skeleton.calculateInverses();
     this.buildPreview();
-    this.model = createCharacterModel(this.skeleton);
+    this.model = this.modelFactory(this.skeleton);
     this.rig.add(this.model.group);
     this.visuals.visible = false;
     this.carry = createCarryProps(this.bones);
@@ -285,8 +286,10 @@ export class SnejAngler {
     this.getRodTip(this.rodAdjustmentTip);
     this.rodLiftAngle = 0;
     if (this.castHoldWeight > 0 && this.rodLiftWeight > 0) this.applyRodLiftPose(info);
+    this.model.updatePose?.(info, this.carry);
     this.updatePreview();
     this.skeleton.update();
+    if (this.model.skeleton && this.model.skeleton !== this.skeleton) this.model.skeleton.update();
     this.group.visible = true;
   }
 

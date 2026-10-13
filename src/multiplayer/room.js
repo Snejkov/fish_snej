@@ -1,5 +1,6 @@
 import * as THREE from "three";
-import { SnejAngler } from "../angler.js?v=0.0.5a-hf6";
+import { SnejAngler } from "../angler.js?v=uploaded-skin-4";
+import { createUploadedSkin } from "../uploadedSkin.js?v=uploaded-skin-4";
 
 const NAMEPLATE_RANGE = 50;
 
@@ -32,7 +33,7 @@ export class SnejRemotePlayerRoom {
     let player = this.players.get(id);
     if (!player) {
       // Each peer reuses the local model with its own skeleton and animation mixer.
-      const angler = new SnejAngler();
+      const angler = new SnejAngler({ modelFactory: createUploadedSkin });
       player = {
         angler,
         model: angler.group,
@@ -74,10 +75,14 @@ export class SnejRemotePlayerRoom {
     player.angler.mixer.stopAllAction();
     player.angler.mixer.uncacheRoot(player.angler.rig);
     player.angler.skeleton.dispose();
+    const skinMaterials = new Set(Object.values(player.angler.model.materials));
+    player.angler.model.dispose();
     const geometries = new Set();
     player.model.traverse((part) => { if (part.geometry) geometries.add(part.geometry); });
     for (const geometry of geometries) geometry.dispose();
-    for (const material of player.model.userData.materials) material.dispose();
+    for (const material of player.model.userData.materials) {
+      if (!skinMaterials.has(material)) material.dispose();
+    }
     this.players.delete(id);
   }
 

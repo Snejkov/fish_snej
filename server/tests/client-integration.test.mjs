@@ -50,7 +50,9 @@ for (const guestOnly of [false, true]) test(`actual adapter API (${guestOnly ? "
   const account = (initialCookie = "") => {
     let cookie = initialCookie;
     const client = new SnejServerClient({ fetcher: async (path, options = {}) => {
-      const response = await fetch(origin + path, { ...options, headers: { ...options.headers, Cookie: cookie, Origin: origin } });
+      // The durability fixture restarts on the same port; do not reuse a closed keep-alive socket.
+      const response = await fetch(origin + path, { ...options,
+        headers: { ...options.headers, Cookie: cookie, Origin: origin, Connection: "close" } });
       const next = response.headers.get("set-cookie");
       if (next) cookie = next.split(";")[0];
       return response;

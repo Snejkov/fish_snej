@@ -3,19 +3,23 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="SnejFishing">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png?v=apple-home-1">
     <title>SnejFishing -- Lakeside</title>
     <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=">
     <link rel="stylesheet" href="./styles.css?v=cast-meter-2">
     <link rel="stylesheet" href="./styles/build.css?v=0.0.3-hf2.12">
     <link rel="stylesheet" href="./styles/profile.css?v=accounts-1">
     <link rel="stylesheet" href="./styles/multiplayer.css?v=nameplate-range-1">
-    <link rel="stylesheet" href="./styles/mobile.css?v=rod-lift-1">
+    <link rel="stylesheet" href="./styles/mobile.css?v=apple-home-1">
     <script type="importmap">
       {
         "imports": {
           "three": "./vendor/three.module.min.js",
           "./src/game.js?v=0.0.4-hf7": "./src/game.js?v=closer-view-1",
-          "./src/i18n.js": "./src/i18n.js?v=rod-lift-1",
+          "./src/i18n.js": "./src/i18n.js?v=apple-home-1",
           "./src/floatRig.js?v=0.0.5a-hf4": "./src/floatRig.js?v=shore-cast-2",
           "./src/multiplayer/client.js": "./src/multiplayer/client.js?v=chat-1",
           "./src/multiplayer/room.js": "./src/multiplayer/room.js?v=nameplate-range-1",
@@ -39,6 +43,11 @@
           <p id="registration-validation" class="validation-line">Use 3 to 20 characters.</p>
           <button id="register-player" disabled>Create Profile</button>
           <p class="registration-rules">Letters, numbers, underscores, and hyphens. The first character cannot be a number.</p>
+          <details class="apple-home-guide" hidden>
+            <summary>Play from your Home Screen</summary>
+            <p>In Safari, tap Share, then Add to Home Screen. Keep Open as Web App enabled if shown.</p>
+            <p>Internet is required. If your saved profile is missing after adding the app, return to Safari instead of creating a new profile.</p>
+          </details>
         </div>
       </section>
 
@@ -95,6 +104,11 @@
             </button>
           </div>
 
+          <details class="apple-home-guide" hidden>
+            <summary>Play from your Home Screen</summary>
+            <p>In Safari, tap Share, then Add to Home Screen. Keep Open as Web App enabled if shown.</p>
+            <p>Internet is required. If your saved profile is missing after adding the app, return to Safari instead of creating a new profile.</p>
+          </details>
           <div class="row actions launcher-actions">
             <button id="new-game">Enter Snej Lake</button>
             <button id="continue-game" class="hidden">Continue Snej Lake</button>
@@ -340,6 +354,10 @@
       </div>
       <div id="toast" class="toast hidden" role="status"></div>
     </div>
+    <script type="module">
+      import { configureAppleHomeScreen } from "./src/appleHomeScreen.js?v=apple-home-1";
+      configureAppleHomeScreen();
+    </script>
     <script type="module" src="./src/main.js?v=ru-en-1"></script>
   </body>
 </html>

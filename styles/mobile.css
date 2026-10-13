@@ -1,4 +1,25 @@
 .mobile-controls[hidden], .mobile-orientation[hidden], .mobile-controls [hidden] { display: none !important; }
+.apple-home-guide[hidden] { display: none !important; }
+.apple-home-guide {
+  flex-basis: 100%;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  color: var(--dim);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.apple-home-guide summary { color: var(--cyan); cursor: pointer; }
+.apple-home-guide p { margin-top: 10px; }
+html.apple-home-screen { overscroll-behavior: none; }
+html.apple-home-screen .screen {
+  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
+    max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  overflow: auto;
+}
+@supports (height: 100dvh) {
+  html.apple-home-screen { height: 100dvh; }
+}
 .mobile-input-active { touch-action: none; }
 .mobile-input-active,
 .mobile-controls,

@@ -29,8 +29,7 @@ test("Physical Backquote toggles actual lock, preserves manual free mode, and ig
   assert.equal(f.counts().captures, 1);
   f.key(); assert.equal(f.cursor.free, true); assert.equal(f.document.pointerLockElement, null);
   assert.equal(f.cursor.pending, false);
-  // Ordinary clicks consult free instead of unconditionally requesting a new lock.
-  if (!f.cursor.free) f.cursor.capture();
+  assert.equal(f.cursor.captureAutomatically(), false);
   assert.equal(f.counts().requests, 1);
   f.key(); f.grant(); assert.equal(f.counts().requests, 2);
 });
@@ -53,4 +52,27 @@ test("Blur, hidden page, Escape, cancelled pending request and a late menu grant
   }
   const f = fixture(); f.key(); f.grant(); f.document.pointerLockElement = null; f.docListeners.pointerlockchange();
   assert.equal(f.cursor.free, true);
+});
+
+test("Automatic unlocks can recapture, but manual Backquote free mode survives menus", () => {
+  const f = fixture(); f.cursor.captureAutomatically(); f.grant();
+  f.cursor.release();
+  assert.equal(f.cursor.free, true); assert.equal(f.cursor.manualFree, false);
+  assert.equal(f.cursor.captureAutomatically(), true); f.grant();
+  assert.equal(f.counts().requests, 2);
+  f.key(); assert.equal(f.cursor.manualFree, true);
+  f.cursor.release();
+  assert.equal(f.cursor.captureAutomatically(), false);
+  assert.equal(f.counts().requests, 2);
+  f.key(); f.grant(); assert.equal(f.cursor.manualFree, false);
+});
+
+test("An obsolete promise rejection cannot release a newer granted capture", async () => {
+  const f = fixture(), failures = [];
+  f.canvas.requestPointerLock = () => new Promise((resolve, reject) => failures.push(reject));
+  f.cursor.captureAutomatically(); f.cursor.release(); f.cursor.captureAutomatically(); f.grant();
+  failures[0](new Error("old request")); await Promise.resolve();
+  f.docListeners.pointerlockerror();
+  assert.equal(f.document.pointerLockElement, f.canvas);
+  assert.equal(f.cursor.pending, false); assert.equal(f.cursor.free, false);
 });

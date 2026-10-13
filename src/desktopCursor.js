@@ -7,11 +7,14 @@ export class SnejDesktopCursor {
   constructor({ canvas, canInteract, onCapture, onRelease, environment = globalThis }) {
     Object.assign(this, { canvas, canInteract, onCapture, onRelease, environment });
     this.free = false;
+    this.manualFree = false;
     this.pending = false;
     this.generation = 0;
     const doc = environment.document;
     doc.addEventListener("pointerlockchange", () => this.changed());
-    doc.addEventListener("pointerlockerror", () => this.release());
+    doc.addEventListener("pointerlockerror", () => {
+      if (doc.pointerLockElement !== this.canvas) this.release();
+    });
     doc.addEventListener("visibilitychange", () => { if (doc.hidden) this.release(); });
     environment.addEventListener("blur", () => this.release());
   }
@@ -20,7 +23,7 @@ export class SnejDesktopCursor {
     if (event.code !== "Backquote" || event.repeat || event.isComposing || event.ctrlKey || event.altKey || event.metaKey
       || editableTarget(event.target) || !this.canInteract()) return false;
     event.preventDefault();
-    if (this.pending || this.environment.document.pointerLockElement === this.canvas) this.release();
+    if (this.pending || this.environment.document.pointerLockElement === this.canvas) this.release({ manual: true });
     else this.capture();
     return true;
   }
@@ -28,6 +31,8 @@ export class SnejDesktopCursor {
   capture() {
     if (this.pending || !this.canInteract() || this.environment.document.hidden) return false;
     this.free = false;
+    this.manualFree = false;
+    if (this.environment.document.pointerLockElement === this.canvas) return true;
     this.pending = true;
     const generation = ++this.generation;
     try {
@@ -37,7 +42,12 @@ export class SnejDesktopCursor {
     return true;
   }
 
-  release() {
+  captureAutomatically() {
+    return !this.manualFree && this.capture();
+  }
+
+  release({ manual = false } = {}) {
+    if (manual) this.manualFree = true;
     this.free = true;
     this.pending = false;
     this.generation += 1;

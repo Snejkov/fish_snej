@@ -6,6 +6,7 @@ const TAU = Math.PI * 2;
 const HIP_HEIGHT = 0.91;
 const FIRST_PERSON_BONES = new Set(["RightForeArm", "RightHand", "RightHandTip"]);
 export const ROD_LIFT_ANGLE = 0.28;
+export const RETRIEVE_LIFT_ANGLE = 1.18;
 const GAITS = {
   idle: { swing: 0, knee: 0, arm: 0, bob: 0, lean: 0, stride: 1 },
   walk: { swing: 0.48, knee: 0.82, arm: 0.38, bob: 0.018, lean: 0.035, stride: 3.0 },
@@ -32,6 +33,7 @@ export class SnejAngler {
     this.carryMoveWeight = 0;
     this.castHoldWeight = 0;
     this.rodLiftWeight = 0;
+    this.rodReturnWeight = 0;
     this.rodLiftAngle = 0;
     this.rodAdjustmentTip = new THREE.Vector3();
     this.liftPivot = new THREE.Vector3();
@@ -233,12 +235,15 @@ export class SnejAngler {
     this.carryMoveWeight += ((moving ? 1 : 0) - this.carryMoveWeight) * carryBlend;
     if (this.carryMoveWeight < 0.0001) this.carryMoveWeight = 0;
     else if (this.carryMoveWeight > 0.9999) this.carryMoveWeight = 1;
-    const castHeld = (info.castState === "flight" || info.castState === "wait") && !info.castRetrieving;
+    const castHeld = info.castState === "flight" || info.castState === "wait" || this.rodReturnWeight > 0.002;
     this.castHoldWeight += ((castHeld ? 1 : 0) - this.castHoldWeight) * blend;
     if (this.castHoldWeight < 0.0001) this.castHoldWeight = 0;
     else if (this.castHoldWeight > 0.9999) this.castHoldWeight = 1;
-    const lifting = info.castState === "wait" && !info.castRetrieving && info.rodLiftHeld === true;
-    this.rodLiftWeight += ((lifting ? 1 : 0) - this.rodLiftWeight) * (1 - Math.exp(-9 * Math.max(0, dt)));
+    const lifting = info.castRetrieving || (info.castState === "wait" && info.rodLiftHeld === true);
+    const returnRate = info.castRetrieving ? 5 : 2.5;
+    this.rodReturnWeight += ((info.castRetrieving ? 1 : 0) - this.rodReturnWeight) * (1 - Math.exp(-returnRate * Math.max(0, dt)));
+    const liftRate = !lifting && this.rodReturnWeight > 0.002 ? 2.5 : 9;
+    this.rodLiftWeight += ((lifting ? 1 : 0) - this.rodLiftWeight) * (1 - Math.exp(-liftRate * Math.max(0, dt)));
     if (this.rodLiftWeight < 0.0001) this.rodLiftWeight = 0;
     else if (this.rodLiftWeight > 0.9999) this.rodLiftWeight = 1;
     const cadence = moving ? speed / GAITS[state].stride : 0;
@@ -278,7 +283,7 @@ export class SnejAngler {
     }
     this.getRodTip(this.rodAdjustmentTip);
     this.rodLiftAngle = 0;
-    if (castHeld && this.rodLiftWeight > 0) this.applyRodLiftPose(info);
+    if (this.castHoldWeight > 0 && this.rodLiftWeight > 0) this.applyRodLiftPose(info);
     this.updatePreview();
     this.skeleton.update();
     this.group.visible = true;
@@ -298,7 +303,7 @@ export class SnejAngler {
   }
 
   applyRodLiftPose(info) {
-    const requested = ROD_LIFT_ANGLE * this.rodLiftWeight;
+    const requested = THREE.MathUtils.lerp(ROD_LIFT_ANGLE, RETRIEVE_LIFT_ANGLE, this.rodReturnWeight) * this.rodLiftWeight;
     this.bones.RightHand.getWorldPosition(this.liftPivot);
     this.liftOffset.copy(this.rodAdjustmentTip).sub(this.liftPivot);
     this.liftAxis.set(-this.castDirection.z, 0, this.castDirection.x).normalize();
@@ -388,6 +393,16 @@ export class SnejAngler {
     const tip = this.carry?.tip || this.bones.RightHandTip;
     if (tip) return tip.getWorldPosition(out);
     return out.set(0.45, 1.3, 0).applyMatrix4(this.group.matrixWorld);
+  }
+
+  getRetrieveHand(out = new THREE.Vector3()) {
+    this.group.updateWorldMatrix(true, true);
+    this.bones.RightHand.getWorldPosition(out);
+    // Catch just in front of the same grip so the hook does not vanish inside the hand.
+    this.group.getWorldDirection(this.carryDirection);
+    out.addScaledVector(this.carryDirection, 0.1);
+    out.y += 0.02;
+    return out;
   }
 
   getCastHoldTip(camera, out = new THREE.Vector3(), facingYaw) {

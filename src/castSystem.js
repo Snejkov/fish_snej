@@ -22,7 +22,7 @@ const FLIGHT_DRAG = 0.0055;
 const FLIGHT_TIME_SCALE = 0.65;
 const CAST_DISTANCE_MIN = 1;
 const RETRIEVE_SPEED = 9;
-const RETRIEVE_DISTANCE = 0.8;
+const RETRIEVE_CATCH_TIME = 0.18;
 
 const elevFor = (pitch) => clamp(0.46 + pitch * 0.55, 0.16, 0.95);
 
@@ -104,11 +104,13 @@ export class SnejCastSystem {
       lastRejection: null,
       targetPower: 0, minCastDist: 0, aimPoint: point(), aimDist: 0, aimYaw: null,
       aimCapped: false, aimHasPoint: false, aimOutOfReach: false, castObstruction: null, retrieving: false,
+      retrieveProgress: 0, retrieveDepth: 0, retrieveHook: point(),
       predictedLanding: point(), waitTime: 0,
       targetLanding: point(), targetValid: false, releaseBlock: null, selectedTarget: null
     });
     this._ctx = null;
     this._flightAccum = 0;
+    this._retrieveFrom = null;
     return this.state;
   }
 
@@ -209,6 +211,19 @@ export class SnejCastSystem {
     state.retrieving = true;
     state.castObstruction = reason;
     state.canRelease = false;
+    this._retrieveFrom = { ...state.bobber };
+    this._retrieveElapsed = 0;
+    const target = this._ctx?.retrieveTarget || this._ctx?.rodTip || this.getCastOriginLocal();
+    const span = distance(state.bobber, target);
+    this._retrieveDuration = clamp(span / RETRIEVE_SPEED, 0.65, 1.6);
+    this._retrieveArc = clamp(span * 0.13, 0.3, 1.2);
+    this._retrieveDepth = clamp(finite(this._ctx?.retrieveDepth, this.rig.floatDepth), 0, this.rig.floatDepth);
+    const floor = this._ctx?.retrieveClearanceY?.(state.bobber.x, state.bobber.z);
+    this._retrieveSubmerged = Number.isFinite(floor) ? Math.max(0, floor + this._retrieveDepth + 0.04 - state.bobber.y) : 0;
+    state.retrieveProgress = 0;
+    state.retrieveDepth = this._retrieveDepth;
+    copy(state.retrieveHook, state.bobber);
+    state.retrieveHook.y -= state.retrieveDepth;
     return true;
   }
 
@@ -470,17 +485,26 @@ export class SnejCastSystem {
       state.castObstruction = state.predictedLanding.obstruction;
       state.canRelease = !state.releaseBlock;
     } else if (state.fs === "flight" && state.retrieving && dt > 0) {
-      const origin = this._ctx?.rodTip || this.getCastOriginLocal();
-      const d = distance(state.bobber, origin);
-      if (d < RETRIEVE_DISTANCE) {
+      this._retrieveElapsed += dt;
+      const p = state.retrieveProgress = clamp01(this._retrieveElapsed / this._retrieveDuration);
+      const u = p * p * (3 - 2 * p);
+      const target = this._ctx?.retrieveTarget || this._ctx?.rodTip || this.getCastOriginLocal();
+      const endDepth = Math.min(this._retrieveDepth, 0.12);
+      state.retrieveDepth = lerp(this._retrieveDepth, endDepth, u);
+      state.bobber.x = lerp(this._retrieveFrom.x, target.x, u);
+      state.bobber.z = lerp(this._retrieveFrom.z, target.z, u);
+      state.bobber.y = lerp(this._retrieveFrom.y, target.y + endDepth, u) + 4 * this._retrieveArc * u * (1 - u);
+      // Return the rig through the air to the grip, never along the ground to the rod tip.
+      const floor = this._ctx?.retrieveClearanceY?.(state.bobber.x, state.bobber.z);
+      // Ease the initially submerged hook out of the water instead of snapping it above the surface.
+      if (p > 0 && p < 1 && Number.isFinite(floor)) state.bobber.y = Math.max(state.bobber.y,
+        floor + state.retrieveDepth + 0.04 - this._retrieveSubmerged * (1 - u));
+      copy(state.retrieveHook, state.bobber);
+      state.retrieveHook.y -= state.retrieveDepth;
+      if (this._retrieveElapsed >= this._retrieveDuration + RETRIEVE_CATCH_TIME) {
         state.fs = "idle";
         state.retrieving = false;
         state.castObstruction = null;
-      } else if (dt > 0) {
-        const t = Math.min(1, RETRIEVE_SPEED * dt / d);
-        state.bobber.x = lerp(state.bobber.x, origin.x, t);
-        state.bobber.y = lerp(state.bobber.y, origin.y, t);
-        state.bobber.z = lerp(state.bobber.z, origin.z, t);
       }
     } else if (state.fs === "flight" && dt > 0) {
       // Fixed steps keep prediction and landing frame-rate independent; interpolate visuals.
@@ -498,9 +522,9 @@ export class SnejCastSystem {
           } else {
             copy(this._position, this._previous);
             state.castObstruction = hit;
-            state.retrieving = true;
           }
           copy(state.bobber, this._position);
+          if (hit !== "water") this.startRetrieve(hit);
         }
       }
       copy(state.bobberVel, this._velocity);

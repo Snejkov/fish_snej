@@ -70,7 +70,7 @@ assert.equal(rig.castHoldWeight, 1);
 const frozen = rig.carry.rod.matrixWorld.toArray();
 for (let i = 0; i < 60; i += 1) rig.update(0, { ...info, state: "paused", castState: "wait" });
 assert.deepEqual(rig.carry.rod.matrixWorld.toArray(), frozen, "Paused hold must not accumulate wrist rotations.");
-for (const cleared of [{ castState: "charge" }, { castState: "idle" }, { castState: "flight", castRetrieving: true }]) {
+for (const cleared of [{ castState: "charge" }, { castState: "idle" }]) {
   advance({ ...info, castState: "wait" });
   rig.update(1 / 60, { ...info, ...cleared });
   assert.ok(rig.castHoldWeight > 0 && rig.castHoldWeight < 1, "Clearing a cast must blend back, not snap.");

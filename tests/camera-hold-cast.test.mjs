@@ -226,6 +226,8 @@ function withDesktopInput(view, callback) {
   const originalRelease = game.endHoldCast.bind(game);
   game.endHoldCast = () => { releases += 1; return originalRelease(); };
   game.installEvents();
+  // Normal gameplay starts with capture from the launch/resume gesture.
+  doc.pointerLockElement = game.canvas;
   const mouse = (extra = {}) => ({ button: 0, preventDefault() {}, sourceCapabilities: { firesTouchEvents: false }, ...extra });
   try { callback({ game, win, doc, mouse, counts: () => ({ captures, releases }) }); }
   finally { globalThis.window = previousWindow; globalThis.document = previousDocument; }
@@ -263,6 +265,7 @@ test("pending landing and lost interaction cancel lifting without resetting the 
     game.castLanding = null;
     for (const reason of ["blur", "hidden", "blocked", "pointercancel"]) {
       game.allowed = true; doc.hidden = false;
+      game.desktopCursor.captureAutomatically();
       game.canvas.emit("mousedown", mouse()); assert.equal(game.rodLiftHeld, true);
       if (reason === "hidden") { doc.hidden = true; doc.emit("visibilitychange", {}); }
       else if (reason === "blocked") { game.allowed = false; game.updateRodLift(1); }
@@ -312,9 +315,15 @@ test("captured primary pointer release launches exactly once without a bubbling 
   });
 });
 
-test("first mouse hold captures before release and a real mouse remains usable on a touch-capable PC", () => {
+test("a recapture click is consumed before a real mouse hold on a touch-capable PC", () => {
   withDesktopInput("third-person", ({ game, win, doc, mouse, counts }) => {
+    game.desktopCursor.release();
     game.mobileInput.enabled = true; game.lastTouchCanvas = performance.now();
+    game.canvas.emit("mousedown", mouse());
+    assert.equal(game.cast.state.fs, "idle"); assert.equal(game.desktopCastHeld, undefined);
+    assert.equal(doc.pointerLockElement, game.canvas);
+    win.emit("pointerup", mouse({ pointerType: "mouse" }), true);
+    assert.equal(game.cast.state.fs, "idle");
     game.canvas.emit("mousedown", mouse());
     assert.equal(game.cast.state.fs, "charge"); assert.equal(counts().captures, 1);
     assert.equal(doc.pointerLockElement, game.canvas, "The initial held gesture must already support camera look.");
@@ -326,7 +335,7 @@ test("first mouse hold captures before release and a real mouse remains usable o
 
 test("manual free cursor is preserved and touch, pen, and non-primary releases cannot end a mouse hold", () => {
   withDesktopInput("first-person", ({ game, win, mouse, counts }) => {
-    game.desktopCursor.release();
+    game.desktopCursor.release({ manual: true });
     game.canvas.emit("mousedown", mouse()); game.updateCast(2.2);
     for (const event of [mouse({ pointerType: "touch" }), mouse({ pointerType: "pen" }),
       mouse({ sourceCapabilities: { firesTouchEvents: true } }), mouse({ button: 2 })]) win.emit("pointerup", event, true);
@@ -353,7 +362,7 @@ test("a long touch refreshes compatibility suppression on release without disabl
     game.canvas.emit("mousedown", mouse({ sourceCapabilities: undefined }));
     assert.equal(game.cast.state.fs, "idle"); assert.equal(counts().captures, 0);
     game.canvas.emit("mousedown", mouse());
-    assert.equal(game.cast.state.fs, "charge"); assert.equal(counts().captures, 1);
+    assert.equal(game.cast.state.fs, "charge"); assert.equal(counts().captures, 0);
   });
 });
 

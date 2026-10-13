@@ -1,6 +1,6 @@
 import { CATALOG, findItem } from "./gear/catalog.js";
 import { CLOTHING_SLOTS } from "./gear/inventory.js";
-import { SnejPlayerChat } from "./multiplayer/chat.js?v=chat-1";
+import { SnejPlayerChat } from "./multiplayer/chat.js?v=menu-retrieve-1";
 import { fishingMeters } from "./fishingUnits.js?v=shore-cast-2";
 import { t, translateText, formatCoins, errorMessage, applyTranslations, onLanguageChange, getLanguage, setLanguage } from "./i18n.js";
 
@@ -295,7 +295,7 @@ export class SnejUI {
     document.getElementById("title-profile").addEventListener("click", () => this.toggleProfile());
     document.getElementById("pause-profile").addEventListener("click", () => this.toggleProfile());
     document.getElementById("pause-inventory").addEventListener("click", () => {
-      this.game.resume();
+      this.game.resume({ capture: false });
       this.toggleInventory();
     });
     document.getElementById("profile-close").addEventListener("click", () => this.closeProfile());
@@ -588,10 +588,10 @@ export class SnejUI {
   }
 
   async openProfile() {
+    this.profileOpen = true;
     this.toggleRoster(false);
     if (this.inventoryOpen) this.closeInventory();
     if (this.buildOpen) await this.discardBuild();
-    this.profileOpen = true;
     document.body.classList.add("profile-open");
     this.game.keys.clear();
     this.game.cast.cancelCharge();
@@ -601,10 +601,11 @@ export class SnejUI {
     this.el.hud.classList.add("hidden");
     this.el.hint.classList.add("hidden");
     this.el.profileTabButtons[0].focus();
-    if (document.pointerLockElement) document.exitPointerLock();
+    this.game.desktopCursor?.release();
   }
 
   closeProfile() {
+    const wasOpen = this.profileOpen;
     this.profileOpen = false;
     document.body.classList.remove("profile-open");
     this.el.profilePanel.classList.add("hidden");
@@ -612,6 +613,7 @@ export class SnejUI {
       this.el.hud.classList.toggle("hidden", !this.hudVisible);
       this.el.hint.classList.remove("hidden");
     }
+    if (wasOpen) this.game.captureDesktopCursor?.();
   }
 
   updateProfile() {
@@ -665,19 +667,20 @@ export class SnejUI {
 
   async openBuild() {
     if (this.game.mode !== "playing" || this.modalOpen) return;
+    this.buildOpen = true;
     if (this.inventoryOpen) this.closeInventory();
     if (this.profileOpen) this.closeProfile();
-    this.buildOpen = true;
     this.game.keys.clear();
     this.game.placementSystem.beginSession();
     this.el.buildPanel.classList.remove("hidden");
     this.el.hud.classList.add("hidden");
     this.el.hint.classList.add("hidden");
-    if (document.pointerLockElement) document.exitPointerLock();
+    this.game.desktopCursor?.release();
     await this.refreshTextures();
   }
 
   closeBuild() {
+    const wasOpen = this.buildOpen;
     this.buildOpen = false;
     this.game.placementSystem.handlePointerUp();
     this.el.buildPanel.classList.add("hidden");
@@ -685,6 +688,7 @@ export class SnejUI {
       this.el.hud.classList.toggle("hidden", !this.hudVisible);
       this.el.hint.classList.remove("hidden");
     }
+    if (wasOpen) this.game.captureDesktopCursor?.();
   }
 
   async saveBuild() {
@@ -876,10 +880,13 @@ export class SnejUI {
   }
 
   toggleRoster(show = !this.rosterOpen) {
+    const wasOpen = this.rosterOpen;
     this.rosterOpen = Boolean(show);
     document.getElementById("online-roster").classList.toggle("hidden", !this.rosterOpen);
     this.el.hud?.classList.toggle("hidden", this.rosterOpen || !this.hudVisible || this.profileOpen || this.buildOpen || this.inventoryOpen || this.game.mode === "title");
     if (this.rosterOpen) this.game.refreshPeerList();
+    if (this.rosterOpen) this.game.desktopCursor?.release();
+    else if (wasOpen) this.game.captureDesktopCursor?.();
   }
 
   showToast(text) {
@@ -922,13 +929,13 @@ export class SnejUI {
   }
 
   async toggleInventory() {
-    this.toggleRoster(false);
     if (!this.game.identity || this.modalOpen || this.game.mode !== "playing") return;
     if (this.inventoryOpen) return this.closeInventory();
+    this.inventoryOpen = true;
+    this.toggleRoster(false);
     if (this.profileOpen) this.closeProfile();
     if (this.buildOpen) await this.discardBuild();
     this.inventoryFocus = document.activeElement;
-    this.inventoryOpen = true;
     this.currentInventoryCategory = "all";
     this.inventoryMode = "owned";
     this.inventorySearch = "";
@@ -946,10 +953,11 @@ export class SnejUI {
     this.refreshInventory();
     for (const panel of this.el.inventoryPanel.querySelectorAll(".inventory-layout, .equipment-panel, .inventory-preview, .inventory-grid")) panel.scrollTop = 0;
     document.getElementById("inventory-close").focus({ preventScroll: true });
-    if (document.pointerLockElement) document.exitPointerLock();
+    this.game.desktopCursor?.release();
   }
 
   closeInventory() {
+    const wasOpen = this.inventoryOpen;
     this.clearGearDrag();
     this.inventoryOpen = false;
     document.body.classList.remove("inventory-open");
@@ -960,6 +968,7 @@ export class SnejUI {
     }
     (this.inventoryFocus?.isConnected && this.inventoryFocus.tabIndex >= 0 && this.inventoryFocus.getClientRects().length
       ? this.inventoryFocus : this.game.canvas).focus();
+    if (wasOpen) this.game.captureDesktopCursor?.();
   }
 
   refreshRodLine() {

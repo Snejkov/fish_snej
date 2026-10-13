@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { SnejAngler } from "./angler.js?v=rod-lift-1";
+import { SnejAngler } from "./angler.js?v=menu-retrieve-1";
 import { RODS, rodForLength } from "./rods.js?v=0.0.5a";
 import { SnejInventory } from "./gear/inventory.js";
 import { SnejCatchLog } from "./game/catchLog.js";
@@ -9,9 +9,9 @@ import { SnejAudio, DEFAULT_AMBIENT_VOLUME, AMBIENT_DEFAULTS_VERSION, migrateAmb
 import {
   SnejCastSystem, SPLASH_BASE, SPLASH_MIN, SPLASH_SCALE,
   STARTLE_R, STARTLE_SEC, WAKE_BOB_AMP, WAKE_BOB_FREQ
-} from "./castSystem.js?v=cast-meter-2";
+} from "./castSystem.js?v=menu-retrieve-1";
 import { DEFAULT_FLOAT_DEPTH, FLOAT_RETRIEVE_FRACTION, SnejFloatRig, limitLineEnd, writeFixedLine } from "./floatRig.js?v=rod-lift-1";
-import { SnejDesktopCursor, editableTarget } from "./desktopCursor.js?v=shore-cast-2";
+import { SnejDesktopCursor, editableTarget } from "./desktopCursor.js?v=menu-retrieve-1";
 import { fishingMeters, fishingWorld } from "./fishingUnits.js?v=shore-cast-2";
 import { SnejAuth, SNEJKOV_ID, SNEJKOV_NAME } from "./auth.js";
 import { SnejServerClient, editableProfile } from "./serverClient.js?v=cast-bait-error-1";
@@ -26,7 +26,7 @@ import { SnejSky } from "./sky.js";
 import { SPAWNS, SPAWN_INITIAL_NAME, SPAWN_NAMES } from "./spawns.js";
 import { SnejTerrain } from "./terrain.js";
 import { SnejTextureManager } from "./textureManager.js";
-import { SnejUI } from "./ui.js?v=rod-lift-1";
+import { SnejUI } from "./ui.js?v=menu-retrieve-1";
 import { SnejMobileInput, movementInput, requestLandscape } from "./mobileInput.js?v=closer-view-1";
 import { SnejWater } from "./water.js?v=0.0.5a-hf3";
 import { clamp, clamp01, damp, lerp, moveDelta, resolveWalkableStart } from "./util.js?v=0.0.3-hf2.12";
@@ -101,6 +101,7 @@ export class SnejFishingGame {
     this.castMesh = null;
     this.castLine = null;
     this.depthLine = null;
+    this.hookMesh = null;
     this.aimMarker = null;
     this.castMeter = document.getElementById("cast-meter");
     this.castMeterFill = this.castMeter.querySelector(".cast-meter-fill");
@@ -238,8 +239,8 @@ export class SnejFishingGame {
     this.applyStart(this.lake.start, { mode: "third-person", pitch: -0.12 });
     this.installEvents();
     this.desktopCursor = new SnejDesktopCursor({ canvas: this.canvas,
-      canInteract: () => this.canCast(),
-      onCapture: () => { this.castPointer = null; this.mouse.dx = this.mouse.dy = 0; this.audio.resume(); },
+      canInteract: () => this.canDesktopCapture(),
+      onCapture: () => { this.desktopMouseActive = true; this.castPointer = null; this.mouse.dx = this.mouse.dy = 0; this.audio.resume(); },
       onRelease: () => { this.mouse.dx = this.mouse.dy = 0; }
     });
     this.mobileInput = new SnejMobileInput({
@@ -317,6 +318,7 @@ export class SnejFishingGame {
   async authenticatePlayer(name) {
     if (this.serverBusy) return { ok: false, message: "Please try again shortly." };
     this.serverBusy = true;
+    const entry = this.beginDesktopEntry({ guest: this.server.enabled });
     try {
       await this.serverReady;
       if (this.serverDetectionFailed && !await this.initializeAccount()) return { ok: false, message: "Connection failed" };
@@ -326,7 +328,7 @@ export class SnejFishingGame {
       await this.enterServerLake();
       return { ok: true };
     } catch (error) { return { ok: false, message: error.message }; }
-    finally { this.serverBusy = false; }
+    finally { this.serverBusy = false; this.finishDesktopEntry(entry); }
   }
 
   async serverCommand(action, itemId) {
@@ -361,6 +363,11 @@ export class SnejFishingGame {
   }
 
   installEvents() {
+    window.addEventListener("pointerdown", event => { this.desktopMouseActive = event.pointerType === "mouse"; }, true);
+    window.addEventListener("touchstart", () => { this.desktopMouseActive = false; }, { capture: true, passive: true });
+    window.addEventListener("mousedown", event => {
+      if (!this.isTouchCompatibilityEvent(event)) this.desktopMouseActive = true;
+    }, true);
     this.castCancelButton.addEventListener("click", () => this.cancelCastAction());
     // Safari can emit compatibility mouse events after a long touch ends.
     for (const type of ["touchstart", "touchend", "touchcancel"]) {
@@ -440,7 +447,7 @@ export class SnejFishingGame {
       if (event.code === "KeyC" && this.keyboardCastHeld) { this.keyboardCastHeld = false; this.endHoldCast(); }
     });
     window.addEventListener("mousemove", (event) => {
-      if (document.pointerLockElement === this.canvas && this.mode === "playing" && !this.ui.buildOpen && !this.ui.profileOpen && !this.ui.inventoryOpen && !this.ui.modalOpen && !this.ui.chat?.open) {
+      if (document.pointerLockElement === this.canvas && this.mode === "playing" && this.canDesktopCapture()) {
         this.mouse.dx += event.movementX;
         this.mouse.dy += event.movementY;
       } else if (!this.isTouchCompatibilityEvent(event)) {
@@ -462,16 +469,22 @@ export class SnejFishingGame {
       surface.addEventListener("touchstart", () => { this.lastTouchCanvas = performance.now(); }, { passive: true });
       surface.addEventListener("mousedown", (event) => {
         if (event.button !== 0 || this.isTouchCompatibilityEvent(event)) return;
+        this.desktopMouseActive = true;
         event.preventDefault();
+        if (this.desktopCursor && !this.desktopCursor.manualFree && document.pointerLockElement !== this.canvas) {
+          // A camera-recapture click must never double as a throw or a retrieval.
+          this.desktopCursor.captureAutomatically();
+          return;
+        }
         const lifting = this.cast.state.fs === "wait";
         this.desktopCastHeld = lifting ? false : this.beginHoldCast();
         const started = lifting ? this.beginRodLift() : this.desktopCastHeld;
-        if (started && !this.desktopCursor?.free && document.pointerLockElement !== this.canvas) this.desktopCursor?.capture();
+        if (started && !this.desktopCursor?.manualFree && document.pointerLockElement !== this.canvas) this.desktopCursor?.captureAutomatically();
       });
       surface.addEventListener("click", (event) => {
         if (this.isTouchCompatibilityEvent(event) || !this.canCast() || ["aim", "charge", "flight"].includes(this.cast.state.fs)) return;
         this.audio.resume();
-        if (!this.desktopCursor?.free) this.desktopCursor?.capture();
+        this.desktopCursor?.captureAutomatically();
       });
     }
     const releaseMouseCast = event => {
@@ -496,7 +509,7 @@ export class SnejFishingGame {
   }
 
   requestMobileLandscape() {
-    if (this.mobileInput?.enabled) void requestLandscape();
+    if (this.mobileInput?.enabled && this.desktopMouseActive !== true) void requestLandscape();
   }
 
   checkCastBait() {
@@ -894,12 +907,14 @@ export class SnejFishingGame {
       this.depthLine.name = "SnejDepthLine";
       this.depthLine.geometry.attributes.position.setUsage(THREE.DynamicDrawUsage);
       this.depthLine.frustumCulled = false;
+      this.hookMesh = this.createHookMesh();
       this.aimMarker = this.createMarker(0.5, 0.66, 0x9ff0ff, 0.85);
       this.aimMarker.name = "SnejCastMarker";
     }
     this.castMesh.visible = false;
     this.castLine.visible = false;
     this.depthLine.visible = false;
+    this.hookMesh.visible = false;
     this.aimMarker.visible = false;
     this.castMeter.classList.add("hidden");
     this.scene.add(
@@ -908,7 +923,7 @@ export class SnejFishingGame {
       this.angler.group,
       this.placementSystem.group,
       this.remoteRoom.group,
-      this.castMesh, this.castLine, this.depthLine, this.aimMarker
+      this.castMesh, this.castLine, this.depthLine, this.hookMesh, this.aimMarker
     );
     this.scene.traverse((object) => { if (object.isLight) object.layers.enable(1); });
     this.configureShadows();
@@ -1039,54 +1054,91 @@ export class SnejFishingGame {
     this.ui?.updateProfile();
   }
 
+  canDesktopCapture() {
+    return (this.desktopEntryActive || this.mode === "playing" || this.mode === "connecting")
+      && !this.ui.buildOpen && !this.ui.profileOpen && !this.ui.inventoryOpen && !this.ui.modalOpen
+      && !this.ui.rosterOpen && !this.ui.chat?.open;
+  }
+
+  captureDesktopCursor() {
+    return (!this.mobileInput?.enabled || this.desktopMouseActive === true)
+      && this.canDesktopCapture() && Boolean(this.desktopCursor?.captureAutomatically());
+  }
+
+  beginDesktopEntry({ guest = false } = {}) {
+    const epoch = this.desktopEntryEpoch = (this.desktopEntryEpoch || 0) + 1;
+    this.desktopEntryActive = Boolean(this.identity || guest) && (!this.mobileInput?.enabled || this.desktopMouseActive === true);
+    // Request during the launch click, before an online profile or room can await the network.
+    this.captureDesktopCursor();
+    return epoch;
+  }
+
+  finishDesktopEntry(epoch) {
+    if (epoch !== this.desktopEntryEpoch) return;
+    this.desktopEntryActive = false;
+    if (!["playing", "connecting"].includes(this.mode)) this.desktopCursor?.release();
+  }
+
+  releaseDesktopCursor() {
+    this.desktopEntryEpoch = (this.desktopEntryEpoch || 0) + 1;
+    this.desktopEntryActive = false;
+    this.desktopCursor?.release();
+  }
+
   async newGame(options = {}) {
-    await this.serverReady;
-    if (this.serverDetectionFailed) return this.ui.showToast("Connection failed");
-    if (this.server.enabled) return this.enterServerLake();
-    this.audio.resume();
-    if (!options.keepConnection) this.disconnectMultiplayer();
-    this.buildWorld();
-    this.currentSpawn = SPAWN_INITIAL_NAME;
-    this.applyStart(SPAWNS[this.currentSpawn], { mode: "third-person", pitch: SPAWNS[this.currentSpawn].pitch });
-    await this.placementSystem.setPlacements([]);
-    this.hasProgress = true;
-    this.mode = "playing";
-    this.ui.showTitle(false);
-    this.ui.showPause(false);
-    this.save();
+    const entry = this.beginDesktopEntry();
+    try {
+      await this.serverReady;
+      if (this.serverDetectionFailed) return this.ui.showToast("Connection failed");
+      if (this.server.enabled) return await this.enterServerLake();
+      this.audio.resume();
+      if (!options.keepConnection) this.disconnectMultiplayer();
+      this.buildWorld();
+      this.currentSpawn = SPAWN_INITIAL_NAME;
+      this.applyStart(SPAWNS[this.currentSpawn], { mode: "third-person", pitch: SPAWNS[this.currentSpawn].pitch });
+      await this.placementSystem.setPlacements([]);
+      this.hasProgress = true;
+      this.mode = "playing";
+      this.ui.showTitle(false);
+      this.ui.showPause(false);
+      this.save();
+    } finally { this.finishDesktopEntry(entry); }
   }
 
   async continueGame() {
-    await this.serverReady;
-    if (this.serverDetectionFailed) return this.ui.showToast("Connection failed");
-    if (this.server.enabled) return this.enterServerLake();
-    this.audio.resume();
-    this.disconnectMultiplayer();
-    const save = this.loadSave();
-    if (!save?.player?.lastPosition) return this.newGame();
-    this.settings = { ...DEFAULT_SETTINGS, ...(save.settings || {}), randomLake: false };
-    this.settings.lang = normalizeLanguage(this.settings.lang);
-    setLanguage(this.settings.lang, { persist: false });
-    this.audio.settings = this.settings;
-    this.identity = save.player.identity;
-    this.nextLocalId = Math.max(this.nextLocalId, Number(this.identity?.nextLocalId) || 1);
-    this.playerName = this.identity.name;
-    this.refreshDerivedRank();
-    this.lastRoom = save.multiplayer?.lastRoom || "snej-1";
-    this.currentSpawn = SPAWN_NAMES.includes(save.player.spawn) ? save.player.spawn : SPAWN_INITIAL_NAME;
-    this.buildWorld();
-    this.applyStart(save.player.lastPosition, save.player.view);
-    await this.placementSystem.setPlacements(save.placements || []);
-    this.ui.syncSettings();
-    this.hasProgress = true;
-    this.mode = "playing";
-    this.ui.showTitle(false);
-    this.ui.showPause(false);
-    this.save();
+    const entry = this.beginDesktopEntry();
+    try {
+      await this.serverReady;
+      if (this.serverDetectionFailed) return this.ui.showToast("Connection failed");
+      if (this.server.enabled) return await this.enterServerLake();
+      this.audio.resume();
+      this.disconnectMultiplayer();
+      const save = this.loadSave();
+      if (!save?.player?.lastPosition) return await this.newGame();
+      this.settings = { ...DEFAULT_SETTINGS, ...(save.settings || {}), randomLake: false };
+      this.settings.lang = normalizeLanguage(this.settings.lang);
+      setLanguage(this.settings.lang, { persist: false });
+      this.audio.settings = this.settings;
+      this.identity = save.player.identity;
+      this.nextLocalId = Math.max(this.nextLocalId, Number(this.identity?.nextLocalId) || 1);
+      this.playerName = this.identity.name;
+      this.refreshDerivedRank();
+      this.lastRoom = save.multiplayer?.lastRoom || "snej-1";
+      this.currentSpawn = SPAWN_NAMES.includes(save.player.spawn) ? save.player.spawn : SPAWN_INITIAL_NAME;
+      this.buildWorld();
+      this.applyStart(save.player.lastPosition, save.player.view);
+      await this.placementSystem.setPlacements(save.placements || []);
+      this.ui.syncSettings();
+      this.hasProgress = true;
+      this.mode = "playing";
+      this.ui.showTitle(false);
+      this.ui.showPause(false);
+      this.save();
+    } finally { this.finishDesktopEntry(entry); }
   }
 
   async startOnline(room) {
-    if (this.server.enabled) return this.enterServerLake();
+    if (this.server.enabled) return this.continueGame();
     this.lastRoom = String(room || "snej-1").trim().slice(0, 32) || "snej-1";
     await this.newGame({ keepConnection: true });
     this.multiplayer.connect(this.lastRoom, this.identity, this.currentRank);
@@ -1094,50 +1146,54 @@ export class SnejFishingGame {
   }
 
   async newLake() {
-    if (this.server.enabled) return this.enterServerLake();
-    const placements = this.placementSystem.serializeCommitted();
-    this.buildWorld();
-    this.applyStart(this.lake.start, { mode: this.cameraMode, pitch: this.pitch });
-    await this.placementSystem.setPlacements(placements);
-    this.mode = "playing";
-    this.ui.showPause(false);
-    this.save();
+    if (this.server.enabled) return this.continueGame();
+    const entry = this.beginDesktopEntry();
+    try {
+      const placements = this.placementSystem.serializeCommitted();
+      this.buildWorld();
+      this.applyStart(this.lake.start, { mode: this.cameraMode, pitch: this.pitch });
+      await this.placementSystem.setPlacements(placements);
+      this.mode = "playing";
+      this.ui.showPause(false);
+      this.save();
+    } finally { this.finishDesktopEntry(entry); }
   }
 
   quitToTitle() {
     this.save();
     this.cast.reset();
+    this.mode = "title";
+    this.releaseDesktopCursor();
     this.castMeter.classList.add("hidden");
     if (this.ui.buildOpen) this.ui.discardBuild();
     if (this.ui.profileOpen) this.ui.closeProfile();
     if (this.ui.inventoryOpen) this.ui.closeInventory();
     this.disconnectMultiplayer();
-    this.mode = "title";
     this.ui.showPause(false);
     this.ui.showTitle(true);
-    if (document.pointerLockElement) document.exitPointerLock();
   }
 
   pause() {
     this.endRodLift();
     this.resetSquint();
+    this.mode = "paused";
+    this.releaseDesktopCursor();
     if (this.ui.inventoryOpen) this.ui.closeInventory();
     if (this.holdCasting || this.castApproval || ["aim", "charge"].includes(this.cast.state.fs)) this.cancelCastAction();
     else this.cast.cancelCharge();
     this.castMeter.classList.add("hidden");
     this.ui.el.toast.classList.add("hidden");
-    this.mode = "paused";
     this.keys.clear();
     this.ui.showPause(true);
     this.save();
-    if (document.pointerLockElement) document.exitPointerLock();
   }
 
-  resume() {
+  resume({ capture = true } = {}) {
     this.audio.resume();
     this.mode = this.server.enabled && !this.multiplayer.connected ? "connecting" : "playing";
     if (this.mode === "connecting") this.multiplayer.connect("snej-1", this.identity, this.currentRank);
     this.ui.showPause(false);
+    if (capture) this.captureDesktopCursor();
   }
 
   async enterServerLake() {
@@ -1485,8 +1541,8 @@ export class SnejFishingGame {
         castState: this.cast.state.fs,
         castRetrieving: this.cast.state.retrieving,
         rodLiftHeld: this.rodLiftHeld,
-        castBobber: this.cast.state.fs === "wait" ? this.cast.state.bobber : null,
-        castLineLength: this.cast.rig.upperLine,
+        castBobber: this.cast.state.fs === "wait" || this.cast.state.retrieving ? this.cast.state.bobber : null,
+        castLineLength: this.cast.state.retrieving ? this.cast.rig.lineLength - this.cast.state.retrieveDepth : this.cast.rig.upperLine,
         rodLiftAllowed: this.rodLiftAllowed ||= tip => !this.lineObstruction(tip, this.cast.state.bobber, 0),
         cameraMode: this.cameraMode,
         viewBlend: this.viewBlend,
@@ -1622,7 +1678,11 @@ export class SnejFishingGame {
     const previewing = ["idle", "aim", "charge"].includes(this.cast.state.fs);
     const rodTip = previewing && this.castCamera && this.angler.getCastHoldTip
       ? this.angler.getCastHoldTip(this.castCamera, this.castTip) : this.angler.getRodTip(this.castTip);
-    Object.assign(this.castContext, { yaw: this.yaw, pitch: this.pitch, pos: this.pos, rodTip });
+    Object.assign(this.castContext, { yaw: this.yaw, pitch: this.pitch, pos: this.pos, rodTip,
+      retrieveTarget: this.angler.getRetrieveHand?.(this.retrieveHand ||= new THREE.Vector3()),
+      retrieveDepth: this.floatRig?.actualDepth ?? this.cast.rig?.floatDepth,
+      retrieveClearanceY: this.terrain?.groundMesh && this.water
+        ? this.retrieveClearanceY ||= (x, z) => this.castMarkerHeight({ x, z }) : undefined });
     this.castContext.rodTipForYaw = previewing && this.castContext.cameraAim && this.angler.getCastHoldTip
       ? this.castTipPreviewFn ||= yaw => this.castTipForFacing(yaw) : null;
     this.castContext.castHeading = this.cast.state.fs === "charge" || this.castApproval ? this.castHeading
@@ -1769,23 +1829,37 @@ export class SnejFishingGame {
     const visible = this.mode !== "title" && (state.fs === "flight" || state.fs === "wait");
     this.castMesh.visible = visible;
     this.castLine.visible = visible;
-    this.depthLine.visible = visible && state.fs === "wait" && this.cast.rig.floatDepth > 0;
+    const hooked = visible && (state.fs === "wait" || state.retrieving);
+    const depth = state.retrieving ? state.retrieveDepth : this.floatRig.actualDepth;
+    this.depthLine.visible = hooked && depth > 0;
+    if (this.hookMesh) this.hookMesh.visible = hooked;
     if (!visible) return;
     this.castMesh.position.set(state.bobber.x, state.bobber.y, state.bobber.z);
     if (state.fs === "wait") this.castMesh.position.y += Math.sin(state.waitTime * WAKE_BOB_FREQ) * WAKE_BOB_AMP;
     const tip = this.angler.getRodTip(this.castTip);
     const end = this.castMesh.position;
     const points = this.castLine.geometry.attributes.position;
-    const length = state.fs === "wait" ? this.cast.rig.upperLine : this.cast.rig.lineLength;
+    const length = state.fs === "wait" ? this.cast.rig.upperLine : this.cast.rig.lineLength - (state.retrieving ? depth : 0);
     limitLineEnd(tip, end, length, end);
     writeFixedLine(tip, end, length, points.array, this.time);
     points.needsUpdate = true;
     if (this.depthLine.visible) {
       const lower = this.depthLine.geometry.attributes.position;
       lower.setXYZ(0, end.x, end.y, end.z);
-      lower.setXYZ(1, this.floatRig.hook.x, this.floatRig.hook.y, this.floatRig.hook.z);
+      const hook = state.retrieving ? { x: end.x, y: end.y - depth, z: end.z } : this.floatRig.hook;
+      lower.setXYZ(1, hook.x, hook.y, hook.z);
       lower.needsUpdate = true;
     }
+    if (hooked && this.hookMesh) this.hookMesh.position.set(end.x, state.retrieving ? end.y - depth : this.floatRig.hook.y, end.z);
+  }
+
+  createHookMesh() {
+    const points = [[0, 0, 0], [0, -0.045, 0], [0.014, -0.065, 0], [0.032, -0.056, 0], [0.034, -0.035, 0]];
+    const mesh = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points.map(p => new THREE.Vector3(...p))),
+      new THREE.LineBasicMaterial({ color: 0xeaf4ff, toneMapped: false }));
+    mesh.name = "SnejHook";
+    mesh.frustumCulled = false;
+    return mesh;
   }
 
   lineObstruction(tip, end, slack = 0) {

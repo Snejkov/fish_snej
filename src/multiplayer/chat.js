@@ -95,6 +95,7 @@ export class SnejPlayerChat {
 
   toggle(show = !this.open) {
     if (show && !this.available()) return;
+    const wasOpen = this.open;
     this.open = Boolean(show);
     this.root.classList.toggle("chat-open", this.open);
     this.panel.hidden = !this.open;
@@ -106,13 +107,14 @@ export class SnejPlayerChat {
     this.game.mobileInput?.reset();
     if (this.open) {
       this.game.cancelCastAction();
-      if (document.pointerLockElement) document.exitPointerLock();
+      this.game.desktopCursor?.release();
       this.unread = 0;
       this.updateUnread();
       this.input.focus();
       this.log.scrollTop = this.log.scrollHeight;
     } else {
       this.input.blur();
+      if (wasOpen) this.game.captureDesktopCursor?.();
     }
   }
 

@@ -9,6 +9,7 @@ const THREE = await import("three");
 const { SnejFishingGame: Game } = await import("../src/game.js");
 const { SnejAngler } = await import("../src/angler.js");
 const { SnejCastSystem } = await import("../src/castSystem.js");
+const { SnejFloatRig } = await import("../src/floatRig.js");
 const { makePresence } = await import("../src/multiplayer/presence.js");
 const { SnejDesktopCursor } = await import("../src/desktopCursor.js");
 const { AccountError } = await import("../src/serverClient.js");
@@ -48,11 +49,11 @@ function fixture(view, online = false) {
   });
   game.cast = new SnejCastSystem({ rodRange: 8, floatDepth: 0.5,
     getCastOrigin: () => angler.getCastOrigin(game.castOrigin,
-      ["idle", "aim", "charge"].includes(game.cast.state.fs) ? game.cast.state.aimYaw : undefined) });
+      game.castRelease?.yaw ?? (["idle", "aim", "charge"].includes(game.cast.state.fs) ? game.cast.state.aimYaw : undefined)) });
   return { game, cancelled, landed, approve: ticket => approval(ticket) };
 }
 
-test("camera ray, not the character, drives both views; turn and exact release are frame-rate independent", () => {
+test("camera ray drives both views; launch precedes the smooth turn and exact landing at every frame rate", () => {
   const previousWindow = globalThis.window; globalThis.window = {};
   try {
     for (const view of ["third-person", "first-person"]) for (const fps of [30, 60, 144]) {
@@ -75,16 +76,24 @@ test("camera ray, not the character, drives both views; turn and exact release a
       assert.ok(tip.distanceTo(alignedTip) < 0.00001, "Prediction must use the future aligned physical rod tip.");
       game.angler.group.rotation.y = groupRotation;
       assert.ok(game.angler.bones.RightHand.quaternion.equals(bones), "Prediction cannot pose live bones.");
-      assert.ok(game.endHoldCast()); assert.equal(game.cast.state.fs, "charge"); assert.equal(game.cameraMode, view);
+      const origin = game.cast.getCastOriginLocal();
+      const launchOrigin = { ...origin };
+      assert.ok(game.endHoldCast()); assert.equal(game.cast.state.fs, "flight");
+      assert.equal(game.cameraMode, "first-person");
+      assert.equal(game.castFacing, facing, "Release cannot turn the visible model before the float starts flying.");
+      assert.equal(game.castTurn.elapsed, 0);
+      assert.ok(Math.hypot(...["x", "y", "z"].map(axis => game.cast.state.castOrigin[axis] - launchOrigin[axis])) < 1e-10,
+        "Post-launch turning cannot change the predicted release grip.");
       game.updateCast(1 / fps);
       assert.ok(Math.abs(game.castFacing - facing) > 0 && Math.abs(game.castFacing - facing) < 1);
       assert.equal(makePresence(game, 1).yaw, game.castFacing, "Peers receive the visual turning direction, not the orbit camera.");
       game.camera.lookAt(new THREE.Vector3(-20, 5, -20)); game.pitch = 1.2;
-      for (let i = 0; i < fps && game.cast.state.fs === "charge"; i += 1) {
+      for (let i = 0; i < fps && game.castTurn; i += 1) {
         game.updateCast(1 / fps);
         assert.deepEqual(game.cast.state.aimPoint, target, "Post-release camera movement cannot retarget.");
       }
-      assert.equal(game.cast.state.fs, "flight"); assert.equal(game.cast.state.castPower, power);
+      assert.equal(game.castTurn, null); assert.equal(game.castFacing, null);
+      assert.equal(game.cast.state.castPower, power);
       assert.equal(game.cameraMode, "first-person");
       for (let i = 0; i < fps * 10 && game.cast.state.fs === "flight"; i += 1) game.updateCast(1 / fps);
       assert.equal(game.cast.state.fs, "wait");
@@ -93,13 +102,13 @@ test("camera ray, not the character, drives both views; turn and exact release a
   } finally { globalThis.window = previousWindow; }
 });
 
-test("approved turning cast can be paused; reset cannot revive it and delayed saves cannot start an obsolete intent", async () => {
+test("pending cast can be paused; reset cannot revive it and delayed saves cannot start an obsolete intent", async () => {
   const previousDocument = globalThis.document; globalThis.document = {};
   try {
     const f = fixture("third-person", true), game = f.game;
     game.beginHoldCast(); game.updateCast(1); game.endHoldCast(); await flush();
-    f.approve({ castId: "approved_cancel_001" }); await flush();
     assert.equal(game.cast.state.fs, "charge"); game.pause(); await flush();
+    f.approve({ castId: "approved_cancel_001" }); await flush();
     assert.equal(game.cast.state.fs, "idle"); assert.equal(game.castRelease, null);
     assert.deepEqual(f.cancelled, ["approved_cancel_001"]); assert.equal(game.cameraMode, "third-person");
     const delayed = fixture("first-person", true), next = delayed.game;
@@ -124,18 +133,23 @@ test("turning across the -PI/PI boundary follows the short arc without a snap", 
   } finally { globalThis.window = previousWindow; }
 });
 
-test("delayed approval cannot change frozen camera target/power; launch waits for both turn and approval", async () => {
+test("delayed approval freezes target/power and facing; approval launches without waiting for a turn", async () => {
   const previousWindow = globalThis.window; globalThis.window = {};
   try {
     for (const view of ["third-person", "first-person"]) {
       const f = fixture(view, true), game = f.game; game.beginHoldCast(); game.updateCast(1.5);
-      const target = { ...game.cast.state.aimPoint }, power = game.cast.state.charge;
+      const target = { ...game.cast.state.aimPoint }, power = game.cast.state.charge, facing = game.castFacing;
       game.endHoldCast(); await flush(); game.updateCast(2);
       assert.equal(game.cast.state.fs, "charge"); assert.equal(game.cameraMode, view);
+      assert.equal(game.castFacing, facing); assert.equal(game.castTurn.elapsed, 0);
       game.camera.lookAt(new THREE.Vector3(-10, 0, -10)); game.updateCast(2);
       assert.deepEqual(game.cast.state.aimPoint, target); assert.equal(game.cast.state.charge, power);
-      f.approve({ castId: "camera_approved_001" }); await flush(); game.updateCast(1 / 60);
+      assert.equal(game.castFacing, facing); assert.equal(game.castTurn.elapsed, 0);
+      f.approve({ castId: "camera_approved_001" }); await flush();
       assert.equal(game.cast.state.fs, "flight");
+      assert.equal(game.castFacing, facing); assert.equal(game.castTurn.elapsed, 0);
+      game.updateCast(1 / 60);
+      assert.notEqual(game.castFacing, facing, "Only a launched cast starts turning.");
       for (let i = 0; i < 600 && game.cast.state.fs === "flight"; i += 1) game.updateCast(1 / 60);
       await flush(); assert.equal(f.landed.length, 1);
       assert.ok(Math.hypot(f.landed[0].value.x - target.x, f.landed[0].value.z - target.z) < 0.00001);
@@ -143,7 +157,7 @@ test("delayed approval cannot change frozen camera target/power; launch waits fo
   } finally { globalThis.window = previousWindow; }
 });
 
-test("cancel, disconnect and changed origin invalidate a turning cast and late approval", async () => {
+test("cancel, disconnect and changed origin invalidate a pending cast and late approval", async () => {
   const previousDocument = globalThis.document; globalThis.document = {};
   try {
     for (const interruption of ["cancel", "disconnect", "origin"]) {
@@ -158,6 +172,90 @@ test("cancel, disconnect and changed origin invalidate a turning cast and late a
       assert.deepEqual(f.landed, []);
     }
   } finally { globalThis.document = previousDocument; }
+});
+
+test("post-launch turn pauses at zero dt and cannot revive after retrieval, reset or an obsolete epoch", () => {
+  for (const interruption of ["retrieve", "reset", "epoch"]) {
+    const { game } = fixture("third-person");
+    game.beginHoldCast(); game.updateCast(1); game.endHoldCast();
+    assert.equal(game.cast.state.fs, "flight");
+    game.updateCast(0.05);
+    const facing = game.castFacing, elapsed = game.castTurn.elapsed;
+    game.updateCast(0); assert.equal(game.castFacing, facing); assert.equal(game.castTurn.elapsed, elapsed);
+    if (interruption === "retrieve") game.cast.startRetrieve("manual");
+    if (interruption === "reset") game.cast.reset();
+    if (interruption === "epoch") game.castEpoch += 1;
+    game.updateCast(0);
+    assert.equal(game.castTurn, null); assert.equal(game.castFacing, null);
+    if (interruption === "epoch") assert.equal(game.cast.state.fs, "flight", "Clearing animation cannot cancel a released flight.");
+    const power = game.cast.state.castPower;
+    game.updateCast(0); assert.equal(game.castTurn, null); assert.equal(game.cast.state.castPower, power);
+  }
+});
+
+test("a real pause and an open menu freeze the launched turn, then resume without a snap or duplicate cast", () => {
+  const { game } = fixture("third-person");
+  game.mode = "playing"; game.canCast = Game.prototype.canCast.bind(game);
+  let launches = 0; game.audio.cast = () => { launches += 1; };
+  game.beginHoldCast(); game.updateCast(1); game.endHoldCast(); game.updateCast(0.05);
+  const facing = game.castFacing, elapsed = game.castTurn.elapsed, bobber = { ...game.cast.state.bobber };
+  game.pause(); game.updateCast(0);
+  assert.equal(game.mode, "paused"); assert.equal(game.castFacing, facing); assert.equal(game.castTurn.elapsed, elapsed);
+  assert.deepEqual(game.cast.state.bobber, bobber); assert.equal(launches, 1);
+  game.resume({ capture: false });
+  game.ui.inventoryOpen = true; game.updateCast(0);
+  assert.equal(game.castFacing, facing); assert.equal(game.castTurn.elapsed, elapsed);
+  game.ui.inventoryOpen = false; game.updateCast(0.05);
+  assert.notEqual(game.castFacing, facing); assert.equal(game.castTurn.elapsed, elapsed + 0.05);
+  assert.equal(launches, 1);
+});
+
+test("post-launch turning completes even when a short flight lands first, with a real angler and fixed line", () => {
+  const previousWindow = globalThis.window; globalThis.window = {};
+  try {
+    for (const view of ["third-person", "first-person"]) for (const fps of [30, 60, 144]) {
+      for (const charge of [0.3, 1]) for (const height of [0.04, -0.9]) {
+        const { game } = fixture(view);
+        game.pos.y = height;
+        game.floatRig = new SnejFloatRig();
+        game.floatContext = { surfaceY: () => 0, isWaterAt: () => true, lineObstruction: () => null, playerOrigin: game.pos };
+        game.beginHoldCast(); game.castFacing = game.cast.state.aimYaw + Math.PI - 0.01;
+        game.updateCast(charge / 0.48);
+        const target = { ...game.cast.state.aimPoint };
+        game.endHoldCast();
+        const origin = { ...game.cast.state.castOrigin };
+        let landedBeforeTurn = false;
+        for (let i = 0; i < fps * 3; i += 1) {
+          game.updateCast(1 / fps);
+          game.castCamera.position.set(game.pos.x, game.pos.y + 1.62, game.pos.z);
+          game.castCamera.lookAt(game.castCamera.position.clone().add(new THREE.Vector3(Math.sin(game.yaw), Math.sin(game.pitch), Math.cos(game.yaw))));
+          game.angler.update(1 / fps, { state: "playing", speed: 0, camera: game.castCamera, castCamera: game.castCamera,
+            viewBlend: 0, castState: game.cast.state.fs });
+          if (game.cast.state.fs === "wait" && game.castTurn) landedBeforeTurn = true;
+          game.updateFloatRig(1 / fps);
+          assert.equal(game.cast.state.retrieving, false, "The body turn cannot retrieve a valid cast.");
+          assert.deepEqual(game.cast.state.castOrigin, origin);
+          if (game.cast.state.fs === "wait") {
+            assert.ok(Math.hypot(game.cast.state.bobber.x - target.x, game.cast.state.bobber.z - target.z) < 1e-5,
+              "The body turn cannot pull the chosen landing point.");
+          }
+        }
+        assert.equal(game.castTurn, null); assert.equal(game.cast.state.fs, "wait");
+        assert.equal(game.postCastPose, false);
+        if (charge === 0.3 && height < 0) assert.equal(landedBeforeTurn, true, "The short-flight fixture must exercise turning after landing.");
+        assert.ok(game.angler.getRodTip().distanceTo(new THREE.Vector3(target.x, 0, target.z)) <= game.cast.rig.upperLine + 1e-6);
+        if (charge === 1) {
+          const before = { ...game.cast.state.bobber };
+          game.yaw += 0.02; game.updateCast(1 / fps);
+          game.angler.update(1 / fps, { state: "playing", speed: 0, camera: game.castCamera, castCamera: game.castCamera,
+            viewBlend: 0, castState: "wait" });
+          game.castAdjusting = true; game.updateFloatRig(1 / fps);
+          assert.ok(Math.hypot(game.cast.state.bobber.x - before.x, game.cast.state.bobber.z - before.z) > 1e-5,
+            "After settling, an intentional rod correction must still move the float.");
+        }
+      }
+    }
+  } finally { globalThis.window = previousWindow; }
 });
 
 test("upward camera and dry/blocked preview do not get silently clamped to a valid cast", () => {

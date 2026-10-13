@@ -115,17 +115,18 @@ button.onclick = () => {
       && barStyle.borderTopWidth === "1px", "Strength was not a compact centered top frame");
     check(game.cast.state.canRelease, "Small camera adjustment blocked the test cast");
     const chosen = { ...game.cast.state.predictedLanding };
-    lift(false); check(game.cast.state.fs === "charge" && game.castTurn, "Release skipped the smooth turn");
-    check(game.cameraMode === "third-person", "Turning changed the view before launch");
+    const releaseTarget = { ...game.cast.state.aimPoint };
+    lift(false); check(game.cast.state.fs === "flight" && game.castTurn, "Release waited for a turn before launching");
+    check(game.cameraMode === "first-person", "Successful release did not switch to first person");
+    check(game.castFacing === oldFacing && game.castTurn.elapsed === 0, "Character turned before launch");
     game.updateCast(0.05);
     check(game.castFacing !== oldFacing, "Character did not turn smoothly");
-    const releaseTarget = { ...game.castRelease.target };
     game.yaw += 0.2; game.updateCamera(10);
-    for (let i = 0; i < 90 && game.cast.state.fs === "charge"; i += 1) {
+    for (let i = 0; i < 90 && game.castTurn; i += 1) {
       game.updateCast(1 / 60);
       check(Math.hypot(game.cast.state.aimPoint.x - releaseTarget.x, game.cast.state.aimPoint.z - releaseTarget.z) < 0.00001, "Turn/approval retargeted the release");
     }
-    check(game.cast.state.fs === "flight", "Turn did not complete the launch");
+    check(!game.castTurn, "Post-launch turn did not complete");
     check(game.cameraMode === "first-person", "Successful release did not switch to first person");
     for (let i = 0; i < 600 && game.cast.state.fs === "flight"; i += 1) game.updateCast(1 / 60);
     check(game.cast.state.fs === "wait", "Cast did not land");
@@ -145,7 +146,7 @@ button.onclick = () => {
     game.yaw = savedYaw; game.angler.group.rotation.y = savedYaw; game.angler.group.updateMatrixWorld(true);
     game.updateCamera(10); game.cast.reset(); game.updateCast(0);
     press(); game.updateCast(2.5);
-    report.textContent = "PASS: camera aim / smooth turn / frozen target / exact landing / compact top frame / hold cap / cancel";
+    report.textContent = "PASS: camera aim / launch before turn / frozen target / exact landing / compact top frame / hold cap / cancel";
     button.hidden = true;
   } catch (error) { report.textContent = "FAIL: " + error.message; }
 };

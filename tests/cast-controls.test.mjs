@@ -79,7 +79,7 @@ test("Mobile landed and retrieving states expose one Retrieve action and restore
   } finally { globalThis.document = originalDocument; setLanguage("ru", { persist: false }); }
 });
 
-test("The turn banner reports only local animation and separates a delayed server response", () => {
+test("Pending release reports server latency, never a pre-launch turn; flight hides the cast banner", () => {
   const originalDocument = globalThis.document;
   globalThis.document = { documentElement: { classList: classes() } };
   const game = { cast: { state: { fs: "charge" } }, castActions: { classList: classes() },
@@ -88,7 +88,7 @@ test("The turn banner reports only local animation and separates a delayed serve
   try {
     setLanguage("en", { persist: false });
     Game.prototype.updateCastControls.call(game, true);
-    assert.equal(game.castInstruction.textContent, "Turning to cast...");
+    assert.equal(game.castInstruction.textContent, "Waiting for server...");
     game.castTurn.elapsed = 0.65;
     Game.prototype.updateCastControls.call(game, true);
     assert.equal(game.castInstruction.textContent, "Waiting for server...");
@@ -96,6 +96,10 @@ test("The turn banner reports only local animation and separates a delayed serve
     Game.prototype.updateCastControls.call(game, true);
     assert.equal(game.castInstruction.textContent, "Waiting for server...");
     game.castRelease.approved = true;
+    Game.prototype.updateCastControls.call(game, true);
+    assert.equal(game.castInstruction.textContent, "");
+    game.cast.state.fs = "flight";
+    game.castTurn.elapsed = 0;
     Game.prototype.updateCastControls.call(game, true);
     assert.equal(game.castInstruction.textContent, "");
     game.castRelease = game.castTurn = null; game.cast.state.fs = "idle";

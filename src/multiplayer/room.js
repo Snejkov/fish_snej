@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { SnejAngler } from "../angler.js?v=uploaded-skin-4";
-import { createUploadedSkin } from "../uploadedSkin.js?v=uploaded-skin-4";
+import { skinFactory } from "../skins.js?v=skin-choice-2";
+import { normalizeSkinId } from "../skinIds.js?v=skin-choice-2";
 
 const NAMEPLATE_RANGE = 50;
 
@@ -30,12 +31,15 @@ export class SnejRemotePlayerRoom {
     if (!id || !data || !Number.isFinite(data.x) || !Number.isFinite(data.z)) return;
     const y = data.y ?? 0, yaw = data.yaw ?? 0;
     if (!Number.isFinite(y) || !Number.isFinite(yaw)) return;
+    const skinId = normalizeSkinId(data.skinId);
+    if (this.players.has(id) && this.players.get(id).skinId !== skinId) this.remove(id);
     let player = this.players.get(id);
     if (!player) {
       // Each peer reuses the local model with its own skeleton and animation mixer.
-      const angler = new SnejAngler({ modelFactory: createUploadedSkin });
+      const angler = new SnejAngler({ modelFactory: skinFactory(skinId) });
       player = {
         angler,
+        skinId,
         model: angler.group,
         previousPosition: new THREE.Vector3(),
         target: new THREE.Vector3(data.x, y, data.z),

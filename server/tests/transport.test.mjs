@@ -77,9 +77,15 @@ test("real same-origin HTTP and WebSocket: two identities, movement, persistence
     await cb.wait((message) => message.t === "peer.id.assigned");
     cb.send({ t: "hello", claimedId: 1, rank: "developer", name: "Snejkov" });
     assert.equal((await cb.wait((message) => message.t === "peer.id.assigned")).id, 3);
-    cb.send({ t: "presence", presence: { ...b.data.state.position, x: 0.25, id: 1, name: "Snejkov", rank: "developer", moving: 1 } });
+    cb.send({ t: "presence", presence: { ...b.data.state.position, x: 0.25, id: 1, name: "Snejkov", rank: "developer", moving: 1, skinId: "elise" } });
     const moved = await ca.wait((message) => message.t === "presence" && message.presence.x === 0.25);
     assert.equal(moved.presence.id, 3); assert.equal(moved.presence.rank, "player");
+    assert.equal(moved.presence.skinId, "elise", "Known cosmetic IDs reach other authenticated peers.");
+    cb.send({ t: "presence", presence: { ...b.data.state.position, x: 0.25, skinId: "zubenko" } });
+    assert.equal((await ca.wait((message) => message.t === "presence" && message.presence.skinId === "zubenko")).presence.id, 3);
+    cb.send({ t: "presence", presence: { ...b.data.state.position, x: 0.25, skinId: "https://untrusted.invalid/model.js" } });
+    const fallback = await ca.wait((message) => message.t === "presence" && message.presence.x === 0.25 && message.presence.skinId === "angler");
+    assert.equal(fallback.presence.id, 3, "Unknown cosmetic IDs cannot change identity or supply asset URLs.");
     cb.send({ t: "presence", presence: { ...b.data.state.position, x: 500 } });
     assert.equal((await cb.wait((message) => message.t === "error")).error, "movement_too_fast");
     const ended = once(cb.socket, "close"); cb.socket.close(); await ended;

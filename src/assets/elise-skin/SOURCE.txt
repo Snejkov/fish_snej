@@ -1,0 +1,14 @@
+Source: owner-provided EliseODiorV2.dff and EliseODiorV2.txd, supplied on 2026-10-14.
+The V2 model is paired with its supplied V2 texture dictionary.
+The original EliseODior.dff variant is not used by the game.
+The runtime contains the original 63,182 triangles and 14 used textures.
+Right fingertips use appearance-only grip weights; gameplay joints are unchanged.
+Texture dimensions are limited to 1024 pixels for browser memory use.
+The unused modder watermark texture is not loaded by the runtime.
+No authorship or redistribution license was supplied with these files.
+Public redistribution requires the owner to confirm permission before publication.
+
+Offline parser: DragonFF by Parik27 and contributors, GPL-3.0-or-later.
+Source: https://github.com/Parik27/DragonFF
+Parser commit: 4c332f96bcd7f251e943f90559ba8e572e3d1a3b
+The parser is used only for offline conversion and is not part of the game runtime.

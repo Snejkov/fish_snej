@@ -5,6 +5,7 @@ import { hashPassword, verifyPassword, readSession, sessionCookie, validPassword
 import { RequestError, reject, object, playerName, position } from "./validation.mjs";
 import { CHAT_CHANNELS, cleanChatText, receivesChat, consumeChatToken } from "../src/multiplayer/chatRules.js";
 import { approveCast, landCast, cancelCast } from "./casts.mjs";
+import { DEFAULT_SKIN_ID, normalizeSkinId } from "../src/skinIds.js?v=skin-choice-2";
 
 const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
   ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".svg": "image/svg+xml",
@@ -176,7 +177,7 @@ export function createApp({ store, WebSocketServer, staticRoot, publicOrigin, se
     if (predecessor) persistPosition(predecessor);
     const saved = store.profile(user.id), id = store.clientId();
     const peer = { id, token, user, socket, alive: true, count: 0, window: Date.now(), persistedAt: Date.now(),
-      movedAt: Date.now(), presence: { ...saved.state.position, id: user.id, name: user.name, rank: user.role, moving: 0, seq: 0 } };
+      movedAt: Date.now(), presence: { ...saved.state.position, id: user.id, name: user.name, rank: user.role, skinId: DEFAULT_SKIN_ID, moving: 0, seq: 0 } };
     peers.set(id, peer);
     currentPeers.set(user.id, peer);
     if (predecessor) predecessor.socket.close(1008, "New connection");
@@ -203,7 +204,8 @@ export function createApp({ store, WebSocketServer, staticRoot, publicOrigin, se
           const travel = Math.hypot(next.x - peer.presence.x, next.y - peer.presence.y, next.z - peer.presence.z);
           if (travel > 12 * Math.max(0, now - peer.movedAt) / 1000 + 1) reject("movement_too_fast");
           peer.movedAt = now;
-          peer.presence = { ...next, id: user.id, name: user.name, rank: user.role, moving: Math.min(1, Math.max(0, Number(value.moving) || 0)), seq: peer.presence.seq + 1 };
+          peer.presence = { ...next, id: user.id, name: user.name, rank: user.role,
+            skinId: normalizeSkinId(value.skinId), moving: Math.min(1, Math.max(0, Number(value.moving) || 0)), seq: peer.presence.seq + 1 };
           if (now - peer.persistedAt >= 1000) {
             const revision = store.updatePosition(user.id, next);
             peer.persistedAt = now;

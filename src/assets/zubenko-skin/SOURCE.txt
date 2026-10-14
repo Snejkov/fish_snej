@@ -1,0 +1,11 @@
+Source: owner-provided Zubenko.zip, supplied on 2026-10-14.
+Original files: zubenko.dff and zubenko.txd (RenderWare geometry and textures).
+Runtime assets contain the supplied 6,530 triangles and four decoded 256x256 textures.
+The model is retargeted to the existing gameplay rig without changing its joints or sockets.
+No authorship or redistribution license was included in the archive.
+Public redistribution requires the owner to confirm permission before publication.
+
+Offline parser: DragonFF by Parik27 and contributors, GPL-3.0-or-later.
+Source: https://github.com/Parik27/DragonFF
+Parser commit: 4c332f96bcd7f251e943f90559ba8e572e3d1a3b
+The parser is used only for offline conversion and is not part of the game runtime.

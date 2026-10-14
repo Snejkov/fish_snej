@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { SnejAngler, RETRIEVE_LIFT_ANGLE } from "./angler.js?v=uploaded-skin-4";
-import { createUploadedSkin } from "./uploadedSkin.js?v=uploaded-skin-4";
+import { skinFactory } from "./skins.js?v=skin-choice-2";
+import { normalizeSkinId, readSkinPreference, saveSkinPreference } from "./skinIds.js?v=skin-choice-2";
 import { RODS, rodForLength } from "./rods.js?v=0.0.5a";
 import { SnejInventory } from "./gear/inventory.js";
 import { SnejCatchLog } from "./game/catchLog.js";
@@ -21,14 +22,14 @@ import { DEFAULT_LANGUAGE, normalizeLanguage, setLanguage, t, translateText, err
 import { resolveLake } from "./lakeValidator.js";
 import { SNEJ_FIXED_SEED, WORLD_SIZE, WATER_REGION } from "./lake.js";
 import { SnejMultiplayerClient } from "./multiplayer/client.js";
-import { makePresence } from "./multiplayer/presence.js?v=camera-cast-1";
+import { makePresence } from "./multiplayer/presence.js?v=skin-choice-2";
 import { SnejRemotePlayerRoom } from "./multiplayer/room.js";
 import { SnejPlacementSystem } from "./placement.js";
 import { SnejSky } from "./sky.js";
 import { SPAWNS, SPAWN_INITIAL_NAME, SPAWN_NAMES } from "./spawns.js";
 import { SnejTerrain } from "./terrain.js";
 import { SnejTextureManager } from "./textureManager.js";
-import { SnejUI } from "./ui.js?v=rod-controls-1";
+import { SnejUI } from "./ui.js?v=skin-choice-2";
 import { SnejMobileInput, movementInput, requestLandscape } from "./mobileInput.js?v=shoulder-view-1";
 import { SnejWater } from "./water.js?v=0.0.5a-hf3";
 import { clamp, clamp01, damp, lerp, moveDelta, resolveWalkableStart } from "./util.js?v=0.0.3-hf2.12";
@@ -74,6 +75,7 @@ export class SnejFishingGame {
     this.settings = { ...DEFAULT_SETTINGS };
     this.auth = new SnejAuth();
     this.identity = null;
+    this.skinId = readSkinPreference();
     this.nextLocalId = 1;
     this.currentRank = "player";
     this.server = new SnejServerClient({ onProfile: (profile, kind) => this.applyServerProfile(profile, kind) });
@@ -979,7 +981,7 @@ export class SnejFishingGame {
     this.terrain = new SnejTerrain(this.lake, this.settings);
     this.water = new SnejWater(this.settings, this.lake);
     this.sky = new SnejSky(this.scene);
-    this.angler = new SnejAngler({ modelFactory: createUploadedSkin });
+    this.angler = new SnejAngler({ modelFactory: skinFactory(this.skinId) });
     this.cast.reset();
     this.applyRod(this.inventory.equippedRod());
     if (!this.castMesh) {
@@ -1167,6 +1169,13 @@ export class SnejFishingGame {
     this.desktopEntryEpoch = (this.desktopEntryEpoch || 0) + 1;
     this.desktopEntryActive = false;
     this.desktopCursor?.release();
+  }
+
+  selectSkin(skinId) {
+    if (this.mode !== "title") return false;
+    this.skinId = saveSkinPreference(normalizeSkinId(skinId));
+    this.ui?.syncSkinPickers();
+    return true;
   }
 
   async newGame(options = {}) {

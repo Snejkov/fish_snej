@@ -3,6 +3,7 @@ import { CLOTHING_SLOTS } from "./gear/inventory.js";
 import { SnejPlayerChat } from "./multiplayer/chat.js?v=menu-retrieve-1";
 import { fishingMeters } from "./fishingUnits.js?v=line-scale-1";
 import { MIN_ROD_SPEED, MAX_ROD_SPEED, normalizeRodSpeed } from "./rodControls.js";
+import { SKIN_OPTIONS, normalizeSkinId } from "./skinIds.js?v=skin-choice-2";
 import { t, translateText, formatCoins, errorMessage, applyTranslations, onLanguageChange, getLanguage, setLanguage } from "./i18n.js";
 
 const GEAR_LABELS = Object.freeze({ rod: "Rod", bait: "Bait", line: "Line", hook: "Hook", lure: "Lure" });
@@ -100,6 +101,7 @@ export class SnejUI {
     this.ensureMobileControls();
     this.chat = new SnejPlayerChat(game, document.getElementById("app"));
     this.ensureLanguagePicker();
+    this.ensureSkinPickers();
     this.bind();
     this.renderSettings(document.getElementById("title-settings"));
     this.renderSettings(document.getElementById("menu-settings"));
@@ -275,6 +277,42 @@ export class SnejUI {
     label.append(select);
     panel.prepend(label);
     this.game.settings.lang = getLanguage();
+  }
+
+  ensureSkinPickers() {
+    for (const root of document.querySelectorAll(".skin-picker")) {
+      const fieldset = document.createElement("fieldset");
+      const legend = textElement("legend", "registration-field", "Skin");
+      fieldset.append(legend);
+      const options = document.createElement("div");
+      options.className = "skin-options";
+      for (const skin of SKIN_OPTIONS) {
+        const label = document.createElement("label");
+        label.className = "skin-option";
+        const input = document.createElement("input");
+        input.type = "radio";
+        input.name = root.id;
+        input.value = skin.id;
+        input.addEventListener("change", () => { if (input.checked) this.game.selectSkin(input.value); });
+        const portrait = document.createElement("img");
+        portrait.src = skin.portrait;
+        portrait.alt = "";
+        portrait.width = 240;
+        portrait.height = 240;
+        const name = textElement("span", "skin-name", skin.name, false);
+        name.dataset.i18nSkip = "true";
+        label.append(input, portrait, name);
+        options.append(label);
+      }
+      fieldset.append(options);
+      root.replaceChildren(fieldset);
+    }
+    this.syncSkinPickers();
+  }
+
+  syncSkinPickers() {
+    const skinId = normalizeSkinId(this.game.skinId);
+    for (const input of document.querySelectorAll('.skin-picker input[type="radio"]')) input.checked = input.value === skinId;
   }
 
   bind() {

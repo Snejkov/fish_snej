@@ -42,15 +42,21 @@ function decode(value, Type) {
   return new Type(bytes.buffer);
 }
 
-const SOURCE = {
-  positions: decode(SKIN_DATA.positions, Float32Array), uv: decode(SKIN_DATA.uv, Float32Array),
-  indices: decode(SKIN_DATA.skinIndices, Uint16Array), weights: decode(SKIN_DATA.skinWeights, Float32Array),
-  binds: decode(SKIN_DATA.bindMatrices, Float32Array), triangles: decode(SKIN_DATA.triangles, Uint16Array)
-};
+const decodedSources = new WeakMap();
+function sourceFor(data) {
+  if (!decodedSources.has(data)) decodedSources.set(data, {
+    positions: decode(data.positions, Float32Array), uv: decode(data.uv, Float32Array),
+    indices: decode(data.skinIndices, Uint16Array), weights: decode(data.skinWeights, Float32Array),
+    binds: decode(data.bindMatrices, Float32Array), triangles: decode(data.triangles, Uint16Array)
+  });
+  return decodedSources.get(data);
+}
 
-export function createUploadedSkin(skeleton) {
+export function createUploadedSkin(skeleton, options = {}) {
+  const data = options.data || SKIN_DATA;
+  const SOURCE = sourceFor(data);
   const group = new THREE.Group();
-  group.name = "UploadedAnglerModel";
+  group.name = options.name || "UploadedAnglerModel";
   const meshes = [], materials = {}, textures = new Set();
   let disposed = false;
   const driverBones = Object.fromEntries(skeleton.bones.map((bone) => [bone.name, bone]));
@@ -73,11 +79,11 @@ export function createUploadedSkin(skeleton) {
   const skinSkeleton = new THREE.Skeleton([...skeleton.bones, ...Object.values(extra)],
     [...skeleton.boneInverses.map((matrix) => matrix.clone()), ...Object.values(extra).map((bone) => bone.matrixWorld.clone().invert())]);
   const targetIndex = Object.fromEntries(skinSkeleton.bones.map((bone, index) => [bone.name, index]));
-  const sourceIndex = Object.fromEntries(SKIN_DATA.sourceBones.map((name, index) => [name, index]));
+  const sourceIndex = Object.fromEntries(data.sourceBones.map((name, index) => [name, index]));
   const targets = skinSkeleton.boneInverses.map((inverse) => inverse.clone().invert());
-  const sources = SKIN_DATA.sourceBones.map((_, index) => new THREE.Matrix4().fromArray(SOURCE.binds, index * 16));
+  const sources = data.sourceBones.map((_, index) => new THREE.Matrix4().fromArray(SOURCE.binds, index * 16));
   const positionOf = (matrix) => new THREE.Vector3().setFromMatrixPosition(matrix);
-  const transforms = SKIN_DATA.sourceBones.map((name) => {
+  const transforms = data.sourceBones.map((name) => {
     const mapping = BODY_MAP[name];
     if (!mapping || targetIndex[mapping[0]] === undefined) throw new Error(`Unsupported skin bone: ${name}`);
     const [target, primary] = mapping;
@@ -128,9 +134,9 @@ export function createUploadedSkin(skeleton) {
 
   const positions = new Float32Array(SOURCE.positions.length);
   const indices = new Uint16Array(SOURCE.indices.length), weights = new Float32Array(SOURCE.weights.length);
-  const armWeights = new Float32Array(SKIN_DATA.vertexCount);
+  const armWeights = new Float32Array(data.vertexCount);
   const point = new THREE.Vector3(), transformed = new THREE.Vector3(), output = new THREE.Vector3();
-  for (let vertex = 0; vertex < SKIN_DATA.vertexCount; vertex += 1) {
+  for (let vertex = 0; vertex < data.vertexCount; vertex += 1) {
     point.fromArray(SOURCE.positions, vertex * 3);
     output.set(0, 0, 0);
     let sum = 0;
@@ -138,7 +144,7 @@ export function createUploadedSkin(skeleton) {
     if (!Number.isFinite(sum) || sum <= 0) throw new Error("Invalid uploaded skin weights");
     for (let influence = 0; influence < 4; influence += 1) {
       const offset = vertex * 4 + influence, sourceBone = SOURCE.indices[offset];
-      const target = BODY_MAP[SKIN_DATA.sourceBones[sourceBone]][0];
+      const target = BODY_MAP[data.sourceBones[sourceBone]][0];
       const weight = SOURCE.weights[offset] / sum;
       indices[offset] = targetIndex[target];
       weights[offset] = weight;
@@ -146,6 +152,24 @@ export function createUploadedSkin(skeleton) {
       if (target === "RightForeArm" || target === "RightHand" || target.startsWith("SkinRight")) armWeights[vertex] += weight;
     }
     output.toArray(positions, vertex * 3);
+  }
+
+  if (options.fingertipWeights) {
+    const palmInverse = targets[targetIndex.SkinRightPalm].clone().invert();
+    const fingerIndex = targetIndex.SkinRightFinger, tipIndex = targetIndex.SkinRightFingertip;
+    // The Elise source has no distal finger weights; blend its existing finger vertices onto the appearance-only tip joint.
+    for (let vertex = 0; vertex < data.vertexCount; vertex += 1) {
+      const offset = vertex * 4;
+      const fingerSlot = [0, 1, 2, 3].find((slot) => indices[offset + slot] === fingerIndex && weights[offset + slot] > 0);
+      const emptySlot = [0, 1, 2, 3].find((slot) => weights[offset + slot] === 0);
+      if (fingerSlot === undefined || emptySlot === undefined) continue;
+      point.fromArray(positions, vertex * 3).applyMatrix4(palmInverse);
+      const blend = THREE.MathUtils.clamp((-point.x - 0.109) / 0.025, 0, 1);
+      const tipWeight = weights[offset + fingerSlot] * blend;
+      indices[offset + emptySlot] = tipIndex;
+      weights[offset + emptySlot] = tipWeight;
+      weights[offset + fingerSlot] -= tipWeight;
+    }
   }
 
   const full = new THREE.BufferGeometry();
@@ -160,13 +184,24 @@ export function createUploadedSkin(skeleton) {
   placeholder.needsUpdate = true;
   textures.add(placeholder);
   const ready = [];
-  for (const source of SKIN_DATA.materials) {
+  for (const source of data.materials) {
+    if (materials[source.texture]) continue;
     const material = new THREE.MeshStandardMaterial({ map: placeholder, roughness: 0.9, metalness: 0 });
+    if (options.cutouts) {
+      material.side = THREE.DoubleSide;
+      const textureInfo = data.textures.find((texture) => texture.name === source.texture);
+      if (textureInfo?.alpha[0] < 255) material.alphaTest = 0.35;
+      if (source.texture === "face_eyeshadow_base") {
+        material.alphaTest = 0;
+        material.transparent = true;
+        material.depthWrite = false;
+      }
+    }
     material.name = source.texture;
     materials[source.texture] = material;
     if (typeof document !== "undefined") {
       ready.push(new Promise((resolve) => {
-        const texture = new THREE.TextureLoader().load(new URL(`./assets/angler-skin/${source.texture}.png?v=uploaded-skin-1`, import.meta.url).href,
+        const texture = new THREE.TextureLoader().load(new URL(`./assets/${options.assetFolder || "angler-skin"}/${source.texture}.png?v=skin-assets-1`, import.meta.url).href,
           (loaded) => {
             if (!disposed) { material.map = loaded; material.needsUpdate = true; }
             resolve(!disposed);
@@ -195,7 +230,7 @@ export function createUploadedSkin(skeleton) {
     const geometry = new THREE.BufferGeometry();
     for (const [name, attribute] of Object.entries(attributes)) geometry.setAttribute(name, attribute);
     geometry.setIndex(part.triangles);
-    const mesh = new THREE.SkinnedMesh(geometry, materials[SKIN_DATA.materials[part.material].texture]);
+    const mesh = new THREE.SkinnedMesh(geometry, materials[data.materials[part.material].texture]);
     mesh.name = `${part.firstPerson ? "UploadedRightArm" : "UploadedBody"}${part.material}`;
     mesh.userData.firstPerson = part.firstPerson;
     mesh.bind(skinSkeleton, new THREE.Matrix4());

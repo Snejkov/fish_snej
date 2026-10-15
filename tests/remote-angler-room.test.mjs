@@ -17,17 +17,17 @@ const a = room.players.get("a"), b = room.players.get("b");
 for (const player of [a, b]) {
   assert.equal(player.model, player.angler.group);
   assert.equal(player.model.parent, room.group);
-  assert.equal(player.angler.model.group.name, "UploadedAnglerModel");
-  assert.equal(player.angler.model.meshes.reduce((sum, mesh) => sum + mesh.geometry.index.count / 3, 0), 6847,
+  assert.equal(player.angler.model.group.name, "ManAnglerModel");
+  assert.equal(player.angler.model.meshes.reduce((sum, mesh) => sum + mesh.geometry.index.count / 3, 0), 45188,
     "Remote players use the complete uploaded character, not a capsule or the old skin.");
   assert.ok(player.angler.model.meshes.every((mesh) => mesh.isSkinnedMesh && !mesh.material.transparent));
-  assert.ok(player.angler.model.meshes.some((mesh) => mesh.name === "UploadedBody2"));
-  assert.ok(player.angler.model.meshes.some((mesh) => mesh.name === "UploadedBody3"));
+  assert.ok(player.angler.model.meshes.some((mesh) => mesh.name === "UploadedBody0"));
+  assert.ok(player.angler.model.meshes.some((mesh) => mesh.userData.firstPerson));
   assert.equal(player.angler.visuals.visible, false);
   assert.equal(player.angler.firstPersonWeight, 0);
 }
 assert.notEqual(a.angler.skeleton, b.angler.skeleton, "Each player has independent animation bones.");
-assert.notEqual(a.angler.model.materials.yasin_body, b.angler.model.materials.yasin_body);
+assert.notEqual(a.angler.model.materials.man_basecolor, b.angler.model.materials.man_basecolor);
 const identity = a.model;
 room.applyPresence(presence("a", 1, 0, -Math.PI + 0.01));
 room.update(0.1);

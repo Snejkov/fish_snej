@@ -1,0 +1,11 @@
+Source: owner-provided man 3d model.glb, supplied on 2026-10-15.
+GLB metadata identifies Tripo as the generator. The source has no skeleton or clips.
+The source geometry and textures were converted offline, simplified and bound
+to the existing gameplay skeleton. Original model files are not modified.
+Face UVs are calibrated to the eye sockets, nose and lips within each source UV
+chart. Head vertices and authored normals are preserved during simplification.
+The owner requested publication of this model in SnejFishing.
+No separate authorship or redistribution license was included in the GLB.
+Offline simplifier: meshoptimizer v0.22 by Arseny Kapoulkine, MIT license.
+https://github.com/zeux/meshoptimizer/tree/v0.22
+The converter and simplifier are not included in the browser runtime.

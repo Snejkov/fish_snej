@@ -26,7 +26,7 @@
   <canvas id="skin-canvas" aria-label="Uploaded angler model"></canvas>
   <header>
     <strong>Uploaded Angler</strong>
-    <select id="skin-choice" aria-label="Skin"><option value="angler">Original Angler</option><option value="elise">Elise Dior</option><option value="zubenko">Zubenko</option></select>
+    <select id="skin-choice" aria-label="Skin"><option value="man">New Angler</option></select>
     <div class="poses" role="group" aria-label="Pose">
       <label><input type="radio" name="pose" value="idle" checked>Idle</label>
       <label><input type="radio" name="pose" value="walk">Walk</label>
@@ -49,8 +49,8 @@
     import * as THREE from "three";
     import { OrbitControls } from "./vendor/OrbitControls.js";
     import { SnejAngler } from "./angler.js?v=uploaded-skin-4";
-    import { skinFactory } from "./skins.js?v=skin-choice-2";
-    import { normalizeSkinId } from "./skinIds.js?v=skin-choice-2";
+    import { skinFactory } from "./skins.js?v=man-glb-2";
+    import { normalizeSkinId } from "./skinIds.js?v=man-glb-2";
     const skinId = normalizeSkinId(new URLSearchParams(location.search).get("skin"));
     const skinChoice = document.getElementById("skin-choice");
     skinChoice.value = skinId;

@@ -8,6 +8,8 @@ registerHooks({ resolve(specifier, context, nextResolve) {
 const THREE = await import("three");
 const { SnejAngler } = await import("../src/angler.js");
 const { skinFactory } = await import("../src/skins.js");
+const { createEliseSkin, createZubenkoSkin } = await import("../src/archivedSkins.js");
+const { createUploadedSkin } = await import("../src/uploadedSkin.js");
 const { SnejRemotePlayerRoom } = await import("../src/multiplayer/room.js");
 const { SnejFishingGame: Game } = await import("../src/game.js");
 const { makePresence } = await import("../src/multiplayer/presence.js");
@@ -15,31 +17,31 @@ const { SKIN_OPTIONS, normalizeSkinId, readSkinPreference, saveSkinPreference } 
 const { SKIN_DATA } = await import("../src/assets/elise-skin/skinData.js");
 
 test("Known skins have real portraits; preferences tolerate unavailable storage", () => {
-  assert.deepEqual(SKIN_OPTIONS.map((skin) => skin.id), ["angler", "elise", "zubenko"]);
+  assert.deepEqual(SKIN_OPTIONS.map((skin) => skin.id), ["man"]);
   for (const skin of SKIN_OPTIONS) {
     const bytes = readFileSync(new URL("../" + skin.portrait, import.meta.url));
     assert.equal(bytes.toString("hex", 0, 8), "89504e470d0a1a0a");
   }
-  for (const value of [null, undefined, "unknown", "../file", { toString: () => "elise" }]) assert.equal(normalizeSkinId(value), "angler");
+  for (const value of [null, undefined, "unknown", "angler", "elise", "zubenko", "../file", { toString: () => "elise" }]) assert.equal(normalizeSkinId(value), "man");
   const previous = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
   const values = new Map();
   try {
     Object.defineProperty(globalThis, "localStorage", { configurable: true, value: {
       getItem: (key) => values.get(key), setItem: (key, value) => values.set(key, value)
     } });
-    assert.equal(readSkinPreference(), "angler");
-    assert.equal(saveSkinPreference("elise"), "elise");
-    assert.equal(readSkinPreference(), "elise");
-    assert.equal(saveSkinPreference("zubenko"), "zubenko");
-    assert.equal(readSkinPreference(), "zubenko");
+    assert.equal(readSkinPreference(), "man");
+    assert.equal(saveSkinPreference("elise"), "man");
+    assert.equal(readSkinPreference(), "man");
+    assert.equal(saveSkinPreference("zubenko"), "man");
+    assert.equal(readSkinPreference(), "man");
     const game = Object.assign(Object.create(Game.prototype), { mode: "title", skinId: "angler", ui: { syncSkinPickers() {} } });
     assert.equal(game.selectSkin("elise"), true);
-    assert.equal(game.skinId, "elise");
+    assert.equal(game.skinId, "man");
     game.mode = "playing";
     assert.equal(game.selectSkin("angler"), false, "Skin changes happen before entry, not during a cast.");
     Object.defineProperty(globalThis, "localStorage", { configurable: true, get() { throw new Error("blocked"); } });
-    assert.equal(readSkinPreference(), "angler");
-    assert.equal(saveSkinPreference("elise"), "elise");
+    assert.equal(readSkinPreference(), "man");
+    assert.equal(saveSkinPreference("elise"), "man");
   } finally {
     if (previous) Object.defineProperty(globalThis, "localStorage", previous);
     else delete globalThis.localStorage;
@@ -47,8 +49,8 @@ test("Known skins have real portraits; preferences tolerate unavailable storage"
 });
 
 test("Elise source geometry, transparency, weighted animation and gameplay sockets", () => {
-  const rig = new SnejAngler({ modelFactory: skinFactory("elise") });
-  const original = new SnejAngler({ modelFactory: skinFactory("angler") });
+  const rig = new SnejAngler({ modelFactory: createEliseSkin });
+  const original = new SnejAngler({ modelFactory: createUploadedSkin });
   assert.equal(rig.model.group.name, "EliseAnglerModel");
   assert.equal(SKIN_DATA.vertexCount, 42150);
   assert.equal(rig.model.meshes.reduce((sum, mesh) => sum + mesh.geometry.index.count / 3, 0), 63182);
@@ -101,38 +103,38 @@ test("Elise source geometry, transparency, weighted animation and gameplay socke
   original.model.dispose();
 });
 
-test("Remote peers choose independent known skins and dispose a replaced appearance", () => {
+test("Legacy remote skins are hidden and all peers use independent new models", () => {
   const room = new SnejRemotePlayerRoom();
   const message = (clientId, skinId) => ({ clientId, presence: { id: 2, name: "SkinPlayer", x: 3, y: 1, z: 4, skinId } });
   room.applyPresence(message("first", "angler"));
   room.applyPresence(message("second", "elise"));
   room.applyPresence(message("third", "zubenko"));
   const a = room.players.get("first"), b = room.players.get("second");
-  assert.equal(a.angler.model.group.name, "UploadedAnglerModel");
-  assert.equal(b.angler.model.group.name, "EliseAnglerModel");
-  assert.equal(room.players.get("third").angler.model.group.name, "ZubenkoAnglerModel");
+  assert.equal(a.angler.model.group.name, "ManAnglerModel");
+  assert.equal(b.angler.model.group.name, "ManAnglerModel");
+  assert.equal(room.players.get("third").angler.model.group.name, "ManAnglerModel");
   assert.notEqual(a.angler.skeleton, b.angler.skeleton);
   assert.notEqual(a.angler.model.meshes[0].geometry.attributes.position, b.angler.model.meshes[0].geometry.attributes.position);
   let disposed = 0;
-  b.angler.model.materials.body_base.addEventListener("dispose", () => disposed++);
+  b.angler.model.materials.man_basecolor.addEventListener("dispose", () => disposed++);
   room.applyPresence(message("second", "unknown"));
-  assert.equal(disposed, 1);
-  assert.equal(room.players.get("second").skinId, "angler");
+  assert.equal(disposed, 0, "Legacy aliases do not rebuild the same current appearance.");
+  assert.equal(room.players.get("second").skinId, "man");
   assert.equal(room.players.size, 3);
   const game = { skinId: "elise", pos: new THREE.Vector3(), yaw: 0 };
-  assert.equal(makePresence(game, 1).skinId, "elise");
+  assert.equal(makePresence(game, 1).skinId, "man");
   game.skinId = "zubenko";
-  assert.equal(makePresence(game, 2).skinId, "zubenko");
+  assert.equal(makePresence(game, 2).skinId, "man");
   game.skinId = "file:///outside.js";
-  assert.equal(makePresence(game, 2).skinId, "angler");
+  assert.equal(makePresence(game, 2).skinId, "man");
   room.clear();
   assert.equal(room.players.size, 0);
 });
 
 test("Zubenko preserves supplied geometry and the original pole throughout real poses", async () => {
   const { SKIN_DATA: data } = await import("../src/assets/zubenko-skin/skinData.js");
-  const rig = new SnejAngler({ modelFactory: skinFactory("zubenko") });
-  const reference = new SnejAngler({ modelFactory: skinFactory("angler") });
+  const rig = new SnejAngler({ modelFactory: createZubenkoSkin });
+  const reference = new SnejAngler({ modelFactory: createUploadedSkin });
   assert.equal(data.vertexCount, 4095);
   assert.equal(rig.model.meshes.reduce((sum, mesh) => sum + mesh.geometry.index.count / 3, 0), 6530);
   assert.equal(Object.keys(rig.model.materials).length, 4);

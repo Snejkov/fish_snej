@@ -11,7 +11,7 @@
 .skin-picker { margin-top: 18px; }
 .skin-picker fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
 .skin-picker legend { margin: 0 0 8px; }
-.skin-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.skin-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 180px)); gap: 10px; }
 .skin-option { position: relative; display: grid; grid-template-columns: 22px minmax(0, 1fr); align-items: center; gap: 8px; overflow: hidden; border: 1px solid var(--line); border-radius: 6px; background: #162520; cursor: pointer; }
 .skin-option:has(input:checked) { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
 .skin-option:has(input:focus-visible) { outline: 2px solid #81c9b5; outline-offset: 2px; }

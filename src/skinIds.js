@@ -1,8 +1,6 @@
-export const DEFAULT_SKIN_ID = "angler";
+export const DEFAULT_SKIN_ID = "man";
 export const SKIN_OPTIONS = Object.freeze([
-  Object.freeze({ id: "angler", name: "Original Angler", portrait: "./src/assets/angler-skin/portrait.png" }),
-  Object.freeze({ id: "elise", name: "Elise Dior", portrait: "./src/assets/elise-skin/portrait.png" }),
-  Object.freeze({ id: "zubenko", name: "Zubenko", portrait: "./src/assets/zubenko-skin/portrait.png" })
+  Object.freeze({ id: "man", name: "New Angler", portrait: "./src/assets/man-skin/portrait.png" })
 ]);
 
 export function normalizeSkinId(value) {

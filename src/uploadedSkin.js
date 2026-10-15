@@ -46,6 +46,7 @@ const decodedSources = new WeakMap();
 function sourceFor(data) {
   if (!decodedSources.has(data)) decodedSources.set(data, {
     positions: decode(data.positions, Float32Array), uv: decode(data.uv, Float32Array),
+    normals: data.normals ? decode(data.normals, Float32Array) : null,
     indices: decode(data.skinIndices, Uint16Array), weights: decode(data.skinWeights, Float32Array),
     binds: decode(data.bindMatrices, Float32Array), triangles: decode(data.triangles, Uint16Array)
   });
@@ -133,6 +134,9 @@ export function createUploadedSkin(skeleton, options = {}) {
   }
 
   const positions = new Float32Array(SOURCE.positions.length);
+  const sourceNormals = SOURCE.normals ? new Float32Array(SOURCE.normals.length) : null;
+  const normalTransforms = SOURCE.normals ? transforms.map((matrix) => new THREE.Matrix3().getNormalMatrix(matrix)) : null;
+  const normal = new THREE.Vector3(), normalOutput = new THREE.Vector3();
   const indices = new Uint16Array(SOURCE.indices.length), weights = new Float32Array(SOURCE.weights.length);
   const armWeights = new Float32Array(data.vertexCount);
   const point = new THREE.Vector3(), transformed = new THREE.Vector3(), output = new THREE.Vector3();
@@ -152,6 +156,15 @@ export function createUploadedSkin(skeleton, options = {}) {
       if (target === "RightForeArm" || target === "RightHand" || target.startsWith("SkinRight")) armWeights[vertex] += weight;
     }
     output.toArray(positions, vertex * 3);
+    if (sourceNormals) {
+      normalOutput.set(0, 0, 0);
+      for (let influence = 0; influence < 4; influence += 1) {
+        const offset = vertex * 4 + influence;
+        normal.fromArray(SOURCE.normals, vertex * 3).applyMatrix3(normalTransforms[SOURCE.indices[offset]]).normalize();
+        normalOutput.addScaledVector(normal, SOURCE.weights[offset] / sum);
+      }
+      normalOutput.normalize().toArray(sourceNormals, vertex * 3);
+    }
   }
 
   if (options.fingertipWeights) {
@@ -176,7 +189,8 @@ export function createUploadedSkin(skeleton, options = {}) {
   full.setAttribute("position", new THREE.BufferAttribute(positions, 3));
   full.setIndex(Array.from(SOURCE.triangles).filter((_, index) => index % 4 !== 3));
   full.computeVertexNormals();
-  const normals = full.attributes.normal.array.slice();
+  // Preserve authored smoothing across UV seams when the source provides normals.
+  const normals = sourceNormals || full.attributes.normal.array.slice();
   full.dispose();
   const placeholder = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1, THREE.RGBAFormat);
   placeholder.colorSpace = THREE.SRGBColorSpace;
@@ -201,13 +215,31 @@ export function createUploadedSkin(skeleton, options = {}) {
     materials[source.texture] = material;
     if (typeof document !== "undefined") {
       ready.push(new Promise((resolve) => {
-        const texture = new THREE.TextureLoader().load(new URL(`./assets/${options.assetFolder || "angler-skin"}/${source.texture}.png?v=skin-assets-1`, import.meta.url).href,
+        const texture = new THREE.TextureLoader().load(new URL(`./assets/${options.assetFolder || "angler-skin"}/${source.texture}.png?v=${options.gltfTextures ? "man-glb-2" : "skin-assets-1"}`, import.meta.url).href,
           (loaded) => {
             if (!disposed) { material.map = loaded; material.needsUpdate = true; }
             resolve(!disposed);
           }, undefined, () => resolve(false));
         texture.colorSpace = THREE.SRGBColorSpace;
+        texture.flipY = !options.gltfTextures;
         // The original GTA UV islands extend beyond 0..1 and use repeat addressing.
+        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+        textures.add(texture);
+      }));
+    }
+    for (const kind of ["normal", "orm"]) {
+      if (!source[kind] || typeof document === "undefined") continue;
+      ready.push(new Promise((resolve) => {
+        const texture = new THREE.TextureLoader().load(new URL(`./assets/${options.assetFolder}/${source[kind]}.png?v=man-glb-2`, import.meta.url).href,
+          (loaded) => {
+            if (!disposed) {
+              if (kind === "normal") material.normalMap = loaded;
+              else { material.roughnessMap = material.metalnessMap = loaded; material.roughness = material.metalness = 1; }
+              material.needsUpdate = true;
+            }
+            resolve(!disposed);
+          }, undefined, () => resolve(false));
+        texture.flipY = !options.gltfTextures;
         texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
         textures.add(texture);
       }));

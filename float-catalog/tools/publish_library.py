@@ -15,7 +15,11 @@ parser=argparse.ArgumentParser()
 parser.add_argument('archive')
 parser.add_argument('--sha256',required=True)
 parser.add_argument('--commit',required=True)
+parser.add_argument('--verification-origin',default='http://127.0.0.1')
+parser.add_argument('--attempt',type=int,default=1)
 args=parser.parse_args()
+assert args.verification_origin in {'http://127.0.0.1','http://127.0.0.1:8080'}
+assert 1 <= args.attempt <= 99
 root=Path('/srv/model-library')
 assert root.resolve()==root and root.is_dir()
 archive_path=Path(args.archive).resolve()
@@ -56,7 +60,13 @@ added=[m for m in after['models'] if m.get('collectionId')==manifest['collection
 assert len(added)==54 and all(m['category']=='bobbers' for m in added)
 assert len(after['models'])==manifest['totalModels']
 
-release=root/'releases'/manifest['release']
+origin=args.verification_origin
+with urlopen(origin+'/catalog.json',timeout=20) as response:
+    public_before=json.load(response)
+unrelated_before={m['id']:m for m in public_before['models'] if m.get('collectionId')!=manifest['collectionId']}
+
+release_name=manifest['release']+('' if args.attempt==1 else '-'+str(args.attempt))
+release=root/'releases'/release_name
 assert not release.exists(),'Release already exists; inspect it before retrying'
 # Hardlink unchanged files, then replace changed files atomically to preserve the old release.
 shutil.copytree(previous,release,copy_function=os.link,symlinks=True)
@@ -77,7 +87,7 @@ for relative,content in contents.items():
         parent=parent.parent
 release.chmod(0o755)
 report={
-    'release':manifest['release'],'previousRelease':str(previous),
+    'release':release_name,'payloadRelease':manifest['release'],'previousRelease':str(previous),
     'gitCommit':args.commit,'payloadSha256':args.sha256,
     'catalogSha256':manifest['catalogSha256'],'modelsAdded':54,
     'totalModels':len(after['models']),'totalBobbers':manifest['totalBobbers'],
@@ -93,18 +103,26 @@ try:
     subprocess.run(['systemctl','restart','model-library'],check=True)
     for attempt in range(5):
         try:
-            with urlopen('http://127.0.0.1/catalog.json',timeout=10) as response:
-                served=response.read()
-            assert hashlib.sha256(served).hexdigest()==manifest['catalogSha256']
+            with urlopen(origin+'/catalog.json',timeout=10) as response:
+                public_after=json.load(response)
+            # The admin server serializes and overlays catalog records from its persistent store.
+            served_models={m['id']:m for m in public_after['models']}
+            for model in added:
+                assert served_models.get(model['id'])==model,model['id']
+            unrelated_after={m['id']:m for m in public_after['models'] if m.get('collectionId')!=manifest['collectionId']}
+            assert unrelated_after==unrelated_before,'Unrelated public models changed'
             break
         except Exception:
             if attempt==4: raise
             time.sleep(1)
     for record in manifest['files']:
-        with urlopen('http://127.0.0.1/'+record['path'],timeout=20) as response:
+        if record['path']=='catalog.json':
+            continue
+        with urlopen(origin+'/'+record['path'],timeout=20) as response:
             served=response.read()
         assert hashlib.sha256(served).hexdigest()==record['sha256'],record['path']
     report['httpFilesVerified']=len(manifest['files'])
+    report['catalogVerification']='Exact imported records and unchanged unrelated public records'
     report['result']='published-and-verified'
 except Exception:
     assert current.resolve()==release

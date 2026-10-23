@@ -1,0 +1,54 @@
+{
+  "id": "F34",
+  "title": "Wormix Zoomer 126",
+  "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix Zoomer 126 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 3\u0433\u0440",
+  "familyId": "F34",
+  "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_wormix/1829229/",
+  "rating": "3",
+  "lengthMm": 240,
+  "scaleBasis": "estimated",
+  "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+  "radialSegments": 12,
+  "texture": "basecolor.webp",
+  "textureSize": [
+    256,
+    1024
+  ],
+  "textureQuality": 90,
+  "reference": "assets/floats/f34.png",
+  "blender": "5.2.3 LTS",
+  "vertices": 352,
+  "triangles": 700,
+  "meshes": 1,
+  "materials": 1,
+  "uvLayers": 1,
+  "dimensionsMm": [
+    20.7649,
+    20.7649,
+    240.0
+  ],
+  "units": "meters",
+  "blenderUpAxis": "Z",
+  "exportUpAxis": "Y",
+  "origin": "Bottom center of assembled float",
+  "fbxEmbeddedTexture": true,
+  "files": {
+    "fbx": "f34.fbx",
+    "glb": "f34.glb",
+    "blend": "f34.blend",
+    "texture": "basecolor.webp"
+  },
+  "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+  "validation": {
+    "fbxReimport": "passed",
+    "scaleToleranceMm": 0.001,
+    "reimportedDimensionsMm": [
+      20.7649,
+      20.7649,
+      240.0
+    ],
+    "embeddedTextureLoaded": true,
+    "embeddedBytesMatch": true,
+    "triangles": 700
+  }
+}

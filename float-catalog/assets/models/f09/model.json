@@ -1,0 +1,54 @@
+{
+  "id": "F09",
+  "title": "Winter Type 0.75",
+  "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u0437\u0438\u043c\u043d\u0438\u0439 \u0442\u0438\u043f 0,75 h-16\u043c\u043c",
+  "familyId": "F09",
+  "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_zimnie/1819940/",
+  "rating": "0.75",
+  "lengthMm": 27,
+  "scaleBasis": "estimated",
+  "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate. The h-16 mm marking is treated as a body designation, not a verified assembled height.",
+  "radialSegments": 12,
+  "texture": "basecolor.webp",
+  "textureSize": [
+    256,
+    1024
+  ],
+  "textureQuality": 90,
+  "reference": "assets/floats/f09.png",
+  "blender": "5.2.3 LTS",
+  "vertices": 216,
+  "triangles": 428,
+  "meshes": 1,
+  "materials": 1,
+  "uvLayers": 1,
+  "dimensionsMm": [
+    9.72,
+    9.72,
+    27.0
+  ],
+  "units": "meters",
+  "blenderUpAxis": "Z",
+  "exportUpAxis": "Y",
+  "origin": "Bottom center of assembled float",
+  "fbxEmbeddedTexture": true,
+  "files": {
+    "fbx": "f09.fbx",
+    "glb": "f09.glb",
+    "blend": "f09.blend",
+    "texture": "basecolor.webp"
+  },
+  "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+  "validation": {
+    "fbxReimport": "passed",
+    "scaleToleranceMm": 0.001,
+    "reimportedDimensionsMm": [
+      9.72,
+      9.72,
+      27.0
+    ],
+    "embeddedTextureLoaded": true,
+    "embeddedBytesMatch": true,
+    "triangles": 428
+  }
+}

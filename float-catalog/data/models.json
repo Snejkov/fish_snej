@@ -1,0 +1,2935 @@
+{
+  "version": 1,
+  "blender": "5.2.3 LTS",
+  "models": [
+    {
+      "id": "F01",
+      "title": "Unbranded 80 mm",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a 80\u043c\u043c 1\u0433\u0440",
+      "familyId": "F01",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/prochie_poplavki/1817353/",
+      "rating": "1",
+      "lengthMm": 80.0,
+      "scaleBasis": "catalog-length",
+      "dimensionNote": "Source overall length; all radial dimensions and part proportions are approximated from the illustration.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f01.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 316,
+      "triangles": 628,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        14.8681,
+        14.8681,
+        80.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f01.fbx",
+        "glb": "f01.glb",
+        "blend": "f01.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          14.8681,
+          14.8681,
+          80.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 628
+      }
+    },
+    {
+      "id": "F02",
+      "title": "Parus Acorn",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u041f\u0430\u0440\u0443\u0441 \u0416\u0435\u043b\u0443\u0434\u044c 140\u043c\u043c 4\u0433\u0440 \u043f\u043e\u0434 \u0441\u0432\u0435\u0442\u043b\u044f\u0447\u043e\u043a",
+      "familyId": "F02",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_parus/1817377/",
+      "rating": "4",
+      "lengthMm": 140.0,
+      "scaleBasis": "catalog-length",
+      "dimensionNote": "Source overall length; all radial dimensions and part proportions are approximated from the illustration.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f02.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 352,
+      "triangles": 700,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        20.1375,
+        20.1375,
+        140.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f02.fbx",
+        "glb": "f02.glb",
+        "blend": "f02.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          20.1375,
+          20.1375,
+          140.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 700
+      }
+    },
+    {
+      "id": "F03",
+      "title": "Goose quill with ring",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043a\u0438 \u0413\u0443\u0441\u0438\u043d\u043e\u0435 \u041f\u0435\u0440\u043e \u0441 \u043a\u043e\u043b\u044c\u0446\u043e\u043c (5\u0448\u0442)",
+      "familyId": "F03",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/prochie_poplavki/1817426/",
+      "rating": "1",
+      "lengthMm": 200,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f03.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 232,
+      "triangles": 460,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        12.5788,
+        12.5788,
+        200.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f03.fbx",
+        "glb": "f03.glb",
+        "blend": "f03.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          12.5788,
+          12.5788,
+          200.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 460
+      }
+    },
+    {
+      "id": "F04",
+      "title": "G.C. 0052",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a G.C. \u21160052 1\u0433\u0440",
+      "familyId": "F04",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_growsculture/1818787/",
+      "rating": "1",
+      "lengthMm": 180,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f04.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 220,
+      "triangles": 436,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        27.1869,
+        27.1869,
+        180.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f04.fbx",
+        "glb": "f04.glb",
+        "blend": "f04.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          27.1869,
+          27.1869,
+          180.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 436
+      }
+    },
+    {
+      "id": "F05",
+      "title": "Silver Stream SSF-29",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Silver Stream SSF-29 1,5\u0433\u0440",
+      "familyId": "F05",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/prochie_poplavki/1818859/",
+      "rating": "1.5",
+      "lengthMm": 110,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f05.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 232,
+      "triangles": 460,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        14.1684,
+        14.1684,
+        110.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f05.fbx",
+        "glb": "f05.glb",
+        "blend": "f05.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          14.1684,
+          14.1684,
+          110.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 460
+      }
+    },
+    {
+      "id": "F06",
+      "title": "Goose quill with small foam body",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043a\u0438 \u0413\u0443\u0441\u0438\u043d\u043e\u0435 \u043f\u0435\u0440\u043e \u0441 \u043c\u0430\u043b\u043e\u0439 \u043f\u0435\u043d\u043e\u043f\u043b\u0430\u0441\u0442\u043e\u0432\u043e\u0439 \u0431\u043e\u0431\u044b\u0448\u043a\u043e\u0439 (3\u0448\u0442)",
+      "familyId": "F06",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/prochie_poplavki/1818983/",
+      "rating": "1.6",
+      "lengthMm": 220,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f06.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 256,
+      "triangles": 508,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        21.3934,
+        21.3934,
+        220.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f06.fbx",
+        "glb": "f06.glb",
+        "blend": "f06.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          21.3934,
+          21.3934,
+          220.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 508
+      }
+    },
+    {
+      "id": "F07",
+      "title": "Parus Ellipse with bulb",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u041f\u0430\u0440\u0443\u0441 \u042d\u043b\u0438\u043f\u0441 \u0441 \u0431\u0443\u043b\u044c\u043a\u043e\u0439 160\u043c\u043c 2,5\u0433\u0440",
+      "familyId": "F07",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_parus/1819478/",
+      "rating": "2.5",
+      "lengthMm": 160.0,
+      "scaleBasis": "catalog-length",
+      "dimensionNote": "Source overall length; all radial dimensions and part proportions are approximated from the illustration.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f07.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 388,
+      "triangles": 772,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        14.4018,
+        14.4018,
+        160.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f07.fbx",
+        "glb": "f07.glb",
+        "blend": "f07.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          14.4018,
+          14.4018,
+          160.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 772
+      }
+    },
+    {
+      "id": "F08",
+      "title": "Wormix 104",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 104 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 3\u0433\u0440",
+      "familyId": "F08",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_wormix/1819600/",
+      "rating": "3",
+      "lengthMm": 180,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f08.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 316,
+      "triangles": 628,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        26.7583,
+        26.7583,
+        180.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f08.fbx",
+        "glb": "f08.glb",
+        "blend": "f08.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          26.7583,
+          26.7583,
+          180.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 628
+      }
+    },
+    {
+      "id": "F09",
+      "title": "Winter Type 0.75",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u0437\u0438\u043c\u043d\u0438\u0439 \u0442\u0438\u043f 0,75 h-16\u043c\u043c",
+      "familyId": "F09",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_zimnie/1819940/",
+      "rating": "0.75",
+      "lengthMm": 27,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate. The h-16 mm marking is treated as a body designation, not a verified assembled height.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f09.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 216,
+      "triangles": 428,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        9.72,
+        9.72,
+        27.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f09.fbx",
+        "glb": "f09.glb",
+        "blend": "f09.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          9.72,
+          9.72,
+          27.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 428
+      }
+    },
+    {
+      "id": "F10",
+      "title": "Parus Needle",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u041f\u0430\u0440\u0443\u0441 \u0418\u0433\u043b\u0430 180\u043c\u043c",
+      "familyId": "F10",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_parus/1819984/",
+      "rating": null,
+      "lengthMm": 180.0,
+      "scaleBasis": "catalog-length",
+      "dimensionNote": "Source overall length; all radial dimensions and part proportions are approximated from the illustration.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f10.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 172,
+      "triangles": 340,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        7.9699,
+        7.9699,
+        180.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f10.fbx",
+        "glb": "f10.glb",
+        "blend": "f10.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          7.9699,
+          7.9699,
+          180.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 340
+      }
+    },
+    {
+      "id": "F11",
+      "title": "Parus Hollow D-4",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u041f\u0430\u0440\u0443\u0441 \u0434\u0443\u0442\u044b\u0439 \u0414-4",
+      "familyId": "F11",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_parus/1821269/",
+      "rating": null,
+      "lengthMm": 180,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f11.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 208,
+      "triangles": 412,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        10.7796,
+        10.7796,
+        180.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f11.fbx",
+        "glb": "f11.glb",
+        "blend": "f11.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          10.7796,
+          10.7796,
+          180.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 412
+      }
+    },
+    {
+      "id": "F12",
+      "title": "Live-bait shock-resistant luminous",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a 10\u0433\u0440 \u0436\u0438\u0432\u0446\u043e\u0432\u044b\u0439, \u043f\u043e\u0434 \u0441\u0432\u0435\u0442\u043b\u044f\u0447\u043e\u043a, \u0443\u0434\u0430\u0440\u043e\u043f\u0440\u043e\u0447\u043d\u044b\u0439",
+      "familyId": "F12",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/prochie_poplavki/1821539/",
+      "rating": "10",
+      "lengthMm": 140,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f12.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 436,
+      "triangles": 868,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        34.6321,
+        34.6321,
+        140.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f12.fbx",
+        "glb": "f12.glb",
+        "blend": "f12.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          34.6321,
+          34.6321,
+          140.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 868
+      }
+    },
+    {
+      "id": "F13",
+      "title": "G.C. 145",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a G.C. \u2116145 5\u0433\u0440",
+      "familyId": "F13",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_growsculture/1821823/",
+      "rating": "5",
+      "lengthMm": 260,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f13.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 400,
+      "triangles": 796,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        24.4318,
+        24.4318,
+        260.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f13.fbx",
+        "glb": "f13.glb",
+        "blend": "f13.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          24.4318,
+          24.4318,
+          260.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 796
+      }
+    },
+    {
+      "id": "F14",
+      "title": "Plastic live-bait float",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u0436\u0438\u0432\u0446\u043e\u0432\u044b\u0439, \u043f\u043b\u0430\u0441\u0442\u0438\u043a\u043e\u0432\u044b\u0439",
+      "familyId": "F14",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/prochie_poplavki/1822690/",
+      "rating": null,
+      "lengthMm": 140,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f14.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 436,
+      "triangles": 868,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        37.9668,
+        37.9668,
+        140.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f14.fbx",
+        "glb": "f14.glb",
+        "blend": "f14.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          37.9668,
+          37.9668,
+          140.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 868
+      }
+    },
+    {
+      "id": "F15",
+      "title": "Live-bait shock-resistant luminous",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a 15\u0433\u0440 \u0436\u0438\u0432\u0446\u043e\u0432\u044b\u0439, \u043f\u043e\u0434 \u0441\u0432\u0435\u0442\u043b\u044f\u0447\u043e\u043a, \u0443\u0434\u0430\u0440\u043e\u043f\u0440\u043e\u0447\u043d\u044b\u0439",
+      "familyId": "F12",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/prochie_poplavki/1822955/",
+      "rating": "15",
+      "lengthMm": 140,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f15.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 436,
+      "triangles": 868,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        34.6321,
+        34.6321,
+        140.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f15.fbx",
+        "glb": "f15.glb",
+        "blend": "f15.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          34.6321,
+          34.6321,
+          140.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 868
+      }
+    },
+    {
+      "id": "F16",
+      "title": "Parus Needle",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u041f\u0430\u0440\u0443\u0441 \u0418\u0433\u043b\u0430 240\u043c\u043c",
+      "familyId": "F10",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_parus/1823055/",
+      "rating": null,
+      "lengthMm": 240.0,
+      "scaleBasis": "catalog-length",
+      "dimensionNote": "Source overall length; all radial dimensions and part proportions are approximated from the illustration.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f16.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 172,
+      "triangles": 340,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        10.6265,
+        10.6265,
+        240.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f16.fbx",
+        "glb": "f16.glb",
+        "blend": "f16.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          10.6265,
+          10.6265,
+          240.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 340
+      }
+    },
+    {
+      "id": "F17",
+      "title": "Wormix 106",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 106 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 30\u0433\u0440",
+      "familyId": "F17",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_wormix/1823647/",
+      "rating": "30",
+      "lengthMm": 200,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f17.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 304,
+      "triangles": 604,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        27.4266,
+        27.4266,
+        200.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f17.fbx",
+        "glb": "f17.glb",
+        "blend": "f17.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          27.4266,
+          27.4266,
+          200.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 604
+      }
+    },
+    {
+      "id": "F18",
+      "title": "Parus Luminous Tube",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a-\u0442\u0440\u0443\u0431\u043a\u0430 \u041f\u0430\u0440\u0443\u0441 160\u043c\u043c \u043f\u043e\u0434 \u0441\u0432\u0435\u0442\u043b\u044f\u0447\u043e\u043a",
+      "familyId": "F18",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_parus/1823796/",
+      "rating": null,
+      "lengthMm": 160.0,
+      "scaleBasis": "catalog-length",
+      "dimensionNote": "Source overall length; all radial dimensions and part proportions are approximated from the illustration.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f18.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 196,
+      "triangles": 388,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        9.1862,
+        9.1862,
+        160.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f18.fbx",
+        "glb": "f18.glb",
+        "blend": "f18.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          9.1862,
+          9.1862,
+          160.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 388
+      }
+    },
+    {
+      "id": "F19",
+      "title": "Parus Quill",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u041f\u0430\u0440\u0443\u0441 \u041f\u0435\u0440\u043e 160\u043c\u043c 1\u0433\u0440",
+      "familyId": "F19",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_parus/1823939/",
+      "rating": "1",
+      "lengthMm": 160.0,
+      "scaleBasis": "catalog-length",
+      "dimensionNote": "Source overall length; all radial dimensions and part proportions are approximated from the illustration.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f19.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 328,
+      "triangles": 652,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        7.201,
+        7.201,
+        160.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f19.fbx",
+        "glb": "f19.glb",
+        "blend": "f19.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          7.201,
+          7.201,
+          160.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 652
+      }
+    },
+    {
+      "id": "F20",
+      "title": "Expert 203-77-454",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Expert 203-77-454 4+4,5\u0433\u0440",
+      "familyId": "F20",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_expert/1824285/",
+      "rating": "4+4.5",
+      "lengthMm": 280,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f20.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 460,
+      "triangles": 916,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        26.0892,
+        26.0892,
+        280.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f20.fbx",
+        "glb": "f20.glb",
+        "blend": "f20.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          26.0892,
+          26.0892,
+          280.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 916
+      }
+    },
+    {
+      "id": "F21",
+      "title": "Parus Needle",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u041f\u0430\u0440\u0443\u0441 \u0418\u0433\u043b\u0430 260\u043c\u043c",
+      "familyId": "F10",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_parus/1824542/",
+      "rating": null,
+      "lengthMm": 260.0,
+      "scaleBasis": "catalog-length",
+      "dimensionNote": "Source overall length; all radial dimensions and part proportions are approximated from the illustration.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f21.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 172,
+      "triangles": 340,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        11.512,
+        11.512,
+        260.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f21.fbx",
+        "glb": "f21.glb",
+        "blend": "f21.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          11.512,
+          11.512,
+          260.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 340
+      }
+    },
+    {
+      "id": "F22",
+      "title": "Wormix 507 Working",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 507 \u0420\u0430\u0431\u043e\u0447\u0438\u0439 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 3\u0433\u0440",
+      "familyId": "F22",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_wormix/1824884/",
+      "rating": "3",
+      "lengthMm": 200,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f22.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 340,
+      "triangles": 676,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        31.9064,
+        31.9064,
+        200.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f22.fbx",
+        "glb": "f22.glb",
+        "blend": "f22.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          31.9064,
+          31.9064,
+          200.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 676
+      }
+    },
+    {
+      "id": "F23",
+      "title": "Wormix 110",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 110 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 5\u0433\u0440",
+      "familyId": "F23",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_wormix/1825696/",
+      "rating": "5",
+      "lengthMm": 190,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f23.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 352,
+      "triangles": 700,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        34.1477,
+        34.1477,
+        190.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f23.fbx",
+        "glb": "f23.glb",
+        "blend": "f23.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          34.1477,
+          34.1477,
+          190.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 700
+      }
+    },
+    {
+      "id": "F24",
+      "title": "Wormix 510 Working",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 510 \u0420\u0430\u0431\u043e\u0447\u0438\u0439 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 4\u0433\u0440",
+      "familyId": "F24",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_wormix/1825814/",
+      "rating": "4",
+      "lengthMm": 210,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f24.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 268,
+      "triangles": 532,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        23.6558,
+        23.6558,
+        210.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f24.fbx",
+        "glb": "f24.glb",
+        "blend": "f24.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          23.6558,
+          23.6558,
+          210.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 532
+      }
+    },
+    {
+      "id": "F25",
+      "title": "Wormix 105",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 105 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 5\u0433\u0440",
+      "familyId": "F25",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_wormix/1826720/",
+      "rating": "5",
+      "lengthMm": 200,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f25.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 376,
+      "triangles": 748,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        21.8839,
+        21.8839,
+        200.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f25.fbx",
+        "glb": "f25.glb",
+        "blend": "f25.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          21.8839,
+          21.8839,
+          200.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 748
+      }
+    },
+    {
+      "id": "F26",
+      "title": "Wormix 104",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 104 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 4\u0433\u0440",
+      "familyId": "F08",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_wormix/1826721/",
+      "rating": "4",
+      "lengthMm": 180,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f26.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 316,
+      "triangles": 628,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        26.7583,
+        26.7583,
+        180.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f26.fbx",
+        "glb": "f26.glb",
+        "blend": "f26.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          26.7583,
+          26.7583,
+          180.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 628
+      }
+    },
+    {
+      "id": "F27",
+      "title": "Wormix 521 Working",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 521 \u0420\u0430\u0431\u043e\u0447\u0438\u0439 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 4\u0433\u0440",
+      "familyId": "F27",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_wormix/1826910/",
+      "rating": "4",
+      "lengthMm": 200,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f27.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 268,
+      "triangles": 532,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        16.8729,
+        16.8729,
+        200.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f27.fbx",
+        "glb": "f27.glb",
+        "blend": "f27.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          16.8729,
+          16.8729,
+          200.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 532
+      }
+    },
+    {
+      "id": "F28",
+      "title": "Parus Small Winter",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u0437\u0438\u043c\u043d\u0438\u0439 \u043c\u0430\u043b\u044b\u0439 (\u041f\u0430\u0440\u0443\u0441)",
+      "familyId": "F28",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_zimnie/1827012/",
+      "rating": null,
+      "lengthMm": 22,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f28.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 276,
+      "triangles": 548,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        6.8981,
+        6.8981,
+        22.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f28.fbx",
+        "glb": "f28.glb",
+        "blend": "f28.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          6.8981,
+          6.8981,
+          22.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 548
+      }
+    },
+    {
+      "id": "F29",
+      "title": "Battery light live-bait float",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 30\u0433\u0440 \u0436\u0438\u0432\u0446\u043e\u0432\u044b\u0439, \u0441 \u0444\u043e\u043d\u0430\u0440\u0438\u043a\u043e\u043c \u043d\u0430 \u0431\u0430\u0442\u0430\u0440\u0435\u0439\u043a\u0435",
+      "familyId": "F29",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/prochie_poplavki/1828347/",
+      "rating": "30",
+      "lengthMm": 150,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f29.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 364,
+      "triangles": 724,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        62.9349,
+        62.9349,
+        150.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f29.fbx",
+        "glb": "f29.glb",
+        "blend": "f29.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          62.9349,
+          62.9349,
+          150.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 724
+      }
+    },
+    {
+      "id": "F30",
+      "title": "Wormix 525 Working",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 525 \u0420\u0430\u0431\u043e\u0447\u0438\u0439 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 3\u0433\u0440",
+      "familyId": "F30",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_wormix/1828793/",
+      "rating": "3",
+      "lengthMm": 200,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f30.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 268,
+      "triangles": 532,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        22.6444,
+        22.6444,
+        200.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f30.fbx",
+        "glb": "f30.glb",
+        "blend": "f30.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          22.6444,
+          22.6444,
+          200.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 532
+      }
+    },
+    {
+      "id": "F31",
+      "title": "Battery light live-bait float",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 100\u0433\u0440 \u0436\u0438\u0432\u0446\u043e\u0432\u044b\u0439, \u0441 \u0444\u043e\u043d\u0430\u0440\u0438\u043a\u043e\u043c \u043d\u0430 \u0431\u0430\u0442\u0430\u0440\u0435\u0439\u043a\u0435",
+      "familyId": "F29",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/prochie_poplavki/1828807/",
+      "rating": "100",
+      "lengthMm": 150,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f31.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 364,
+      "triangles": 724,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        62.9349,
+        62.9349,
+        150.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f31.fbx",
+        "glb": "f31.glb",
+        "blend": "f31.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          62.9349,
+          62.9349,
+          150.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 724
+      }
+    },
+    {
+      "id": "F32",
+      "title": "Battery light live-bait float",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 40\u0433\u0440 \u0436\u0438\u0432\u0446\u043e\u0432\u044b\u0439, \u0441 \u0444\u043e\u043d\u0430\u0440\u0438\u043a\u043e\u043c \u043d\u0430 \u0431\u0430\u0442\u0430\u0440\u0435\u0439\u043a\u0435",
+      "familyId": "F29",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/prochie_poplavki/1828808/",
+      "rating": "40",
+      "lengthMm": 150,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f32.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 364,
+      "triangles": 724,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        62.9349,
+        62.9349,
+        150.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f32.fbx",
+        "glb": "f32.glb",
+        "blend": "f32.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          62.9349,
+          62.9349,
+          150.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 724
+      }
+    },
+    {
+      "id": "F33",
+      "title": "Parus Quill",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u041f\u0430\u0440\u0443\u0441 \u041f\u0435\u0440\u043e 190\u043c\u043c 1,2\u0433\u0440",
+      "familyId": "F19",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_parus/1829018/",
+      "rating": "1.2",
+      "lengthMm": 190.0,
+      "scaleBasis": "catalog-length",
+      "dimensionNote": "Source overall length; all radial dimensions and part proportions are approximated from the illustration.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f33.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 328,
+      "triangles": 652,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        8.5511,
+        8.5511,
+        190.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f33.fbx",
+        "glb": "f33.glb",
+        "blend": "f33.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          8.5511,
+          8.5511,
+          190.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 652
+      }
+    },
+    {
+      "id": "F34",
+      "title": "Wormix Zoomer 126",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix Zoomer 126 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 3\u0433\u0440",
+      "familyId": "F34",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_wormix/1829229/",
+      "rating": "3",
+      "lengthMm": 240,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f34.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 352,
+      "triangles": 700,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        20.7649,
+        20.7649,
+        240.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f34.fbx",
+        "glb": "f34.glb",
+        "blend": "f34.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          20.7649,
+          20.7649,
+          240.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 700
+      }
+    },
+    {
+      "id": "F35",
+      "title": "Wormix Zoomer 132",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix Zoomer 132 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 2\u0433\u0440",
+      "familyId": "F35",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_wormix/1829786/",
+      "rating": "2",
+      "lengthMm": 230,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f35.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 328,
+      "triangles": 652,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        12.885,
+        12.885,
+        230.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f35.fbx",
+        "glb": "f35.glb",
+        "blend": "f35.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          12.885,
+          12.885,
+          230.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 652
+      }
+    },
+    {
+      "id": "F36",
+      "title": "Parus Soldier",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u041f\u0430\u0440\u0443\u0441 \u0421\u043e\u043b\u0434\u0430\u0442 105\u043c\u043c 3\u0433\u0440",
+      "familyId": "F36",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_parus/1830525/",
+      "rating": "3",
+      "lengthMm": 105.0,
+      "scaleBasis": "catalog-length",
+      "dimensionNote": "Source overall length; all radial dimensions and part proportions are approximated from the illustration.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f36.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 340,
+      "triangles": 676,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        16.6834,
+        16.6834,
+        105.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f36.fbx",
+        "glb": "f36.glb",
+        "blend": "f36.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          16.6834,
+          16.6834,
+          105.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 676
+      }
+    },
+    {
+      "id": "F37",
+      "title": "Wormix Zoomer 126",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix Zoomer 126 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 5\u0433\u0440",
+      "familyId": "F34",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_wormix/1830726/",
+      "rating": "5",
+      "lengthMm": 240,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f37.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 352,
+      "triangles": 700,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        20.7649,
+        20.7649,
+        240.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f37.fbx",
+        "glb": "f37.glb",
+        "blend": "f37.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          20.7649,
+          20.7649,
+          240.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 700
+      }
+    },
+    {
+      "id": "F38",
+      "title": "Wormix 110",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 110 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 2\u0433\u0440",
+      "familyId": "F23",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_wormix/1831277/",
+      "rating": "2",
+      "lengthMm": 190,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f38.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 352,
+      "triangles": 700,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        34.1477,
+        34.1477,
+        190.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f38.fbx",
+        "glb": "f38.glb",
+        "blend": "f38.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          34.1477,
+          34.1477,
+          190.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 700
+      }
+    },
+    {
+      "id": "F39",
+      "title": "Wormix 105",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 105 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 2,5\u0433\u0440",
+      "familyId": "F25",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_wormix/1833243/",
+      "rating": "2.5",
+      "lengthMm": 200,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f39.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 376,
+      "triangles": 748,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        21.8839,
+        21.8839,
+        200.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f39.fbx",
+        "glb": "f39.glb",
+        "blend": "f39.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          21.8839,
+          21.8839,
+          200.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 748
+      }
+    },
+    {
+      "id": "F40",
+      "title": "Winter Buoy, h-16",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u0437\u0438\u043c\u043d\u0438\u0439 \u0442\u0438\u043f \u0411\u0443\u0435\u043a h-16\u043c\u043c",
+      "familyId": "F40",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_zimnie/1833513/",
+      "rating": null,
+      "lengthMm": 27,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate. The h-16 mm marking is treated as a body designation, not a verified assembled height.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f40.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 216,
+      "triangles": 428,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        9.72,
+        9.72,
+        27.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f40.fbx",
+        "glb": "f40.glb",
+        "blend": "f40.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          9.72,
+          9.72,
+          27.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 428
+      }
+    },
+    {
+      "id": "F41",
+      "title": "Parus Luminous Tube",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a-\u0442\u0440\u0443\u0431\u043a\u0430 \u041f\u0430\u0440\u0443\u0441 200\u043c\u043c \u043f\u043e\u0434 \u0441\u0432\u0435\u0442\u043b\u044f\u0447\u043e\u043a",
+      "familyId": "F18",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_parus/1833550/",
+      "rating": null,
+      "lengthMm": 200.0,
+      "scaleBasis": "catalog-length",
+      "dimensionNote": "Source overall length; all radial dimensions and part proportions are approximated from the illustration.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f41.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 196,
+      "triangles": 388,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        11.4827,
+        11.4827,
+        200.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f41.fbx",
+        "glb": "f41.glb",
+        "blend": "f41.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          11.4827,
+          11.4827,
+          200.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 388
+      }
+    },
+    {
+      "id": "F42",
+      "title": "Wormix Zoomer 134",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix Zoomer 134 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 4\u0433\u0440",
+      "familyId": "F42",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_wormix/1834870/",
+      "rating": "4",
+      "lengthMm": 240,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f42.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 448,
+      "triangles": 892,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        23.3474,
+        23.3474,
+        240.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f42.fbx",
+        "glb": "f42.glb",
+        "blend": "f42.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          23.3474,
+          23.3474,
+          240.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 892
+      }
+    },
+    {
+      "id": "F43",
+      "title": "Wormix 111",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 111 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 2\u0433\u0440",
+      "familyId": "F43",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_wormix/1835455/",
+      "rating": "2",
+      "lengthMm": 200,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f43.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 268,
+      "triangles": 532,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        18.745,
+        18.745,
+        200.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f43.fbx",
+        "glb": "f43.glb",
+        "blend": "f43.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          18.745,
+          18.745,
+          200.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 532
+      }
+    },
+    {
+      "id": "F44",
+      "title": "Wormix 510 Working",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 510 \u0420\u0430\u0431\u043e\u0447\u0438\u0439 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 2\u0433\u0440",
+      "familyId": "F24",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_wormix/1835930/",
+      "rating": "2",
+      "lengthMm": 210,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f44.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 268,
+      "triangles": 532,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        23.6558,
+        23.6558,
+        210.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f44.fbx",
+        "glb": "f44.glb",
+        "blend": "f44.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          23.6558,
+          23.6558,
+          210.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 532
+      }
+    },
+    {
+      "id": "F45",
+      "title": "Wormix 105",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 105 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 3\u0433\u0440",
+      "familyId": "F25",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_wormix/1836290/",
+      "rating": "3",
+      "lengthMm": 200,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f45.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 376,
+      "triangles": 748,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        21.8839,
+        21.8839,
+        200.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f45.fbx",
+        "glb": "f45.glb",
+        "blend": "f45.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          21.8839,
+          21.8839,
+          200.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 748
+      }
+    },
+    {
+      "id": "F46",
+      "title": "Parus Sensitive Short",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u041f\u0430\u0440\u0443\u0441 \u0427\u0443\u0442\u043a\u0438\u0439 \u043a\u043e\u0440\u043e\u0442\u043a\u0438\u0439 150\u043c\u043c 3\u0433\u0440",
+      "familyId": "F46",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_parus/1836920/",
+      "rating": "3",
+      "lengthMm": 150.0,
+      "scaleBasis": "catalog-length",
+      "dimensionNote": "Source overall length; all radial dimensions and part proportions are approximated from the illustration.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f46.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 364,
+      "triangles": 724,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        21.9651,
+        21.9651,
+        150.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f46.fbx",
+        "glb": "f46.glb",
+        "blend": "f46.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          21.9651,
+          21.9651,
+          150.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 724
+      }
+    },
+    {
+      "id": "F47",
+      "title": "Parus Tube 190-200 mm",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a-\u0442\u0440\u0443\u0431\u043a\u0430 \u041f\u0430\u0440\u0443\u0441 190-200\u043c\u043c 1\u0433\u0440",
+      "familyId": "F47",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_parus/1837364/",
+      "rating": "1",
+      "lengthMm": 195.0,
+      "scaleBasis": "catalog-range-midpoint",
+      "dimensionNote": "195 mm midpoint of the source 190-200 mm range; all radial dimensions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f47.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 148,
+      "triangles": 292,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        6.6503,
+        6.6503,
+        195.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f47.fbx",
+        "glb": "f47.glb",
+        "blend": "f47.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          6.6503,
+          6.6503,
+          195.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 292
+      }
+    },
+    {
+      "id": "F48",
+      "title": "G.C. 0047",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a G.C. \u21160047 2\u0433\u0440",
+      "familyId": "F48",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_growsculture/1837498/",
+      "rating": "2",
+      "lengthMm": 200,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f48.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 364,
+      "triangles": 724,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        21.3047,
+        21.3047,
+        200.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f48.fbx",
+        "glb": "f48.glb",
+        "blend": "f48.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          21.3047,
+          21.3047,
+          200.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 724
+      }
+    },
+    {
+      "id": "F49",
+      "title": "Wormix 109",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 109 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 5\u0433\u0440",
+      "familyId": "F49",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_wormix/1837802/",
+      "rating": "5",
+      "lengthMm": 200,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f49.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 352,
+      "triangles": 700,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        21.2984,
+        21.2984,
+        200.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f49.fbx",
+        "glb": "f49.glb",
+        "blend": "f49.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          21.2984,
+          21.2984,
+          200.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 700
+      }
+    },
+    {
+      "id": "F50",
+      "title": "Unbranded 100 mm",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a 100\u043c\u043c 1\u0433\u0440",
+      "familyId": "F50",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/prochie_poplavki/1838991/",
+      "rating": "1",
+      "lengthMm": 100.0,
+      "scaleBasis": "catalog-length",
+      "dimensionNote": "Source overall length; all radial dimensions and part proportions are approximated from the illustration.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f50.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 280,
+      "triangles": 556,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        15.1502,
+        15.1502,
+        100.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f50.fbx",
+        "glb": "f50.glb",
+        "blend": "f50.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          15.1502,
+          15.1502,
+          100.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 556
+      }
+    },
+    {
+      "id": "F51",
+      "title": "Wormix 107",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 107 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 5\u0433\u0440",
+      "familyId": "F51",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_wormix/1839014/",
+      "rating": "5",
+      "lengthMm": 190,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f51.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 304,
+      "triangles": 604,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        18.0583,
+        18.0583,
+        190.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f51.fbx",
+        "glb": "f51.glb",
+        "blend": "f51.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          18.0583,
+          18.0583,
+          190.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 604
+      }
+    },
+    {
+      "id": "F52",
+      "title": "Wormix 510 Working",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 510 \u0420\u0430\u0431\u043e\u0447\u0438\u0439 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 3\u0433\u0440",
+      "familyId": "F24",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_wormix/1839891/",
+      "rating": "3",
+      "lengthMm": 210,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f52.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 268,
+      "triangles": 532,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        23.6558,
+        23.6558,
+        210.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f52.fbx",
+        "glb": "f52.glb",
+        "blend": "f52.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          23.6558,
+          23.6558,
+          210.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 532
+      }
+    },
+    {
+      "id": "F54",
+      "title": "Parus Needle",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u041f\u0430\u0440\u0443\u0441 \u0418\u0433\u043b\u0430 230\u043c\u043c",
+      "familyId": "F10",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_parus/1841225/",
+      "rating": null,
+      "lengthMm": 230.0,
+      "scaleBasis": "catalog-length",
+      "dimensionNote": "Source overall length; all radial dimensions and part proportions are approximated from the illustration.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f54.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 172,
+      "triangles": 340,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        10.1837,
+        10.1837,
+        230.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f54.fbx",
+        "glb": "f54.glb",
+        "blend": "f54.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          10.1837,
+          10.1837,
+          230.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 340
+      }
+    },
+    {
+      "id": "F55",
+      "title": "Wormix 104",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 104 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 5\u0433\u0440",
+      "familyId": "F08",
+      "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_wormix/1841321/",
+      "rating": "5",
+      "lengthMm": 180,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "radialSegments": 12,
+      "texture": "basecolor.webp",
+      "textureSize": [
+        256,
+        1024
+      ],
+      "textureQuality": 90,
+      "reference": "assets/floats/f55.png",
+      "blender": "5.2.3 LTS",
+      "vertices": 316,
+      "triangles": 628,
+      "meshes": 1,
+      "materials": 1,
+      "uvLayers": 1,
+      "dimensionsMm": [
+        26.7583,
+        26.7583,
+        180.0
+      ],
+      "units": "meters",
+      "blenderUpAxis": "Z",
+      "exportUpAxis": "Y",
+      "origin": "Bottom center of assembled float",
+      "fbxEmbeddedTexture": true,
+      "files": {
+        "fbx": "f55.fbx",
+        "glb": "f55.glb",
+        "blend": "f55.blend",
+        "texture": "basecolor.webp"
+      },
+      "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+      "validation": {
+        "fbxReimport": "passed",
+        "scaleToleranceMm": 0.001,
+        "reimportedDimensionsMm": [
+          26.7583,
+          26.7583,
+          180.0
+        ],
+        "embeddedTextureLoaded": true,
+        "embeddedBytesMatch": true,
+        "triangles": 628
+      }
+    }
+  ],
+  "missing": [
+    {
+      "id": "F53",
+      "reason": "No usable source image. Source photos show fishing line."
+    }
+  ],
+  "textureEncoding": {
+    "format": "WebP",
+    "quality": 90,
+    "lossless": false,
+    "alphaPreserved": true
+  },
+  "dimensionPolicy": "Only listed overall lengths are source dimensions. All radial dimensions are approximated from adapted illustrations. Unknown overall lengths are explicitly estimated."
+}

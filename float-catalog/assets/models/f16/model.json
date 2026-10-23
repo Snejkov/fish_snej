@@ -1,0 +1,54 @@
+{
+  "id": "F16",
+  "title": "Parus Needle",
+  "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u041f\u0430\u0440\u0443\u0441 \u0418\u0433\u043b\u0430 240\u043c\u043c",
+  "familyId": "F10",
+  "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_parus/1823055/",
+  "rating": null,
+  "lengthMm": 240.0,
+  "scaleBasis": "catalog-length",
+  "dimensionNote": "Source overall length; all radial dimensions and part proportions are approximated from the illustration.",
+  "radialSegments": 12,
+  "texture": "basecolor.webp",
+  "textureSize": [
+    256,
+    1024
+  ],
+  "textureQuality": 90,
+  "reference": "assets/floats/f16.png",
+  "blender": "5.2.3 LTS",
+  "vertices": 172,
+  "triangles": 340,
+  "meshes": 1,
+  "materials": 1,
+  "uvLayers": 1,
+  "dimensionsMm": [
+    10.6265,
+    10.6265,
+    240.0
+  ],
+  "units": "meters",
+  "blenderUpAxis": "Z",
+  "exportUpAxis": "Y",
+  "origin": "Bottom center of assembled float",
+  "fbxEmbeddedTexture": true,
+  "files": {
+    "fbx": "f16.fbx",
+    "glb": "f16.glb",
+    "blend": "f16.blend",
+    "texture": "basecolor.webp"
+  },
+  "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+  "validation": {
+    "fbxReimport": "passed",
+    "scaleToleranceMm": 0.001,
+    "reimportedDimensionsMm": [
+      10.6265,
+      10.6265,
+      240.0
+    ],
+    "embeddedTextureLoaded": true,
+    "embeddedBytesMatch": true,
+    "triangles": 340
+  }
+}

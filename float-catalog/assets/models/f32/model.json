@@ -1,0 +1,54 @@
+{
+  "id": "F32",
+  "title": "Battery light live-bait float",
+  "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 40\u0433\u0440 \u0436\u0438\u0432\u0446\u043e\u0432\u044b\u0439, \u0441 \u0444\u043e\u043d\u0430\u0440\u0438\u043a\u043e\u043c \u043d\u0430 \u0431\u0430\u0442\u0430\u0440\u0435\u0439\u043a\u0435",
+  "familyId": "F29",
+  "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/prochie_poplavki/1828808/",
+  "rating": "40",
+  "lengthMm": 150,
+  "scaleBasis": "estimated",
+  "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+  "radialSegments": 12,
+  "texture": "basecolor.webp",
+  "textureSize": [
+    256,
+    1024
+  ],
+  "textureQuality": 90,
+  "reference": "assets/floats/f32.png",
+  "blender": "5.2.3 LTS",
+  "vertices": 364,
+  "triangles": 724,
+  "meshes": 1,
+  "materials": 1,
+  "uvLayers": 1,
+  "dimensionsMm": [
+    62.9349,
+    62.9349,
+    150.0
+  ],
+  "units": "meters",
+  "blenderUpAxis": "Z",
+  "exportUpAxis": "Y",
+  "origin": "Bottom center of assembled float",
+  "fbxEmbeddedTexture": true,
+  "files": {
+    "fbx": "f32.fbx",
+    "glb": "f32.glb",
+    "blend": "f32.blend",
+    "texture": "basecolor.webp"
+  },
+  "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+  "validation": {
+    "fbxReimport": "passed",
+    "scaleToleranceMm": 0.001,
+    "reimportedDimensionsMm": [
+      62.9349,
+      62.9349,
+      150.0
+    ],
+    "embeddedTextureLoaded": true,
+    "embeddedBytesMatch": true,
+    "triangles": 724
+  }
+}

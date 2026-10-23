@@ -1,0 +1,19 @@
+{
+  "collectionId": "badis-floats-2026-10-24",
+  "origin": "http://144.31.28.132/",
+  "release": "floats-acebc39f50e9",
+  "baseCatalogSha256": "ffec8596de43091f394619f8618bbf56ebff68e5c21bb689a231fc842c6a2ee8",
+  "catalogSha256": "676c60202910d5fcec61539b996124c47e5c8fac8a40a13098d119bd12b510c2",
+  "addedModels": 54,
+  "preservedModels": 37,
+  "totalModels": 91,
+  "totalBobbers": 55,
+  "feedUrl": "http://144.31.28.132/assets/floats/catalog.json",
+  "feedVersion": "cb2bc2854fec844d0e9c491bf69d283944f1dbbf0334ac00d643b4db84508c84",
+  "skipped": [
+    {
+      "id": "F53",
+      "reason": "No usable float reference image"
+    }
+  ]
+}

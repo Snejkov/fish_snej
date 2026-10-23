@@ -1,0 +1,54 @@
+{
+  "id": "F20",
+  "title": "Expert 203-77-454",
+  "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Expert 203-77-454 4+4,5\u0433\u0440",
+  "familyId": "F20",
+  "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_expert/1824285/",
+  "rating": "4+4.5",
+  "lengthMm": 280,
+  "scaleBasis": "estimated",
+  "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+  "radialSegments": 12,
+  "texture": "basecolor.webp",
+  "textureSize": [
+    256,
+    1024
+  ],
+  "textureQuality": 90,
+  "reference": "assets/floats/f20.png",
+  "blender": "5.2.3 LTS",
+  "vertices": 460,
+  "triangles": 916,
+  "meshes": 1,
+  "materials": 1,
+  "uvLayers": 1,
+  "dimensionsMm": [
+    26.0892,
+    26.0892,
+    280.0
+  ],
+  "units": "meters",
+  "blenderUpAxis": "Z",
+  "exportUpAxis": "Y",
+  "origin": "Bottom center of assembled float",
+  "fbxEmbeddedTexture": true,
+  "files": {
+    "fbx": "f20.fbx",
+    "glb": "f20.glb",
+    "blend": "f20.blend",
+    "texture": "basecolor.webp"
+  },
+  "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+  "validation": {
+    "fbxReimport": "passed",
+    "scaleToleranceMm": 0.001,
+    "reimportedDimensionsMm": [
+      26.0892,
+      26.0892,
+      280.0
+    ],
+    "embeddedTextureLoaded": true,
+    "embeddedBytesMatch": true,
+    "triangles": 916
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "id": "F49",
+  "title": "Wormix 109",
+  "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 109 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 5\u0433\u0440",
+  "familyId": "F49",
+  "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_wormix/1837802/",
+  "rating": "5",
+  "lengthMm": 200,
+  "scaleBasis": "estimated",
+  "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+  "radialSegments": 12,
+  "texture": "basecolor.webp",
+  "textureSize": [
+    256,
+    1024
+  ],
+  "textureQuality": 90,
+  "reference": "assets/floats/f49.png",
+  "blender": "5.2.3 LTS",
+  "vertices": 352,
+  "triangles": 700,
+  "meshes": 1,
+  "materials": 1,
+  "uvLayers": 1,
+  "dimensionsMm": [
+    21.2984,
+    21.2984,
+    200.0
+  ],
+  "units": "meters",
+  "blenderUpAxis": "Z",
+  "exportUpAxis": "Y",
+  "origin": "Bottom center of assembled float",
+  "fbxEmbeddedTexture": true,
+  "files": {
+    "fbx": "f49.fbx",
+    "glb": "f49.glb",
+    "blend": "f49.blend",
+    "texture": "basecolor.webp"
+  },
+  "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+  "validation": {
+    "fbxReimport": "passed",
+    "scaleToleranceMm": 0.001,
+    "reimportedDimensionsMm": [
+      21.2984,
+      21.2984,
+      200.0
+    ],
+    "embeddedTextureLoaded": true,
+    "embeddedBytesMatch": true,
+    "triangles": 700
+  }
+}

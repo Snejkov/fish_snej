@@ -1,0 +1,55 @@
+id,name,catalog_rating_g,model_length_mm,scale_basis,triangles,fbx,webp
+F01,Unbranded 80 mm,1,80.0,catalog-length,628,assets/models/f01/f01.fbx,assets/models/f01/basecolor.webp
+F02,Parus Acorn,4,140.0,catalog-length,700,assets/models/f02/f02.fbx,assets/models/f02/basecolor.webp
+F03,Goose quill with ring,1,200,estimated,460,assets/models/f03/f03.fbx,assets/models/f03/basecolor.webp
+F04,G.C. 0052,1,180,estimated,436,assets/models/f04/f04.fbx,assets/models/f04/basecolor.webp
+F05,Silver Stream SSF-29,1.5,110,estimated,460,assets/models/f05/f05.fbx,assets/models/f05/basecolor.webp
+F06,Goose quill with small foam body,1.6,220,estimated,508,assets/models/f06/f06.fbx,assets/models/f06/basecolor.webp
+F07,Parus Ellipse with bulb,2.5,160.0,catalog-length,772,assets/models/f07/f07.fbx,assets/models/f07/basecolor.webp
+F08,Wormix 104,3,180,estimated,628,assets/models/f08/f08.fbx,assets/models/f08/basecolor.webp
+F09,Winter Type 0.75,0.75,27,estimated,428,assets/models/f09/f09.fbx,assets/models/f09/basecolor.webp
+F10,Parus Needle,Not specified,180.0,catalog-length,340,assets/models/f10/f10.fbx,assets/models/f10/basecolor.webp
+F11,Parus Hollow D-4,Not specified,180,estimated,412,assets/models/f11/f11.fbx,assets/models/f11/basecolor.webp
+F12,Live-bait shock-resistant luminous,10,140,estimated,868,assets/models/f12/f12.fbx,assets/models/f12/basecolor.webp
+F13,G.C. 145,5,260,estimated,796,assets/models/f13/f13.fbx,assets/models/f13/basecolor.webp
+F14,Plastic live-bait float,Not specified,140,estimated,868,assets/models/f14/f14.fbx,assets/models/f14/basecolor.webp
+F15,Live-bait shock-resistant luminous,15,140,estimated,868,assets/models/f15/f15.fbx,assets/models/f15/basecolor.webp
+F16,Parus Needle,Not specified,240.0,catalog-length,340,assets/models/f16/f16.fbx,assets/models/f16/basecolor.webp
+F17,Wormix 106,30,200,estimated,604,assets/models/f17/f17.fbx,assets/models/f17/basecolor.webp
+F18,Parus Luminous Tube,Not specified,160.0,catalog-length,388,assets/models/f18/f18.fbx,assets/models/f18/basecolor.webp
+F19,Parus Quill,1,160.0,catalog-length,652,assets/models/f19/f19.fbx,assets/models/f19/basecolor.webp
+F20,Expert 203-77-454,4+4.5,280,estimated,916,assets/models/f20/f20.fbx,assets/models/f20/basecolor.webp
+F21,Parus Needle,Not specified,260.0,catalog-length,340,assets/models/f21/f21.fbx,assets/models/f21/basecolor.webp
+F22,Wormix 507 Working,3,200,estimated,676,assets/models/f22/f22.fbx,assets/models/f22/basecolor.webp
+F23,Wormix 110,5,190,estimated,700,assets/models/f23/f23.fbx,assets/models/f23/basecolor.webp
+F24,Wormix 510 Working,4,210,estimated,532,assets/models/f24/f24.fbx,assets/models/f24/basecolor.webp
+F25,Wormix 105,5,200,estimated,748,assets/models/f25/f25.fbx,assets/models/f25/basecolor.webp
+F26,Wormix 104,4,180,estimated,628,assets/models/f26/f26.fbx,assets/models/f26/basecolor.webp
+F27,Wormix 521 Working,4,200,estimated,532,assets/models/f27/f27.fbx,assets/models/f27/basecolor.webp
+F28,Parus Small Winter,Not specified,22,estimated,548,assets/models/f28/f28.fbx,assets/models/f28/basecolor.webp
+F29,Battery light live-bait float,30,150,estimated,724,assets/models/f29/f29.fbx,assets/models/f29/basecolor.webp
+F30,Wormix 525 Working,3,200,estimated,532,assets/models/f30/f30.fbx,assets/models/f30/basecolor.webp
+F31,Battery light live-bait float,100,150,estimated,724,assets/models/f31/f31.fbx,assets/models/f31/basecolor.webp
+F32,Battery light live-bait float,40,150,estimated,724,assets/models/f32/f32.fbx,assets/models/f32/basecolor.webp
+F33,Parus Quill,1.2,190.0,catalog-length,652,assets/models/f33/f33.fbx,assets/models/f33/basecolor.webp
+F34,Wormix Zoomer 126,3,240,estimated,700,assets/models/f34/f34.fbx,assets/models/f34/basecolor.webp
+F35,Wormix Zoomer 132,2,230,estimated,652,assets/models/f35/f35.fbx,assets/models/f35/basecolor.webp
+F36,Parus Soldier,3,105.0,catalog-length,676,assets/models/f36/f36.fbx,assets/models/f36/basecolor.webp
+F37,Wormix Zoomer 126,5,240,estimated,700,assets/models/f37/f37.fbx,assets/models/f37/basecolor.webp
+F38,Wormix 110,2,190,estimated,700,assets/models/f38/f38.fbx,assets/models/f38/basecolor.webp
+F39,Wormix 105,2.5,200,estimated,748,assets/models/f39/f39.fbx,assets/models/f39/basecolor.webp
+F40,"Winter Buoy, h-16",Not specified,27,estimated,428,assets/models/f40/f40.fbx,assets/models/f40/basecolor.webp
+F41,Parus Luminous Tube,Not specified,200.0,catalog-length,388,assets/models/f41/f41.fbx,assets/models/f41/basecolor.webp
+F42,Wormix Zoomer 134,4,240,estimated,892,assets/models/f42/f42.fbx,assets/models/f42/basecolor.webp
+F43,Wormix 111,2,200,estimated,532,assets/models/f43/f43.fbx,assets/models/f43/basecolor.webp
+F44,Wormix 510 Working,2,210,estimated,532,assets/models/f44/f44.fbx,assets/models/f44/basecolor.webp
+F45,Wormix 105,3,200,estimated,748,assets/models/f45/f45.fbx,assets/models/f45/basecolor.webp
+F46,Parus Sensitive Short,3,150.0,catalog-length,724,assets/models/f46/f46.fbx,assets/models/f46/basecolor.webp
+F47,Parus Tube 190-200 mm,1,195.0,catalog-range-midpoint,292,assets/models/f47/f47.fbx,assets/models/f47/basecolor.webp
+F48,G.C. 0047,2,200,estimated,724,assets/models/f48/f48.fbx,assets/models/f48/basecolor.webp
+F49,Wormix 109,5,200,estimated,700,assets/models/f49/f49.fbx,assets/models/f49/basecolor.webp
+F50,Unbranded 100 mm,1,100.0,catalog-length,556,assets/models/f50/f50.fbx,assets/models/f50/basecolor.webp
+F51,Wormix 107,5,190,estimated,604,assets/models/f51/f51.fbx,assets/models/f51/basecolor.webp
+F52,Wormix 510 Working,3,210,estimated,532,assets/models/f52/f52.fbx,assets/models/f52/basecolor.webp
+F54,Parus Needle,Not specified,230.0,catalog-length,340,assets/models/f54/f54.fbx,assets/models/f54/basecolor.webp
+F55,Wormix 104,5,180,estimated,628,assets/models/f55/f55.fbx,assets/models/f55/basecolor.webp

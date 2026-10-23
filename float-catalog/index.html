@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#173e34">
+  <meta name="description" content="Local preview of individual fishing float references and modeling notes.">
+  <title>Float models / FBX and WebP preview</title>
+  <script type="importmap">{"imports":{"three":"./vendor/three.module.min.js","three/addons/":"./vendor/addons/"}}</script>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23173e34'/%3E%3Cpath d='M16 4v24' stroke='%23f2a05a' stroke-width='2'/%3E%3Cellipse cx='16' cy='17' rx='5' ry='8' fill='%23f0df9d'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body class="preview-page">
+  <header class="preview-header">
+    <div><p class="eyebrow">LOCAL PREVIEW / BLENDER ASSETS</p><h1>Fishing float models.</h1><p class="preview-description">54 low-poly floats. Rotate each model, compare its reference, and download FBX with WebP textures.</p></div>
+    <div class="header-right"><a class="button" href="downloads/float-models-all.zip" download>Download all 54 models &#8595;</a><a class="button secondary" href="float-library.fbx" download>All-in-one FBX</a><button id="export-db" class="button secondary" type="button">Database</button><button id="import-db" class="button secondary" type="button">Import notes</button><input id="import-file" type="file" accept="application/json,.json" hidden></div>
+  </header>
+  <div class="preview-summary" aria-label="Collection statistics"><span><strong id="stat-total">55</strong> catalog entries</span><span><strong id="stat-images">0</strong> references</span><span><strong id="stat-modeled">0</strong> Blender models</span><span>WebP quality 90 / Meter units / Y-up exports</span></div>
+
+  <main class="workspace" id="workspace">
+    <aside class="library-panel" aria-label="Float library">
+      <div class="panel-heading"><h2>Collection</h2><span id="result-count" class="count">55</span></div>
+      <label class="search-field"><span class="sr-only">Search catalog</span><span aria-hidden="true">&#9906;</span><input id="search" type="search" placeholder="Find a name, brand, or model" autocomplete="off"></label>
+      <div class="filters"><label><span>Brand</span><select id="brand-filter"><option value="">All brands</option></select></label><label><span>Shape</span><select id="shape-filter"><option value="">All shapes</option></select></label></div>
+      <div class="filter-secondary"><select id="status-filter" aria-label="Filter by modeling status"><option value="">Any status</option><option value="reference">Reference</option><option value="queued">To model</option><option value="modeling">In progress</option><option value="modeled">Modeled</option><option value="needs-reference">Needs reference</option></select><select id="sort" aria-label="Sort collection"><option value="id">Catalog order</option><option value="rating">Rating: low to high</option><option value="name">Name: A to Z</option></select></div>
+      <div id="float-list" class="float-list" aria-label="Choose a float"><p class="loading">Opening the collection...</p></div>
+      <div class="library-foot"><span id="storage-state">Connecting local database</span><button id="clear-filters" class="text-button" type="button">Clear filters</button></div>
+    </aside>
+
+    <section id="detail" class="detail-panel" aria-label="Selected float" aria-busy="true"><div class="loading detail-loading">Preparing your reference desk...</div></section>
+  </main>
+
+  <footer class="footer"><span>Local Blender asset preview. <a href="downloads/">All individual downloads</a> / <a href="assets/model-library.webp" target="_blank">Model contact sheet</a></span><span>Source names and ratings retained. Colors reinterpreted.</span></footer>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <dialog id="image-dialog" aria-label="Full-size float reference"><button id="close-image" class="dialog-close" type="button" aria-label="Close image">&#215;</button><img id="full-image" alt=""><p id="full-image-caption"></p></dialog>
+</body>
+</html>

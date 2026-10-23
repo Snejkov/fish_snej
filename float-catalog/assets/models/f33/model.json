@@ -1,0 +1,54 @@
+{
+  "id": "F33",
+  "title": "Parus Quill",
+  "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u041f\u0430\u0440\u0443\u0441 \u041f\u0435\u0440\u043e 190\u043c\u043c 1,2\u0433\u0440",
+  "familyId": "F19",
+  "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_parus/1829018/",
+  "rating": "1.2",
+  "lengthMm": 190.0,
+  "scaleBasis": "catalog-length",
+  "dimensionNote": "Source overall length; all radial dimensions and part proportions are approximated from the illustration.",
+  "radialSegments": 12,
+  "texture": "basecolor.webp",
+  "textureSize": [
+    256,
+    1024
+  ],
+  "textureQuality": 90,
+  "reference": "assets/floats/f33.png",
+  "blender": "5.2.3 LTS",
+  "vertices": 328,
+  "triangles": 652,
+  "meshes": 1,
+  "materials": 1,
+  "uvLayers": 1,
+  "dimensionsMm": [
+    8.5511,
+    8.5511,
+    190.0
+  ],
+  "units": "meters",
+  "blenderUpAxis": "Z",
+  "exportUpAxis": "Y",
+  "origin": "Bottom center of assembled float",
+  "fbxEmbeddedTexture": true,
+  "files": {
+    "fbx": "f33.fbx",
+    "glb": "f33.glb",
+    "blend": "f33.blend",
+    "texture": "basecolor.webp"
+  },
+  "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+  "validation": {
+    "fbxReimport": "passed",
+    "scaleToleranceMm": 0.001,
+    "reimportedDimensionsMm": [
+      8.5511,
+      8.5511,
+      190.0
+    ],
+    "embeddedTextureLoaded": true,
+    "embeddedBytesMatch": true,
+    "triangles": 652
+  }
+}

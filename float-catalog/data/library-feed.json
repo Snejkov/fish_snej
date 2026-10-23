@@ -1,0 +1,2618 @@
+{
+  "schemaVersion": 1,
+  "collectionId": "badis-floats-2026-10-24",
+  "generatedAt": "2026-10-23T20:28:12Z",
+  "version": "cb2bc2854fec844d0e9c491bf69d283944f1dbbf0334ac00d643b4db84508c84",
+  "units": "meters",
+  "upAxis": "Y",
+  "forwardAxis": "-Z",
+  "origin": "bottom-center",
+  "preferredRuntimeFormat": "glb",
+  "glbTexturesEmbedded": true,
+  "items": [
+    {
+      "id": "F01",
+      "name": "Unbranded 80 mm",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a 80\u043c\u043c 1\u0433\u0440",
+      "rating": "1",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 80.0,
+      "scaleBasis": "catalog-length",
+      "dimensionNote": "Source overall length; all radial dimensions and part proportions are approximated from the illustration.",
+      "triangles": 628,
+      "dimensionsMeters": [
+        0.0148681,
+        0.08,
+        0.0148681
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f01/f01.glb?v=1a72f7046464",
+          "path": "assets/floats/f01/f01.glb",
+          "sha256": "1a72f70464644f2b2b7a1ae3e4cc95ea29cfc496d45f9136c6904fbe3a9da0ce",
+          "bytes": 18648
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f01/f01.fbx?v=806553194ac1",
+          "path": "assets/floats/f01/f01.fbx",
+          "sha256": "806553194ac12040814faea26613e8c371faf1568b7e35a328e08b0919e407fc",
+          "bytes": 52556
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f01/basecolor.webp?v=eae5a33d6590",
+          "path": "assets/floats/f01/basecolor.webp",
+          "sha256": "eae5a33d659057032dd4f446ddcf8b26da6eec3ca1966cdafd97954084b4841a",
+          "bytes": 1182
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f01.webp?v=7867a6017e72",
+          "path": "thumbnails/floats/f01.webp",
+          "sha256": "7867a6017e723ed2c04220ba3deb3d28c2f1a7b7e57827e452bc2514d4d3a9fb",
+          "bytes": 3210
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f01.zip?v=9b9ab8f11858",
+          "path": "downloads/floats/f01.zip",
+          "sha256": "9b9ab8f11858cd2efb651893ed292cb8e6949f75a260510ba0fdd37f28efa8e3",
+          "bytes": 158033
+        }
+      }
+    },
+    {
+      "id": "F02",
+      "name": "Parus Acorn",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u041f\u0430\u0440\u0443\u0441 \u0416\u0435\u043b\u0443\u0434\u044c 140\u043c\u043c 4\u0433\u0440 \u043f\u043e\u0434 \u0441\u0432\u0435\u0442\u043b\u044f\u0447\u043e\u043a",
+      "rating": "4",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 140.0,
+      "scaleBasis": "catalog-length",
+      "dimensionNote": "Source overall length; all radial dimensions and part proportions are approximated from the illustration.",
+      "triangles": 700,
+      "dimensionsMeters": [
+        0.0201375,
+        0.14,
+        0.0201375
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f02/f02.glb?v=c7f16188f8ff",
+          "path": "assets/floats/f02/f02.glb",
+          "sha256": "c7f16188f8ffabb0c393e08d890c8cec7250b49c2d69e10df5c366de17450f63",
+          "bytes": 20336
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f02/f02.fbx?v=317209bc187d",
+          "path": "assets/floats/f02/f02.fbx",
+          "sha256": "317209bc187dce959a06df71f45509e9ee2492bfd49b4e4c288acae34e06c8b7",
+          "bytes": 56108
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f02/basecolor.webp?v=51894346aedd",
+          "path": "assets/floats/f02/basecolor.webp",
+          "sha256": "51894346aedd09c38da659dd93e1815f3da892e1c06f1b8d90feb0664af85e3b",
+          "bytes": 1038
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f02.webp?v=8c05a1ca6e00",
+          "path": "thumbnails/floats/f02.webp",
+          "sha256": "8c05a1ca6e0035db770296e666a0880dbda241c7d988bda3ff7a2d56dfc8ff80",
+          "bytes": 2962
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f02.zip?v=478d499766a2",
+          "path": "downloads/floats/f02.zip",
+          "sha256": "478d499766a2195f92d11e26fe7d8dbd2e12fdc890810ce7b8b06f648c62deea",
+          "bytes": 162479
+        }
+      }
+    },
+    {
+      "id": "F03",
+      "name": "Goose quill with ring",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043a\u0438 \u0413\u0443\u0441\u0438\u043d\u043e\u0435 \u041f\u0435\u0440\u043e \u0441 \u043a\u043e\u043b\u044c\u0446\u043e\u043c (5\u0448\u0442)",
+      "rating": "1",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 200,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 460,
+      "dimensionsMeters": [
+        0.0125788,
+        0.2,
+        0.0125788
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f03/f03.glb?v=9bc4cabedc66",
+          "path": "assets/floats/f03/f03.glb",
+          "sha256": "9bc4cabedc66498f308287337cfd8876c28b82424498f4fbfdb2e95a4254a4f0",
+          "bytes": 14652
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f03/f03.fbx?v=80d74826771f",
+          "path": "assets/floats/f03/f03.fbx",
+          "sha256": "80d74826771f50c05583afd56b6463fa3e5017d3f6d0a1457033a533b6f4c0e2",
+          "bytes": 43852
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f03/basecolor.webp?v=487d218c5981",
+          "path": "assets/floats/f03/basecolor.webp",
+          "sha256": "487d218c5981c76427b75e733ec591617ab4c51c1e3660bc633e1f3722f13a2b",
+          "bytes": 964
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f03.webp?v=91dc91b51aa1",
+          "path": "thumbnails/floats/f03.webp",
+          "sha256": "91dc91b51aa1818e600cad69d4b499d2a392e27b74f832bb04df355899ae5abe",
+          "bytes": 2294
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f03.zip?v=9d59011cb9d5",
+          "path": "downloads/floats/f03.zip",
+          "sha256": "9d59011cb9d50e35db5fa9e034f26b1e1789dcdb4fef68ceba450601c502711c",
+          "bytes": 142872
+        }
+      }
+    },
+    {
+      "id": "F04",
+      "name": "G.C. 0052",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a G.C. \u21160052 1\u0433\u0440",
+      "rating": "1",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 180,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 436,
+      "dimensionsMeters": [
+        0.0271869,
+        0.18,
+        0.0271869
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f04/f04.glb?v=14f606f864ac",
+          "path": "assets/floats/f04/f04.glb",
+          "sha256": "14f606f864acbbff88f99bd49fe8e7414a3b0ad155e0fad2b6157177c7ddab70",
+          "bytes": 14008
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f04/f04.fbx?v=606776fd8503",
+          "path": "assets/floats/f04/f04.fbx",
+          "sha256": "606776fd85032a09185e1cc8e369cc8b9c0292d0fe432fc3d1b7bb74d519b01c",
+          "bytes": 42076
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f04/basecolor.webp?v=f7f1ddbe5387",
+          "path": "assets/floats/f04/basecolor.webp",
+          "sha256": "f7f1ddbe5387d116a952b9ceecb82bdd7c7e47e0b5727fab66d53560d5da0bf8",
+          "bytes": 866
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f04.webp?v=a6f9bb1911f9",
+          "path": "thumbnails/floats/f04.webp",
+          "sha256": "a6f9bb1911f9fec62b7f6b28898d1426386278d64e92bece2ad7cd5a1a28d19b",
+          "bytes": 2516
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f04.zip?v=c2451230f91f",
+          "path": "downloads/floats/f04.zip",
+          "sha256": "c2451230f91f66b4c757f539fcad045608376fcc4392071fc71c9a0bbc41a5ab",
+          "bytes": 140348
+        }
+      }
+    },
+    {
+      "id": "F05",
+      "name": "Silver Stream SSF-29",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Silver Stream SSF-29 1,5\u0433\u0440",
+      "rating": "1.5",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 110,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 460,
+      "dimensionsMeters": [
+        0.0141684,
+        0.11,
+        0.0141684
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f05/f05.glb?v=baa130353480",
+          "path": "assets/floats/f05/f05.glb",
+          "sha256": "baa1303534801d477a7d227673170b553bfc804519e4307983269547e60083bd",
+          "bytes": 14544
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f05/f05.fbx?v=fc65b00f751f",
+          "path": "assets/floats/f05/f05.fbx",
+          "sha256": "fc65b00f751f070717abc43359e3894d0c29baa63e23032ef04f110c8f3c53e5",
+          "bytes": 43804
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f05/basecolor.webp?v=3134f34307a1",
+          "path": "assets/floats/f05/basecolor.webp",
+          "sha256": "3134f34307a1dfe9f5dc4bf7be99dee0859f864ca3fa7bcba132e1bfd88f5628",
+          "bytes": 852
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f05.webp?v=3d491a15477e",
+          "path": "thumbnails/floats/f05.webp",
+          "sha256": "3d491a15477e86c098edc01736daf4002c41fb21b6980ef6466220443cb7cdb3",
+          "bytes": 2930
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f05.zip?v=3d755537e663",
+          "path": "downloads/floats/f05.zip",
+          "sha256": "3d755537e663ded20c50a1ee5c77a5b6d86589d1e10882b42260866bcec6cc07",
+          "bytes": 142579
+        }
+      }
+    },
+    {
+      "id": "F06",
+      "name": "Goose quill with small foam body",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043a\u0438 \u0413\u0443\u0441\u0438\u043d\u043e\u0435 \u043f\u0435\u0440\u043e \u0441 \u043c\u0430\u043b\u043e\u0439 \u043f\u0435\u043d\u043e\u043f\u043b\u0430\u0441\u0442\u043e\u0432\u043e\u0439 \u0431\u043e\u0431\u044b\u0448\u043a\u043e\u0439 (3\u0448\u0442)",
+      "rating": "1.6",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 220,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 508,
+      "dimensionsMeters": [
+        0.0213934,
+        0.22,
+        0.0213934
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f06/f06.glb?v=f0ed228876cf",
+          "path": "assets/floats/f06/f06.glb",
+          "sha256": "f0ed228876cfd6209f13c80496e6b870fce42b154504ed8f90cf8c16a375e526",
+          "bytes": 15736
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f06/f06.fbx?v=db218e4daac9",
+          "path": "assets/floats/f06/f06.fbx",
+          "sha256": "db218e4daac9e0f9c6531c65f6dd47c2f02d20dc8abb90c00e95acf16c6bc989",
+          "bytes": 46012
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f06/basecolor.webp?v=989b19de6877",
+          "path": "assets/floats/f06/basecolor.webp",
+          "sha256": "989b19de6877e6762d26fc8949b3afef10b944aa62ce13a61688d63d686e7d55",
+          "bytes": 840
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f06.webp?v=e2a08166106e",
+          "path": "thumbnails/floats/f06.webp",
+          "sha256": "e2a08166106e3764c1f28b1985b8e8f9d4902d917dcf33b63f3e6216e4fa2111",
+          "bytes": 2062
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f06.zip?v=9f53968d1cc1",
+          "path": "downloads/floats/f06.zip",
+          "sha256": "9f53968d1cc1d1fabf229b0384e0bb336fe1500a451fc0e67abef3cc9b3f96f7",
+          "bytes": 146368
+        }
+      }
+    },
+    {
+      "id": "F07",
+      "name": "Parus Ellipse with bulb",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u041f\u0430\u0440\u0443\u0441 \u042d\u043b\u0438\u043f\u0441 \u0441 \u0431\u0443\u043b\u044c\u043a\u043e\u0439 160\u043c\u043c 2,5\u0433\u0440",
+      "rating": "2.5",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 160.0,
+      "scaleBasis": "catalog-length",
+      "dimensionNote": "Source overall length; all radial dimensions and part proportions are approximated from the illustration.",
+      "triangles": 772,
+      "dimensionsMeters": [
+        0.0144018,
+        0.16,
+        0.0144018
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f07/f07.glb?v=9bf988365941",
+          "path": "assets/floats/f07/f07.glb",
+          "sha256": "9bf9883659419b40932c5f524326e5884dedda7d823853a4070881b33eb419d6",
+          "bytes": 21896
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f07/f07.fbx?v=57de35a20e81",
+          "path": "assets/floats/f07/f07.fbx",
+          "sha256": "57de35a20e810c2c516fb775574443a62a809331ebdad6780811fee86bdea389",
+          "bytes": 59916
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f07/basecolor.webp?v=9d68ff233564",
+          "path": "assets/floats/f07/basecolor.webp",
+          "sha256": "9d68ff2335640d0d48e3a50eb3afd846a716e2a5ca563732744456f70308b4de",
+          "bytes": 1150
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f07.webp?v=f6c529ebd557",
+          "path": "thumbnails/floats/f07.webp",
+          "sha256": "f6c529ebd55738472ebbdeccffd3e2b063c8fd0d437358d1003796d9df3a4e54",
+          "bytes": 2526
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f07.zip?v=2702e4905f00",
+          "path": "downloads/floats/f07.zip",
+          "sha256": "2702e4905f0084afdbfdd136d422b8aefd9aef28da3da49a9e0e3a56fea83f4c",
+          "bytes": 168219
+        }
+      }
+    },
+    {
+      "id": "F08",
+      "name": "Wormix 104",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 104 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 3\u0433\u0440",
+      "rating": "3",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 180,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 628,
+      "dimensionsMeters": [
+        0.0267583,
+        0.18,
+        0.0267583
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f08/f08.glb?v=62da11bdaff6",
+          "path": "assets/floats/f08/f08.glb",
+          "sha256": "62da11bdaff653abaa6262242d6fec118f140498c78075688e5a8a08164d8600",
+          "bytes": 18580
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f08/f08.fbx?v=2267f54087f1",
+          "path": "assets/floats/f08/f08.fbx",
+          "sha256": "2267f54087f194ae27d91babf8b87bd0aaa32a32523fbad70a64694f7f51648d",
+          "bytes": 52428
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f08/basecolor.webp?v=a2107bf927ba",
+          "path": "assets/floats/f08/basecolor.webp",
+          "sha256": "a2107bf927ba17204517cf77b00f676befb9ba4fc1a2fe10b6155c2cc5ced7ec",
+          "bytes": 868
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f08.webp?v=f9068adbd4ce",
+          "path": "thumbnails/floats/f08.webp",
+          "sha256": "f9068adbd4ce62fee979d879c9232abc1eed4e84008391252de2d1262c0cf560",
+          "bytes": 2852
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f08.zip?v=83c09591abfb",
+          "path": "downloads/floats/f08.zip",
+          "sha256": "83c09591abfb07fe351a05cf207893b9e0dc84ff278f3ef5fbc72ce5e08afc2e",
+          "bytes": 156722
+        }
+      }
+    },
+    {
+      "id": "F09",
+      "name": "Winter Type 0.75",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u0437\u0438\u043c\u043d\u0438\u0439 \u0442\u0438\u043f 0,75 h-16\u043c\u043c",
+      "rating": "0.75",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 27,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate. The h-16 mm marking is treated as a body designation, not a verified assembled height.",
+      "triangles": 428,
+      "dimensionsMeters": [
+        0.00972,
+        0.027,
+        0.00972
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f09/f09.glb?v=a190531c99c0",
+          "path": "assets/floats/f09/f09.glb",
+          "sha256": "a190531c99c08bd108c3a90422fa20599cba544e408baf0ace92d2bca430144b",
+          "bytes": 13860
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f09/f09.fbx?v=ba92cd324ed8",
+          "path": "assets/floats/f09/f09.fbx",
+          "sha256": "ba92cd324ed8354bc7b8e1977b77b56a6ad3f0e501341e5dbe8901800db73148",
+          "bytes": 42540
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f09/basecolor.webp?v=a1c2a2573f37",
+          "path": "assets/floats/f09/basecolor.webp",
+          "sha256": "a1c2a2573f370eb10501265e1278379af84d359d83ab51a2e7bebc426cd7d263",
+          "bytes": 826
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f09.webp?v=d502aeabbc1d",
+          "path": "thumbnails/floats/f09.webp",
+          "sha256": "d502aeabbc1d84564b4462af5ec2f30cbb63f41ab98f248c51e9dba69591c2b8",
+          "bytes": 3468
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f09.zip?v=a7ddb1a8964b",
+          "path": "downloads/floats/f09.zip",
+          "sha256": "a7ddb1a8964b33c83d74348331fffa5bf2d9d5a6cbe3944609b8cdb8c7a701b6",
+          "bytes": 140563
+        }
+      }
+    },
+    {
+      "id": "F10",
+      "name": "Parus Needle",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u041f\u0430\u0440\u0443\u0441 \u0418\u0433\u043b\u0430 180\u043c\u043c",
+      "rating": null,
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 180.0,
+      "scaleBasis": "catalog-length",
+      "dimensionNote": "Source overall length; all radial dimensions and part proportions are approximated from the illustration.",
+      "triangles": 340,
+      "dimensionsMeters": [
+        0.0079699,
+        0.18,
+        0.0079699
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f10/f10.glb?v=d195e6a56916",
+          "path": "assets/floats/f10/f10.glb",
+          "sha256": "d195e6a569164217e91a058f775aa3692a118ee23e8b8a76bbfcf63717b7ab68",
+          "bytes": 11552
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f10/f10.fbx?v=0f7819a04a6b",
+          "path": "assets/floats/f10/f10.fbx",
+          "sha256": "0f7819a04a6b089d49f256434a026f3ee3e8552d3a799bc3c8f888c32d379de4",
+          "bytes": 36972
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f10/basecolor.webp?v=6e1dce89569c",
+          "path": "assets/floats/f10/basecolor.webp",
+          "sha256": "6e1dce89569c2ec218b4b093767b1555fa413e59a1cabf73cd9fd91443b94f78",
+          "bytes": 710
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f10.webp?v=971d55ad7cd3",
+          "path": "thumbnails/floats/f10.webp",
+          "sha256": "971d55ad7cd3cc7c97ecddce118feb57fcbffab1413292869e1bf2d5da62b15e",
+          "bytes": 2078
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f10.zip?v=64c55da4f8ae",
+          "path": "downloads/floats/f10.zip",
+          "sha256": "64c55da4f8aef9abdb4b071a3f3e2beee8a1745b4b5ae57877b8de44ea4037b5",
+          "bytes": 131532
+        }
+      }
+    },
+    {
+      "id": "F11",
+      "name": "Parus Hollow D-4",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u041f\u0430\u0440\u0443\u0441 \u0434\u0443\u0442\u044b\u0439 \u0414-4",
+      "rating": null,
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 180,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 412,
+      "dimensionsMeters": [
+        0.0107796,
+        0.18,
+        0.0107796
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f11/f11.glb?v=819563d0d3e8",
+          "path": "assets/floats/f11/f11.glb",
+          "sha256": "819563d0d3e836e13a58e715f32c7b3717933a02388fc2aba81c4c7740a2fc12",
+          "bytes": 13720
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f11/f11.fbx?v=669bd492522c",
+          "path": "assets/floats/f11/f11.fbx",
+          "sha256": "669bd492522c25c1b7283f2757707945c6c0011a9334a9cce736380642f3a59d",
+          "bytes": 41852
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f11/basecolor.webp?v=a0dbee4dc0ad",
+          "path": "assets/floats/f11/basecolor.webp",
+          "sha256": "a0dbee4dc0ad2350bc9743cdee2cbcc8b42c9c28db5f9ed272857fcc66c55bb6",
+          "bytes": 1038
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f11.webp?v=bb4d44a6859a",
+          "path": "thumbnails/floats/f11.webp",
+          "sha256": "bb4d44a6859ade8c95386be09c88994caa9fa4688b9ff3326ca0a3290cf4c271",
+          "bytes": 2196
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f11.zip?v=4c827d7812bd",
+          "path": "downloads/floats/f11.zip",
+          "sha256": "4c827d7812bd053494460343331d4f4abf52d8805173bee4ad80571c697c1c59",
+          "bytes": 138818
+        }
+      }
+    },
+    {
+      "id": "F12",
+      "name": "Live-bait shock-resistant luminous",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a 10\u0433\u0440 \u0436\u0438\u0432\u0446\u043e\u0432\u044b\u0439, \u043f\u043e\u0434 \u0441\u0432\u0435\u0442\u043b\u044f\u0447\u043e\u043a, \u0443\u0434\u0430\u0440\u043e\u043f\u0440\u043e\u0447\u043d\u044b\u0439",
+      "rating": "10",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 140,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 868,
+      "dimensionsMeters": [
+        0.0346321,
+        0.14,
+        0.0346321
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f12/f12.glb?v=59b8fbc5aa4c",
+          "path": "assets/floats/f12/f12.glb",
+          "sha256": "59b8fbc5aa4c14b197cd47d0a20edd9277a98912e1533d0b7b60d11b91abe38d",
+          "bytes": 24532
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f12/f12.fbx?v=842b19087638",
+          "path": "assets/floats/f12/f12.fbx",
+          "sha256": "842b19087638a91cb246f2b43c0f4c779b5b1857122d808a8cd0aff4a8ecae32",
+          "bytes": 65052
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f12/basecolor.webp?v=cea6c719ddfb",
+          "path": "assets/floats/f12/basecolor.webp",
+          "sha256": "cea6c719ddfba2e0c564afa7738816c56b1d83aed54bbb0b1f38f412d3365da0",
+          "bytes": 1354
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f12.webp?v=5a148a84bb86",
+          "path": "thumbnails/floats/f12.webp",
+          "sha256": "5a148a84bb8609c29af249f9fd75872e05f7385981e0e1d70b9cf22f65d3a114",
+          "bytes": 3762
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f12.zip?v=a4bbfd2749fc",
+          "path": "downloads/floats/f12.zip",
+          "sha256": "a4bbfd2749fc04cff63cc6ebae8997382d2da3904fa13c3c67bad6afb93759b2",
+          "bytes": 177638
+        }
+      }
+    },
+    {
+      "id": "F13",
+      "name": "G.C. 145",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a G.C. \u2116145 5\u0433\u0440",
+      "rating": "5",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 260,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 796,
+      "dimensionsMeters": [
+        0.0244318,
+        0.26,
+        0.0244318
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f13/f13.glb?v=9b4de0109324",
+          "path": "assets/floats/f13/f13.glb",
+          "sha256": "9b4de0109324650001f2153a3495387e97b1c562c485b10f3f166a9bcfb2b776",
+          "bytes": 22788
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f13/f13.fbx?v=01ef7bfe1adc",
+          "path": "assets/floats/f13/f13.fbx",
+          "sha256": "01ef7bfe1adc189fd3fc444d9f0f099542cc6f50245e9ca5d63e57040059226f",
+          "bytes": 61132
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f13/basecolor.webp?v=e8d5446ac043",
+          "path": "assets/floats/f13/basecolor.webp",
+          "sha256": "e8d5446ac043967f30d52ad1d3d0873b4e4c94a1df17d9253e5b44034b78e107",
+          "bytes": 1340
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f13.webp?v=864ab27c9f1b",
+          "path": "thumbnails/floats/f13.webp",
+          "sha256": "864ab27c9f1bb632234472b7e8a346dce394b5e5452a505a1306435860c8adda",
+          "bytes": 2910
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f13.zip?v=326b01d9a2d9",
+          "path": "downloads/floats/f13.zip",
+          "sha256": "326b01d9a2d972e030d270048920fd509747850336362079ae54cfc7be2cb06c",
+          "bytes": 171339
+        }
+      }
+    },
+    {
+      "id": "F14",
+      "name": "Plastic live-bait float",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u0436\u0438\u0432\u0446\u043e\u0432\u044b\u0439, \u043f\u043b\u0430\u0441\u0442\u0438\u043a\u043e\u0432\u044b\u0439",
+      "rating": null,
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 140,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 868,
+      "dimensionsMeters": [
+        0.0379668,
+        0.14,
+        0.0379668
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f14/f14.glb?v=58af3473407a",
+          "path": "assets/floats/f14/f14.glb",
+          "sha256": "58af3473407a09b65b0ade43e194cc7a1db0f6bcf5f07d84e433ea116b13655c",
+          "bytes": 24116
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f14/f14.fbx?v=da51d6dfc1da",
+          "path": "assets/floats/f14/f14.fbx",
+          "sha256": "da51d6dfc1dad7ddbfe849bd11305553b6de254e0dd209298bd84b15255b6414",
+          "bytes": 64972
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f14/basecolor.webp?v=cf48ece7c146",
+          "path": "assets/floats/f14/basecolor.webp",
+          "sha256": "cf48ece7c1469cc32cb2bc9f817c6602c3d00d004e9def8f667610d707e72604",
+          "bytes": 1184
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f14.webp?v=0b2126bd29d3",
+          "path": "thumbnails/floats/f14.webp",
+          "sha256": "0b2126bd29d32eb6f8973f9789a6d150c63f7b511c0afb64e802a89df96269f4",
+          "bytes": 4208
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f14.zip?v=99f6a2dd19ed",
+          "path": "downloads/floats/f14.zip",
+          "sha256": "99f6a2dd19ed84e2058e7beed2df02be51d719d8f5729e580d11ed7f61cee3c3",
+          "bytes": 177095
+        }
+      }
+    },
+    {
+      "id": "F15",
+      "name": "Live-bait shock-resistant luminous",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a 15\u0433\u0440 \u0436\u0438\u0432\u0446\u043e\u0432\u044b\u0439, \u043f\u043e\u0434 \u0441\u0432\u0435\u0442\u043b\u044f\u0447\u043e\u043a, \u0443\u0434\u0430\u0440\u043e\u043f\u0440\u043e\u0447\u043d\u044b\u0439",
+      "rating": "15",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 140,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 868,
+      "dimensionsMeters": [
+        0.0346321,
+        0.14,
+        0.0346321
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f15/f15.glb?v=61c2845f3baa",
+          "path": "assets/floats/f15/f15.glb",
+          "sha256": "61c2845f3baa03e9500e4db6bf83c0b55c25427310e47598d01813031703df91",
+          "bytes": 24532
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f15/f15.fbx?v=019ae7d51ff3",
+          "path": "assets/floats/f15/f15.fbx",
+          "sha256": "019ae7d51ff3b3e22c3de294cab83be6af709abb8a23b5fb21e9e5fa52841a65",
+          "bytes": 65052
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f15/basecolor.webp?v=cea6c719ddfb",
+          "path": "assets/floats/f15/basecolor.webp",
+          "sha256": "cea6c719ddfba2e0c564afa7738816c56b1d83aed54bbb0b1f38f412d3365da0",
+          "bytes": 1354
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f15.webp?v=5a148a84bb86",
+          "path": "thumbnails/floats/f15.webp",
+          "sha256": "5a148a84bb8609c29af249f9fd75872e05f7385981e0e1d70b9cf22f65d3a114",
+          "bytes": 3762
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f15.zip?v=6c91a7e3480a",
+          "path": "downloads/floats/f15.zip",
+          "sha256": "6c91a7e3480ae34a3574eb9499059333bda7e8057fae1153e719aebc355c107a",
+          "bytes": 177708
+        }
+      }
+    },
+    {
+      "id": "F16",
+      "name": "Parus Needle",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u041f\u0430\u0440\u0443\u0441 \u0418\u0433\u043b\u0430 240\u043c\u043c",
+      "rating": null,
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 240.0,
+      "scaleBasis": "catalog-length",
+      "dimensionNote": "Source overall length; all radial dimensions and part proportions are approximated from the illustration.",
+      "triangles": 340,
+      "dimensionsMeters": [
+        0.0106265,
+        0.24,
+        0.0106265
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f16/f16.glb?v=bcde12533e5e",
+          "path": "assets/floats/f16/f16.glb",
+          "sha256": "bcde12533e5e99f93fde7bf17380f9fec82f40d46f5d93751de78dcc8b22f00e",
+          "bytes": 11520
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f16/f16.fbx?v=6db448c3f772",
+          "path": "assets/floats/f16/f16.fbx",
+          "sha256": "6db448c3f772b7017891bbbd8a763bcb5528ec4f6ecf21224eec3aa88a36f1bc",
+          "bytes": 37244
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f16/basecolor.webp?v=6e1dce89569c",
+          "path": "assets/floats/f16/basecolor.webp",
+          "sha256": "6e1dce89569c2ec218b4b093767b1555fa413e59a1cabf73cd9fd91443b94f78",
+          "bytes": 710
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f16.webp?v=2ae606da0049",
+          "path": "thumbnails/floats/f16.webp",
+          "sha256": "2ae606da0049f8736bd946e71fcd87ad40a3c653d8a6e902c900d55c36d6851b",
+          "bytes": 2128
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f16.zip?v=fbdde5c71e73",
+          "path": "downloads/floats/f16.zip",
+          "sha256": "fbdde5c71e73cda524bd72a1f33801ef59f45805f1d679ed5e68a342757e86cf",
+          "bytes": 131436
+        }
+      }
+    },
+    {
+      "id": "F17",
+      "name": "Wormix 106",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 106 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 30\u0433\u0440",
+      "rating": "30",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 200,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 604,
+      "dimensionsMeters": [
+        0.0274266,
+        0.2,
+        0.0274266
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f17/f17.glb?v=a01155e789cd",
+          "path": "assets/floats/f17/f17.glb",
+          "sha256": "a01155e789cd6a9e7d3ca8893908214d1251359f4c554e5b1503666541326c1d",
+          "bytes": 17996
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f17/f17.fbx?v=1e891876bf7b",
+          "path": "assets/floats/f17/f17.fbx",
+          "sha256": "1e891876bf7bcd9e3925b41746295214d4046dfcf09f1b5b6e530153dcdb20ba",
+          "bytes": 51132
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f17/basecolor.webp?v=f329f6ab7ee0",
+          "path": "assets/floats/f17/basecolor.webp",
+          "sha256": "f329f6ab7ee0d849f5cc269e21c4b17efdabc86c46cd5bb6a0de724cd0ee1a8e",
+          "bytes": 872
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f17.webp?v=14f7d7447e00",
+          "path": "thumbnails/floats/f17.webp",
+          "sha256": "14f7d7447e00d1428f7611284d0859ef5ffa6ca7bba049fd226d03e988dfdd1b",
+          "bytes": 2936
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f17.zip?v=dfad5d6e8dae",
+          "path": "downloads/floats/f17.zip",
+          "sha256": "dfad5d6e8daea367d5bbcbc10b93fcd3bbf42479f188d72ab8ba538204c1bcb0",
+          "bytes": 154294
+        }
+      }
+    },
+    {
+      "id": "F18",
+      "name": "Parus Luminous Tube",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a-\u0442\u0440\u0443\u0431\u043a\u0430 \u041f\u0430\u0440\u0443\u0441 160\u043c\u043c \u043f\u043e\u0434 \u0441\u0432\u0435\u0442\u043b\u044f\u0447\u043e\u043a",
+      "rating": null,
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 160.0,
+      "scaleBasis": "catalog-length",
+      "dimensionNote": "Source overall length; all radial dimensions and part proportions are approximated from the illustration.",
+      "triangles": 388,
+      "dimensionsMeters": [
+        0.0091862,
+        0.16,
+        0.0091862
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f18/f18.glb?v=e8632f310c1a",
+          "path": "assets/floats/f18/f18.glb",
+          "sha256": "e8632f310c1a02f04a95e819c6f6f595704d5131339be31f440063049420fb2c",
+          "bytes": 12832
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f18/f18.fbx?v=1c465f9f48e6",
+          "path": "assets/floats/f18/f18.fbx",
+          "sha256": "1c465f9f48e6ecc7ec135874ce197e7f833727b2be405073d783879f07f7b430",
+          "bytes": 39772
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f18/basecolor.webp?v=440be8b20777",
+          "path": "assets/floats/f18/basecolor.webp",
+          "sha256": "440be8b207778411f47f64db47b042b304822140b0e502867231e18bdf1dad14",
+          "bytes": 858
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f18.webp?v=73136e139faa",
+          "path": "thumbnails/floats/f18.webp",
+          "sha256": "73136e139faa5ff7cbe44076bc69da166c0edc09f019cec392d0102164cc9f2e",
+          "bytes": 2216
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f18.zip?v=132a7876d065",
+          "path": "downloads/floats/f18.zip",
+          "sha256": "132a7876d065b24680b4b20a2585236f4384642b67b759aad081481e1ddafd4d",
+          "bytes": 136425
+        }
+      }
+    },
+    {
+      "id": "F19",
+      "name": "Parus Quill",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u041f\u0430\u0440\u0443\u0441 \u041f\u0435\u0440\u043e 160\u043c\u043c 1\u0433\u0440",
+      "rating": "1",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 160.0,
+      "scaleBasis": "catalog-length",
+      "dimensionNote": "Source overall length; all radial dimensions and part proportions are approximated from the illustration.",
+      "triangles": 652,
+      "dimensionsMeters": [
+        0.007201,
+        0.16,
+        0.007201
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f19/f19.glb?v=ca4b9f8240d4",
+          "path": "assets/floats/f19/f19.glb",
+          "sha256": "ca4b9f8240d40ec026d46fa14bbe5db84378c159f0f7c97006120013c4eb0982",
+          "bytes": 18980
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f19/f19.fbx?v=8a2c735ef714",
+          "path": "assets/floats/f19/f19.fbx",
+          "sha256": "8a2c735ef714cbcb9acb52ed15f1915c19f412bde1cd626a73c7d544ce5e158f",
+          "bytes": 53548
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f19/basecolor.webp?v=c6d7c952f6e6",
+          "path": "assets/floats/f19/basecolor.webp",
+          "sha256": "c6d7c952f6e60cb9cd89581507d119f12e3c3eb6293d4ecb80e2e28bcd02fb22",
+          "bytes": 936
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f19.webp?v=5ca6bc4ff5a5",
+          "path": "thumbnails/floats/f19.webp",
+          "sha256": "5ca6bc4ff5a59ae8dc56ef9d0f325020137e36ced36f39364de9013e04c829b3",
+          "bytes": 2356
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f19.zip?v=541402942078",
+          "path": "downloads/floats/f19.zip",
+          "sha256": "541402942078b62de998f5cf92f4476f99a8bc4ce62b0231788735171e051fdc",
+          "bytes": 157845
+        }
+      }
+    },
+    {
+      "id": "F20",
+      "name": "Expert 203-77-454",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Expert 203-77-454 4+4,5\u0433\u0440",
+      "rating": "4+4.5",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 280,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 916,
+      "dimensionsMeters": [
+        0.0260892,
+        0.28,
+        0.0260892
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f20/f20.glb?v=f5ae7abeba8b",
+          "path": "assets/floats/f20/f20.glb",
+          "sha256": "f5ae7abeba8b11f37dfd088462910c82874c8bc32b3c9a47c4519dbc3b38a3e3",
+          "bytes": 25844
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f20/f20.fbx?v=96940a41de37",
+          "path": "assets/floats/f20/f20.fbx",
+          "sha256": "96940a41de3742737ecdd4b52dc7bee25a0a4deb11838554fa1561bce3cee5a5",
+          "bytes": 68188
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f20/basecolor.webp?v=67f53992980f",
+          "path": "assets/floats/f20/basecolor.webp",
+          "sha256": "67f53992980fed75343fa9105723e4a6354ab9d230edbc0af0c6f15c87f867c7",
+          "bytes": 1552
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f20.webp?v=db423712ad02",
+          "path": "thumbnails/floats/f20.webp",
+          "sha256": "db423712ad02343b28abf732d88de5dc2a2ae9f6949b180f5cc1ea8bdb759160",
+          "bytes": 3054
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f20.zip?v=987ee4936e08",
+          "path": "downloads/floats/f20.zip",
+          "sha256": "987ee4936e088feb68454571ffad056985562ba29067932b15929bf7e21cd3d0",
+          "bytes": 181720
+        }
+      }
+    },
+    {
+      "id": "F21",
+      "name": "Parus Needle",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u041f\u0430\u0440\u0443\u0441 \u0418\u0433\u043b\u0430 260\u043c\u043c",
+      "rating": null,
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 260.0,
+      "scaleBasis": "catalog-length",
+      "dimensionNote": "Source overall length; all radial dimensions and part proportions are approximated from the illustration.",
+      "triangles": 340,
+      "dimensionsMeters": [
+        0.011512,
+        0.26,
+        0.011512
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f21/f21.glb?v=35fb214747df",
+          "path": "assets/floats/f21/f21.glb",
+          "sha256": "35fb214747df6e47ee5daae725d3e8a4067e9b02e8505a6a53cd2867c1b1a285",
+          "bytes": 11260
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f21/f21.fbx?v=3c4a2b608549",
+          "path": "assets/floats/f21/f21.fbx",
+          "sha256": "3c4a2b608549a9c3a5568552cceb957c3a77b475b169082c6c68f53938227f97",
+          "bytes": 37004
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f21/basecolor.webp?v=6e1dce89569c",
+          "path": "assets/floats/f21/basecolor.webp",
+          "sha256": "6e1dce89569c2ec218b4b093767b1555fa413e59a1cabf73cd9fd91443b94f78",
+          "bytes": 710
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f21.webp?v=1f16c88f38a6",
+          "path": "thumbnails/floats/f21.webp",
+          "sha256": "1f16c88f38a64fa89e5c6d1d0997e1b273cff963da077fb9141ebd9d24af2ece",
+          "bytes": 2154
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f21.zip?v=b5e255cb385c",
+          "path": "downloads/floats/f21.zip",
+          "sha256": "b5e255cb385c11a339093d4eff51df3c20fb7370efbfad3a82ed2ca5e65b0ea2",
+          "bytes": 131203
+        }
+      }
+    },
+    {
+      "id": "F22",
+      "name": "Wormix 507 Working",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 507 \u0420\u0430\u0431\u043e\u0447\u0438\u0439 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 3\u0433\u0440",
+      "rating": "3",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 200,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 676,
+      "dimensionsMeters": [
+        0.0319064,
+        0.2,
+        0.0319064
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f22/f22.glb?v=84f4c1b1b9bc",
+          "path": "assets/floats/f22/f22.glb",
+          "sha256": "84f4c1b1b9bce4a57a38ce7d1d067088b007b7197a73610920d5ba8dde7dabca",
+          "bytes": 19476
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f22/f22.fbx?v=534ff5e316aa",
+          "path": "assets/floats/f22/f22.fbx",
+          "sha256": "534ff5e316aa168cde31e601ef1363cb1c7f950734b7fabc141aab3b783fa7e0",
+          "bytes": 54812
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f22/basecolor.webp?v=5a2c5f6c32b5",
+          "path": "assets/floats/f22/basecolor.webp",
+          "sha256": "5a2c5f6c32b5174d8d172b5c64efbc0e9cb3fc59c67fdba0fe812f9f776b6a16",
+          "bytes": 942
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f22.webp?v=42105357fccb",
+          "path": "thumbnails/floats/f22.webp",
+          "sha256": "42105357fccbce175f85e5e877dfe7199e5b1098fe4264b0a7b4028fee756b21",
+          "bytes": 2790
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f22.zip?v=edee1cc5d33f",
+          "path": "downloads/floats/f22.zip",
+          "sha256": "edee1cc5d33fcdb44942c852c0923db29585e0f4d19ef3e33ef9c9510d3ddffb",
+          "bytes": 160318
+        }
+      }
+    },
+    {
+      "id": "F23",
+      "name": "Wormix 110",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 110 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 5\u0433\u0440",
+      "rating": "5",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 190,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 700,
+      "dimensionsMeters": [
+        0.0341477,
+        0.19,
+        0.0341477
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f23/f23.glb?v=bbabd8503063",
+          "path": "assets/floats/f23/f23.glb",
+          "sha256": "bbabd850306393b5537b72248ab124d8db79561efbfaba613b138cd69d52b089",
+          "bytes": 20356
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f23/f23.fbx?v=9726995d5232",
+          "path": "assets/floats/f23/f23.fbx",
+          "sha256": "9726995d52329e0be556deb3b4383dfcfc70866de25ef0dc980e9b639d4eb9c6",
+          "bytes": 56300
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f23/basecolor.webp?v=cadf92f28346",
+          "path": "assets/floats/f23/basecolor.webp",
+          "sha256": "cadf92f283466b6d5004560639017da21717c01fd87f63b3c20212938f969e32",
+          "bytes": 1118
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f23.webp?v=7d8b45b598d6",
+          "path": "thumbnails/floats/f23.webp",
+          "sha256": "7d8b45b598d6856d0fefaec07b7410f6618b51dad122a7d9c82418086c27269e",
+          "bytes": 2818
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f23.zip?v=c285d2e1f272",
+          "path": "downloads/floats/f23.zip",
+          "sha256": "c285d2e1f27205fa469c4e6ce1a2d550ca9ef17a652ccf8879452c32186ad230",
+          "bytes": 162855
+        }
+      }
+    },
+    {
+      "id": "F24",
+      "name": "Wormix 510 Working",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 510 \u0420\u0430\u0431\u043e\u0447\u0438\u0439 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 4\u0433\u0440",
+      "rating": "4",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 210,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 532,
+      "dimensionsMeters": [
+        0.0236558,
+        0.21,
+        0.0236558
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f24/f24.glb?v=3b588e8d18de",
+          "path": "assets/floats/f24/f24.glb",
+          "sha256": "3b588e8d18deae00436f8241814bd4bc855bb4b0911196f4da93d030718f0ce1",
+          "bytes": 16376
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f24/f24.fbx?v=788bccd7f321",
+          "path": "assets/floats/f24/f24.fbx",
+          "sha256": "788bccd7f321200d4e2c5bc8de3b7e800a1b0b44053267bca6df29f8bdb91f2c",
+          "bytes": 47276
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f24/basecolor.webp?v=3db6cebf6543",
+          "path": "assets/floats/f24/basecolor.webp",
+          "sha256": "3db6cebf654388af2319936e6990fb337719590bf32b6b7ac4a0a8aba216a4d3",
+          "bytes": 916
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f24.webp?v=b15204c87388",
+          "path": "thumbnails/floats/f24.webp",
+          "sha256": "b15204c873881c99f82700af14d51e0478bb2a6a4aa33e0fe86164d6f8187b93",
+          "bytes": 2420
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f24.zip?v=6e1f1da6295c",
+          "path": "downloads/floats/f24.zip",
+          "sha256": "6e1f1da6295cb16ffac16df50bd4deff240f40e5d9ade6801296091389530b8a",
+          "bytes": 148950
+        }
+      }
+    },
+    {
+      "id": "F25",
+      "name": "Wormix 105",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 105 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 5\u0433\u0440",
+      "rating": "5",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 200,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 748,
+      "dimensionsMeters": [
+        0.0218839,
+        0.2,
+        0.0218839
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f25/f25.glb?v=5b915bc49716",
+          "path": "assets/floats/f25/f25.glb",
+          "sha256": "5b915bc4971608a8bde9bb87f56abc28befc761f0b3983fede2b9970acd81fb7",
+          "bytes": 21500
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f25/f25.fbx?v=042662a3f856",
+          "path": "assets/floats/f25/f25.fbx",
+          "sha256": "042662a3f856572e7c7eb661462f1f0c26256e416ec4c78ea171d445a604eb55",
+          "bytes": 58636
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f25/basecolor.webp?v=9ab6315b5355",
+          "path": "assets/floats/f25/basecolor.webp",
+          "sha256": "9ab6315b5355adca3694626579e30686f55c4819115a3c2d4c27358b2f34d86a",
+          "bytes": 1080
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f25.webp?v=47e988e9ed68",
+          "path": "thumbnails/floats/f25.webp",
+          "sha256": "47e988e9ed6883ef6d2ac59ad18152cda9c6e12cb4cb7474728b9d3783a3458e",
+          "bytes": 2860
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f25.zip?v=5afb354933be",
+          "path": "downloads/floats/f25.zip",
+          "sha256": "5afb354933be40f3ef167936296fce052caf524060fecdb44f115baa62655dd5",
+          "bytes": 165808
+        }
+      }
+    },
+    {
+      "id": "F26",
+      "name": "Wormix 104",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 104 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 4\u0433\u0440",
+      "rating": "4",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 180,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 628,
+      "dimensionsMeters": [
+        0.0267583,
+        0.18,
+        0.0267583
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f26/f26.glb?v=148d9849fc9a",
+          "path": "assets/floats/f26/f26.glb",
+          "sha256": "148d9849fc9ade59940ff43f9a77b6badcc0c300532f240398bd9a9e039eac6d",
+          "bytes": 18580
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f26/f26.fbx?v=38c2c5603f4a",
+          "path": "assets/floats/f26/f26.fbx",
+          "sha256": "38c2c5603f4a25996b696a63324524a445b317b4e239ad4c9e4f51e43fe92067",
+          "bytes": 52428
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f26/basecolor.webp?v=a2107bf927ba",
+          "path": "assets/floats/f26/basecolor.webp",
+          "sha256": "a2107bf927ba17204517cf77b00f676befb9ba4fc1a2fe10b6155c2cc5ced7ec",
+          "bytes": 868
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f26.webp?v=f9068adbd4ce",
+          "path": "thumbnails/floats/f26.webp",
+          "sha256": "f9068adbd4ce62fee979d879c9232abc1eed4e84008391252de2d1262c0cf560",
+          "bytes": 2852
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f26.zip?v=3f9d9199b7de",
+          "path": "downloads/floats/f26.zip",
+          "sha256": "3f9d9199b7dee9531a3b4457284eeb3c0a5295ddfaefa351a1a3398b5498e2e2",
+          "bytes": 156737
+        }
+      }
+    },
+    {
+      "id": "F27",
+      "name": "Wormix 521 Working",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 521 \u0420\u0430\u0431\u043e\u0447\u0438\u0439 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 4\u0433\u0440",
+      "rating": "4",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 200,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 532,
+      "dimensionsMeters": [
+        0.0168729,
+        0.2,
+        0.0168729
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f27/f27.glb?v=f311c48b7f60",
+          "path": "assets/floats/f27/f27.glb",
+          "sha256": "f311c48b7f605434ee00b68c528fb0d5881211db27e5d4f838d640328030fa5e",
+          "bytes": 16176
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f27/f27.fbx?v=5912251ccddb",
+          "path": "assets/floats/f27/f27.fbx",
+          "sha256": "5912251ccddb2df01779614639371a6f7d296017d66d291ff587a45d4d79c5a6",
+          "bytes": 47212
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f27/basecolor.webp?v=f4bc94f45959",
+          "path": "assets/floats/f27/basecolor.webp",
+          "sha256": "f4bc94f4595913d2746986f55d5bab8638596a09fcb208a22bb88ea7bf03e18c",
+          "bytes": 810
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f27.webp?v=646884d31634",
+          "path": "thumbnails/floats/f27.webp",
+          "sha256": "646884d316342af79fb9480e9143eb4d873d6a425df5ae26b0a006308bbb8085",
+          "bytes": 1864
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f27.zip?v=ea9e1c348848",
+          "path": "downloads/floats/f27.zip",
+          "sha256": "ea9e1c34884866595a7ba3140a971cb02d930bcae62184480b7c99076d2a91aa",
+          "bytes": 148417
+        }
+      }
+    },
+    {
+      "id": "F28",
+      "name": "Parus Small Winter",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u0437\u0438\u043c\u043d\u0438\u0439 \u043c\u0430\u043b\u044b\u0439 (\u041f\u0430\u0440\u0443\u0441)",
+      "rating": null,
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 22,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 548,
+      "dimensionsMeters": [
+        0.0068981,
+        0.022,
+        0.0068981
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f28/f28.glb?v=7f0e69cb2f2e",
+          "path": "assets/floats/f28/f28.glb",
+          "sha256": "7f0e69cb2f2ef27d33d74740b689339b9b0ae1ce5d8dbd2fc118bb3059fc1f6e",
+          "bytes": 16856
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f28/f28.fbx?v=0fd247e88920",
+          "path": "assets/floats/f28/f28.fbx",
+          "sha256": "0fd247e88920807cf9527b23734c30b07dffa5f645b93e1ff22eef566338ded5",
+          "bytes": 49244
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f28/basecolor.webp?v=5cba1b41561f",
+          "path": "assets/floats/f28/basecolor.webp",
+          "sha256": "5cba1b41561fd2a8eff1a39a1c7357e6cdf18246bb2939594c2ee029817d53a1",
+          "bytes": 968
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f28.webp?v=3e4a0f22a9f4",
+          "path": "thumbnails/floats/f28.webp",
+          "sha256": "3e4a0f22a9f403047305e3eed13750f1f3c300de19c7ab3f3be7b2e1ebf85f78",
+          "bytes": 3894
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f28.zip?v=37472ef8cd3b",
+          "path": "downloads/floats/f28.zip",
+          "sha256": "37472ef8cd3b954f3d009c1a607b4437723afe200ec8f19e7528cf4003f3cc7f",
+          "bytes": 151458
+        }
+      }
+    },
+    {
+      "id": "F29",
+      "name": "Battery light live-bait float",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 30\u0433\u0440 \u0436\u0438\u0432\u0446\u043e\u0432\u044b\u0439, \u0441 \u0444\u043e\u043d\u0430\u0440\u0438\u043a\u043e\u043c \u043d\u0430 \u0431\u0430\u0442\u0430\u0440\u0435\u0439\u043a\u0435",
+      "rating": "30",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 150,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 724,
+      "dimensionsMeters": [
+        0.0629349,
+        0.15,
+        0.0629349
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f29/f29.glb?v=45dc7b4a2773",
+          "path": "assets/floats/f29/f29.glb",
+          "sha256": "45dc7b4a2773a2b931bc3dc17bd5e523c9a68c3354285211c333eb7faf5d803a",
+          "bytes": 20856
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f29/f29.fbx?v=8c821a0956ef",
+          "path": "assets/floats/f29/f29.fbx",
+          "sha256": "8c821a0956efd0232da21b079bdc86af9ede09dee20c4f0be00977895a1b1ca8",
+          "bytes": 57852
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f29/basecolor.webp?v=c042297c5b6e",
+          "path": "assets/floats/f29/basecolor.webp",
+          "sha256": "c042297c5b6e2447c2f536605b5a4444a4e35f9881a3a68c6048b7921b38679b",
+          "bytes": 1086
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f29.webp?v=1a92eec52af7",
+          "path": "thumbnails/floats/f29.webp",
+          "sha256": "1a92eec52af771d26773e8921d50b69b427073c89157753baa20dbf334c8f009",
+          "bytes": 4544
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f29.zip?v=d31ba91c8837",
+          "path": "downloads/floats/f29.zip",
+          "sha256": "d31ba91c883751cc7c0ae9f58d4a6d93db0de13f01678b246d05b84e9796dc3e",
+          "bytes": 165429
+        }
+      }
+    },
+    {
+      "id": "F30",
+      "name": "Wormix 525 Working",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 525 \u0420\u0430\u0431\u043e\u0447\u0438\u0439 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 3\u0433\u0440",
+      "rating": "3",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 200,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 532,
+      "dimensionsMeters": [
+        0.0226444,
+        0.2,
+        0.0226444
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f30/f30.glb?v=d4c73c42b68e",
+          "path": "assets/floats/f30/f30.glb",
+          "sha256": "d4c73c42b68e51b4df104b9f95658dd44b42d4880213d51fdccb6c4ce46408fe",
+          "bytes": 16308
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f30/f30.fbx?v=fc15b6ce2c92",
+          "path": "assets/floats/f30/f30.fbx",
+          "sha256": "fc15b6ce2c9234c67e469cd5283c00c2c7be47466514fc827d48b5d83a7e8b1c",
+          "bytes": 47308
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f30/basecolor.webp?v=6357ce2eda72",
+          "path": "assets/floats/f30/basecolor.webp",
+          "sha256": "6357ce2eda720af576fb4c237e649a9ad46f3f4f81bc71c401811742e8245d22",
+          "bytes": 878
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f30.webp?v=22dbebb8508e",
+          "path": "thumbnails/floats/f30.webp",
+          "sha256": "22dbebb8508e4e477159b050efc4ddc4f42e4f081d0c1f371d8161357895e6db",
+          "bytes": 2510
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f30.zip?v=680d112147e6",
+          "path": "downloads/floats/f30.zip",
+          "sha256": "680d112147e6cd16381456e6d0b9be4d1c65ef4f93aa51ca5eb05565518700b5",
+          "bytes": 148822
+        }
+      }
+    },
+    {
+      "id": "F31",
+      "name": "Battery light live-bait float",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 100\u0433\u0440 \u0436\u0438\u0432\u0446\u043e\u0432\u044b\u0439, \u0441 \u0444\u043e\u043d\u0430\u0440\u0438\u043a\u043e\u043c \u043d\u0430 \u0431\u0430\u0442\u0430\u0440\u0435\u0439\u043a\u0435",
+      "rating": "100",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 150,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 724,
+      "dimensionsMeters": [
+        0.0629349,
+        0.15,
+        0.0629349
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f31/f31.glb?v=bcaedded88d8",
+          "path": "assets/floats/f31/f31.glb",
+          "sha256": "bcaedded88d8c00e6ab3b3e6c86de8dd50d58bb67bdcb5d70a01bae02f050187",
+          "bytes": 20856
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f31/f31.fbx?v=bc8a8df76a44",
+          "path": "assets/floats/f31/f31.fbx",
+          "sha256": "bc8a8df76a447ab55f393db4be4283be903d7493f2b6b185a31f5c6da2a611e3",
+          "bytes": 57852
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f31/basecolor.webp?v=c042297c5b6e",
+          "path": "assets/floats/f31/basecolor.webp",
+          "sha256": "c042297c5b6e2447c2f536605b5a4444a4e35f9881a3a68c6048b7921b38679b",
+          "bytes": 1086
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f31.webp?v=1a92eec52af7",
+          "path": "thumbnails/floats/f31.webp",
+          "sha256": "1a92eec52af771d26773e8921d50b69b427073c89157753baa20dbf334c8f009",
+          "bytes": 4544
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f31.zip?v=45201f6b5226",
+          "path": "downloads/floats/f31.zip",
+          "sha256": "45201f6b52265f1a7f6c5aa0191810d3f31438ac8b884bed1e9e909b89edea1d",
+          "bytes": 165567
+        }
+      }
+    },
+    {
+      "id": "F32",
+      "name": "Battery light live-bait float",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 40\u0433\u0440 \u0436\u0438\u0432\u0446\u043e\u0432\u044b\u0439, \u0441 \u0444\u043e\u043d\u0430\u0440\u0438\u043a\u043e\u043c \u043d\u0430 \u0431\u0430\u0442\u0430\u0440\u0435\u0439\u043a\u0435",
+      "rating": "40",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 150,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 724,
+      "dimensionsMeters": [
+        0.0629349,
+        0.15,
+        0.0629349
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f32/f32.glb?v=fde3c27b1b72",
+          "path": "assets/floats/f32/f32.glb",
+          "sha256": "fde3c27b1b727037e02654257fcfa5cc1f6c8ce15f05287a490df86792f97fbc",
+          "bytes": 20856
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f32/f32.fbx?v=ccad56d5d027",
+          "path": "assets/floats/f32/f32.fbx",
+          "sha256": "ccad56d5d027cd5af9a7872636a3227d522ee6febc8d31862085d9d9d023331b",
+          "bytes": 57852
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f32/basecolor.webp?v=c042297c5b6e",
+          "path": "assets/floats/f32/basecolor.webp",
+          "sha256": "c042297c5b6e2447c2f536605b5a4444a4e35f9881a3a68c6048b7921b38679b",
+          "bytes": 1086
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f32.webp?v=1a92eec52af7",
+          "path": "thumbnails/floats/f32.webp",
+          "sha256": "1a92eec52af771d26773e8921d50b69b427073c89157753baa20dbf334c8f009",
+          "bytes": 4544
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f32.zip?v=a266933eb1e7",
+          "path": "downloads/floats/f32.zip",
+          "sha256": "a266933eb1e7a997e451e7d1820b867ea93405488c9c95d087b9f3ebe5c86841",
+          "bytes": 165274
+        }
+      }
+    },
+    {
+      "id": "F33",
+      "name": "Parus Quill",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u041f\u0430\u0440\u0443\u0441 \u041f\u0435\u0440\u043e 190\u043c\u043c 1,2\u0433\u0440",
+      "rating": "1.2",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 190.0,
+      "scaleBasis": "catalog-length",
+      "dimensionNote": "Source overall length; all radial dimensions and part proportions are approximated from the illustration.",
+      "triangles": 652,
+      "dimensionsMeters": [
+        0.0085511,
+        0.19,
+        0.0085511
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f33/f33.glb?v=f5e41d80c101",
+          "path": "assets/floats/f33/f33.glb",
+          "sha256": "f5e41d80c101027ff08f05afa2ded28c5cee577b13b5ed89aae4d683d95682ef",
+          "bytes": 19208
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f33/f33.fbx?v=679903d2748d",
+          "path": "assets/floats/f33/f33.fbx",
+          "sha256": "679903d2748d5ef4d9085553ae37beccee548e421d80865c90c7f73342f5199e",
+          "bytes": 53628
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f33/basecolor.webp?v=c6d7c952f6e6",
+          "path": "assets/floats/f33/basecolor.webp",
+          "sha256": "c6d7c952f6e60cb9cd89581507d119f12e3c3eb6293d4ecb80e2e28bcd02fb22",
+          "bytes": 936
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f33.webp?v=abfac6032d90",
+          "path": "thumbnails/floats/f33.webp",
+          "sha256": "abfac6032d90c9b92201eb9a2f6954f63c1caa8a290c79bdb7efd0c5d28ec716",
+          "bytes": 2350
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f33.zip?v=9bbdedb79169",
+          "path": "downloads/floats/f33.zip",
+          "sha256": "9bbdedb791696dc999633494f07527c8226b91e789af0818cec6ee3803c590c2",
+          "bytes": 158008
+        }
+      }
+    },
+    {
+      "id": "F34",
+      "name": "Wormix Zoomer 126",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix Zoomer 126 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 3\u0433\u0440",
+      "rating": "3",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 240,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 700,
+      "dimensionsMeters": [
+        0.0207649,
+        0.24,
+        0.0207649
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f34/f34.glb?v=9609f182d276",
+          "path": "assets/floats/f34/f34.glb",
+          "sha256": "9609f182d2764f8643737dfdeb0c8bd68d4bf60b95b9664ead7e08f85e9d7ace",
+          "bytes": 20124
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f34/f34.fbx?v=04a574f1b6c3",
+          "path": "assets/floats/f34/f34.fbx",
+          "sha256": "04a574f1b6c3df42d0a64b915358188a4fabd55c12ba018a491b1b5472fc406b",
+          "bytes": 56124
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f34/basecolor.webp?v=fe615903b26e",
+          "path": "assets/floats/f34/basecolor.webp",
+          "sha256": "fe615903b26e354faecb98c9616e25e2f55496e6ecb4ada29286eefb08dd893a",
+          "bytes": 1130
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f34.webp?v=0e6347d815b3",
+          "path": "thumbnails/floats/f34.webp",
+          "sha256": "0e6347d815b3bdbcd8ffdcf815a8fb43b8adbd8ff1b4f01b605ea66ad0e3de7b",
+          "bytes": 2926
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f34.zip?v=c5cc57053312",
+          "path": "downloads/floats/f34.zip",
+          "sha256": "c5cc57053312ab05094975be5c57ddcac8fc7de1026e83d6657809c72f475f1a",
+          "bytes": 162817
+        }
+      }
+    },
+    {
+      "id": "F35",
+      "name": "Wormix Zoomer 132",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix Zoomer 132 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 2\u0433\u0440",
+      "rating": "2",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 230,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 652,
+      "dimensionsMeters": [
+        0.012885,
+        0.23,
+        0.012885
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f35/f35.glb?v=42f049506521",
+          "path": "assets/floats/f35/f35.glb",
+          "sha256": "42f0495065211a8900c7d3b57186d244878ca09613a5049655d3f57db3442e2f",
+          "bytes": 19084
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f35/f35.fbx?v=86f2b9a93161",
+          "path": "assets/floats/f35/f35.fbx",
+          "sha256": "86f2b9a93161d523756afa4df8d07cc4adda36c48958fbe4f3128a213df484cf",
+          "bytes": 53612
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f35/basecolor.webp?v=107e341bdce1",
+          "path": "assets/floats/f35/basecolor.webp",
+          "sha256": "107e341bdce12ddddd343faa2ed6878d7c2ae9d284496aecc6eedc883618b4f0",
+          "bytes": 1210
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f35.webp?v=dafca574362f",
+          "path": "thumbnails/floats/f35.webp",
+          "sha256": "dafca574362f526d9e100ab5191329af12fa9522e827fe79ea9dc92fae322bb3",
+          "bytes": 2554
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f35.zip?v=c1ef1dbe54ab",
+          "path": "downloads/floats/f35.zip",
+          "sha256": "c1ef1dbe54ab040d7a0176d323b40cdd89660ea8594fc1aff4f58684cb8cd4c4",
+          "bytes": 158668
+        }
+      }
+    },
+    {
+      "id": "F36",
+      "name": "Parus Soldier",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u041f\u0430\u0440\u0443\u0441 \u0421\u043e\u043b\u0434\u0430\u0442 105\u043c\u043c 3\u0433\u0440",
+      "rating": "3",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 105.0,
+      "scaleBasis": "catalog-length",
+      "dimensionNote": "Source overall length; all radial dimensions and part proportions are approximated from the illustration.",
+      "triangles": 676,
+      "dimensionsMeters": [
+        0.0166834,
+        0.105,
+        0.0166834
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f36/f36.glb?v=8f9c27c79317",
+          "path": "assets/floats/f36/f36.glb",
+          "sha256": "8f9c27c79317f3ebbcb9f6734ec84ceb33bd45da8a7181c9dfdfb4ae77296852",
+          "bytes": 19336
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f36/f36.fbx?v=ebaf8fe45934",
+          "path": "assets/floats/f36/f36.fbx",
+          "sha256": "ebaf8fe4593450819bd366792bc83f53e8a0d58fa2ca4dc62ce77ac27618e261",
+          "bytes": 54924
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f36/basecolor.webp?v=6a65b84ccc5c",
+          "path": "assets/floats/f36/basecolor.webp",
+          "sha256": "6a65b84ccc5c3bcec294a43d7412b320006ff9360ef1304e151fb3000e36fdbd",
+          "bytes": 824
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f36.webp?v=c54ee565856a",
+          "path": "thumbnails/floats/f36.webp",
+          "sha256": "c54ee565856aa2179e5736e3354554299704caeb9e20d5ccdd6ef2dbecc0b11a",
+          "bytes": 2974
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f36.zip?v=5bae144ca693",
+          "path": "downloads/floats/f36.zip",
+          "sha256": "5bae144ca69386e2d3bf4e824d6a57f3ee6b1355f742ac1cdd2635a6b1b84196",
+          "bytes": 160140
+        }
+      }
+    },
+    {
+      "id": "F37",
+      "name": "Wormix Zoomer 126",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix Zoomer 126 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 5\u0433\u0440",
+      "rating": "5",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 240,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 700,
+      "dimensionsMeters": [
+        0.0207649,
+        0.24,
+        0.0207649
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f37/f37.glb?v=52410b0cbd04",
+          "path": "assets/floats/f37/f37.glb",
+          "sha256": "52410b0cbd04e189c528867a7320d375b561a119e21ee48e8da64c339c244b39",
+          "bytes": 20124
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f37/f37.fbx?v=2403ed2374c8",
+          "path": "assets/floats/f37/f37.fbx",
+          "sha256": "2403ed2374c831f1dfd828d40e8d9af18ae29314767c3f14f42a50479073ca1e",
+          "bytes": 56124
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f37/basecolor.webp?v=fe615903b26e",
+          "path": "assets/floats/f37/basecolor.webp",
+          "sha256": "fe615903b26e354faecb98c9616e25e2f55496e6ecb4ada29286eefb08dd893a",
+          "bytes": 1130
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f37.webp?v=0e6347d815b3",
+          "path": "thumbnails/floats/f37.webp",
+          "sha256": "0e6347d815b3bdbcd8ffdcf815a8fb43b8adbd8ff1b4f01b605ea66ad0e3de7b",
+          "bytes": 2926
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f37.zip?v=80abc9aaa125",
+          "path": "downloads/floats/f37.zip",
+          "sha256": "80abc9aaa125ac3c6d4b2416868e3f451593476b3110c64e4c9790bc77ee6d59",
+          "bytes": 162814
+        }
+      }
+    },
+    {
+      "id": "F38",
+      "name": "Wormix 110",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 110 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 2\u0433\u0440",
+      "rating": "2",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 190,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 700,
+      "dimensionsMeters": [
+        0.0341477,
+        0.19,
+        0.0341477
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f38/f38.glb?v=4ef3633d37a7",
+          "path": "assets/floats/f38/f38.glb",
+          "sha256": "4ef3633d37a73fd169733aa13a8bada0829f736cf7a31426abc0a92d5846947a",
+          "bytes": 20356
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f38/f38.fbx?v=7b532458d199",
+          "path": "assets/floats/f38/f38.fbx",
+          "sha256": "7b532458d1998b2d26f82a9c2cc919dd2e48179a0735b64e74a0b531a8fb5253",
+          "bytes": 56300
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f38/basecolor.webp?v=cadf92f28346",
+          "path": "assets/floats/f38/basecolor.webp",
+          "sha256": "cadf92f283466b6d5004560639017da21717c01fd87f63b3c20212938f969e32",
+          "bytes": 1118
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f38.webp?v=7d8b45b598d6",
+          "path": "thumbnails/floats/f38.webp",
+          "sha256": "7d8b45b598d6856d0fefaec07b7410f6618b51dad122a7d9c82418086c27269e",
+          "bytes": 2818
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f38.zip?v=f69641927938",
+          "path": "downloads/floats/f38.zip",
+          "sha256": "f69641927938faffbe5741bb1462d7dd9638c2eeb7421b065d2c2627f579cbdf",
+          "bytes": 162825
+        }
+      }
+    },
+    {
+      "id": "F39",
+      "name": "Wormix 105",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 105 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 2,5\u0433\u0440",
+      "rating": "2.5",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 200,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 748,
+      "dimensionsMeters": [
+        0.0218839,
+        0.2,
+        0.0218839
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f39/f39.glb?v=348838f6becc",
+          "path": "assets/floats/f39/f39.glb",
+          "sha256": "348838f6becc57c46dc347e5903c0ec0b99e9910aaead28438705708310a96ba",
+          "bytes": 21504
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f39/f39.fbx?v=c8fa53489dcb",
+          "path": "assets/floats/f39/f39.fbx",
+          "sha256": "c8fa53489dcbb5a4f63a7842984d8be97e1be49b87c0be4264805a2bab2e1885",
+          "bytes": 58636
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f39/basecolor.webp?v=9ab6315b5355",
+          "path": "assets/floats/f39/basecolor.webp",
+          "sha256": "9ab6315b5355adca3694626579e30686f55c4819115a3c2d4c27358b2f34d86a",
+          "bytes": 1080
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f39.webp?v=47e988e9ed68",
+          "path": "thumbnails/floats/f39.webp",
+          "sha256": "47e988e9ed6883ef6d2ac59ad18152cda9c6e12cb4cb7474728b9d3783a3458e",
+          "bytes": 2860
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f39.zip?v=b3b0d8e30d57",
+          "path": "downloads/floats/f39.zip",
+          "sha256": "b3b0d8e30d5744e45eebebc4d627b5f5c9e9010eb7646666d9a8a08afcb0d4b1",
+          "bytes": 166042
+        }
+      }
+    },
+    {
+      "id": "F40",
+      "name": "Winter Buoy, h-16",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u0437\u0438\u043c\u043d\u0438\u0439 \u0442\u0438\u043f \u0411\u0443\u0435\u043a h-16\u043c\u043c",
+      "rating": null,
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 27,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate. The h-16 mm marking is treated as a body designation, not a verified assembled height.",
+      "triangles": 428,
+      "dimensionsMeters": [
+        0.00972,
+        0.027,
+        0.00972
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f40/f40.glb?v=97917a80633d",
+          "path": "assets/floats/f40/f40.glb",
+          "sha256": "97917a80633deeaf107456eae3bd19cce4f57541f59b0282f9ed80601e92be4b",
+          "bytes": 13868
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f40/f40.fbx?v=5dcf66363873",
+          "path": "assets/floats/f40/f40.fbx",
+          "sha256": "5dcf66363873caa80d14c8f7f556ae1dc187780c2eeb6bed4389f4b0b7f1dd89",
+          "bytes": 42556
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f40/basecolor.webp?v=a1c2a2573f37",
+          "path": "assets/floats/f40/basecolor.webp",
+          "sha256": "a1c2a2573f370eb10501265e1278379af84d359d83ab51a2e7bebc426cd7d263",
+          "bytes": 826
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f40.webp?v=d502aeabbc1d",
+          "path": "thumbnails/floats/f40.webp",
+          "sha256": "d502aeabbc1d84564b4462af5ec2f30cbb63f41ab98f248c51e9dba69591c2b8",
+          "bytes": 3468
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f40.zip?v=b33b5c4b4bc9",
+          "path": "downloads/floats/f40.zip",
+          "sha256": "b33b5c4b4bc990a3e413b71d79c44bf52446c4338f33c05ba5fb695038429b9c",
+          "bytes": 140669
+        }
+      }
+    },
+    {
+      "id": "F41",
+      "name": "Parus Luminous Tube",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a-\u0442\u0440\u0443\u0431\u043a\u0430 \u041f\u0430\u0440\u0443\u0441 200\u043c\u043c \u043f\u043e\u0434 \u0441\u0432\u0435\u0442\u043b\u044f\u0447\u043e\u043a",
+      "rating": null,
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 200.0,
+      "scaleBasis": "catalog-length",
+      "dimensionNote": "Source overall length; all radial dimensions and part proportions are approximated from the illustration.",
+      "triangles": 388,
+      "dimensionsMeters": [
+        0.0114827,
+        0.2,
+        0.0114827
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f41/f41.glb?v=c9f8c828bfdc",
+          "path": "assets/floats/f41/f41.glb",
+          "sha256": "c9f8c828bfdc502c7b2aaf84707afe7aae5922c342335f5bf1fcc2900bdb96a7",
+          "bytes": 12804
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f41/f41.fbx?v=b77a3089ac18",
+          "path": "assets/floats/f41/f41.fbx",
+          "sha256": "b77a3089ac189586b0fec20db0499f12f2be5b0aeb0e4fd54d91f1af336af8e3",
+          "bytes": 39660
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f41/basecolor.webp?v=440be8b20777",
+          "path": "assets/floats/f41/basecolor.webp",
+          "sha256": "440be8b207778411f47f64db47b042b304822140b0e502867231e18bdf1dad14",
+          "bytes": 858
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f41.webp?v=d0a87152c164",
+          "path": "thumbnails/floats/f41.webp",
+          "sha256": "d0a87152c164c6f31ffbcab4cd3020b8306623b5dd9e2065ba179d2d0f61f437",
+          "bytes": 2208
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f41.zip?v=9ba7cef48ebd",
+          "path": "downloads/floats/f41.zip",
+          "sha256": "9ba7cef48ebd1e465b424b3956dd80de893f5baf7d75a3338f23dc9da1ebfa85",
+          "bytes": 136412
+        }
+      }
+    },
+    {
+      "id": "F42",
+      "name": "Wormix Zoomer 134",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix Zoomer 134 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 4\u0433\u0440",
+      "rating": "4",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 240,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 892,
+      "dimensionsMeters": [
+        0.0233474,
+        0.24,
+        0.0233474
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f42/f42.glb?v=e9d96d730974",
+          "path": "assets/floats/f42/f42.glb",
+          "sha256": "e9d96d73097484d022b606ed196e34396753e2a18000b8e386da43cb35e1a55b",
+          "bytes": 24836
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f42/f42.fbx?v=11e292f6ebec",
+          "path": "assets/floats/f42/f42.fbx",
+          "sha256": "11e292f6ebecf1fee64beb95abb91afca4bedeedc16787bb955bd3ca764f93e8",
+          "bytes": 66220
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f42/basecolor.webp?v=d7001a936a29",
+          "path": "assets/floats/f42/basecolor.webp",
+          "sha256": "d7001a936a2905f06b67eabaef2404e576226b594cb18f76c447df73daecc241",
+          "bytes": 1232
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f42.webp?v=25f5a140ca2a",
+          "path": "thumbnails/floats/f42.webp",
+          "sha256": "25f5a140ca2a0376388a01d3f78314264cdfa74e3cca3f7fb4494f20bf0d4e5c",
+          "bytes": 2740
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f42.zip?v=2a79c1064bdd",
+          "path": "downloads/floats/f42.zip",
+          "sha256": "2a79c1064bdd34c9e06479e368f564975dc5daa19040764edc65ce841dc61936",
+          "bytes": 179392
+        }
+      }
+    },
+    {
+      "id": "F43",
+      "name": "Wormix 111",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 111 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 2\u0433\u0440",
+      "rating": "2",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 200,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 532,
+      "dimensionsMeters": [
+        0.018745,
+        0.2,
+        0.018745
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f43/f43.glb?v=9763bab9ee09",
+          "path": "assets/floats/f43/f43.glb",
+          "sha256": "9763bab9ee091414d346826caec19cfd486be17cdd482348b291b64752f17e50",
+          "bytes": 16408
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f43/f43.fbx?v=15fa99172d0e",
+          "path": "assets/floats/f43/f43.fbx",
+          "sha256": "15fa99172d0ed20f1773d0d16355c514eb235ec94ff13a6d765072debf78227c",
+          "bytes": 47468
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f43/basecolor.webp?v=6acea355d915",
+          "path": "assets/floats/f43/basecolor.webp",
+          "sha256": "6acea355d915db3031c9865ce9ae3c48d77a05c061e24681a3cd1e3bce506abf",
+          "bytes": 968
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f43.webp?v=712f2d1f6597",
+          "path": "thumbnails/floats/f43.webp",
+          "sha256": "712f2d1f659706e62eb7da860bb97528c1e2c8a78ad52f8a3ef3a43853131537",
+          "bytes": 2356
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f43.zip?v=7ccad965b79f",
+          "path": "downloads/floats/f43.zip",
+          "sha256": "7ccad965b79f373a164063d514613ac0a3ad34f81c379efc261e1ef4e4253ec1",
+          "bytes": 149459
+        }
+      }
+    },
+    {
+      "id": "F44",
+      "name": "Wormix 510 Working",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 510 \u0420\u0430\u0431\u043e\u0447\u0438\u0439 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 2\u0433\u0440",
+      "rating": "2",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 210,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 532,
+      "dimensionsMeters": [
+        0.0236558,
+        0.21,
+        0.0236558
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f44/f44.glb?v=fdc7a7ac99d8",
+          "path": "assets/floats/f44/f44.glb",
+          "sha256": "fdc7a7ac99d83379492dd47e4b737fb2783812debe184c86c511a1c4c4abde36",
+          "bytes": 16376
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f44/f44.fbx?v=3dc7eb5c4ad8",
+          "path": "assets/floats/f44/f44.fbx",
+          "sha256": "3dc7eb5c4ad8063a810fe80c4109ec4f9852d6e1326239e4fc58bd31a9f3da01",
+          "bytes": 47276
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f44/basecolor.webp?v=3db6cebf6543",
+          "path": "assets/floats/f44/basecolor.webp",
+          "sha256": "3db6cebf654388af2319936e6990fb337719590bf32b6b7ac4a0a8aba216a4d3",
+          "bytes": 916
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f44.webp?v=b15204c87388",
+          "path": "thumbnails/floats/f44.webp",
+          "sha256": "b15204c873881c99f82700af14d51e0478bb2a6a4aa33e0fe86164d6f8187b93",
+          "bytes": 2420
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f44.zip?v=d2bc6c079a7a",
+          "path": "downloads/floats/f44.zip",
+          "sha256": "d2bc6c079a7a051bcbf7663b2b2af1db1efd63f66a258a16f020801f0b78f5f4",
+          "bytes": 148945
+        }
+      }
+    },
+    {
+      "id": "F45",
+      "name": "Wormix 105",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 105 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 3\u0433\u0440",
+      "rating": "3",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 200,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 748,
+      "dimensionsMeters": [
+        0.0218839,
+        0.2,
+        0.0218839
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f45/f45.glb?v=1ae1048fa0ce",
+          "path": "assets/floats/f45/f45.glb",
+          "sha256": "1ae1048fa0ce6b1bc6a955195908716b9e9cd2bae91656021a4b426cbfc167ef",
+          "bytes": 21500
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f45/f45.fbx?v=a59924e2ae57",
+          "path": "assets/floats/f45/f45.fbx",
+          "sha256": "a59924e2ae57a883a19a481c48fe5008a5c32024a7bdb1e0e2cae7af9bfb34d6",
+          "bytes": 58636
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f45/basecolor.webp?v=9ab6315b5355",
+          "path": "assets/floats/f45/basecolor.webp",
+          "sha256": "9ab6315b5355adca3694626579e30686f55c4819115a3c2d4c27358b2f34d86a",
+          "bytes": 1080
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f45.webp?v=47e988e9ed68",
+          "path": "thumbnails/floats/f45.webp",
+          "sha256": "47e988e9ed6883ef6d2ac59ad18152cda9c6e12cb4cb7474728b9d3783a3458e",
+          "bytes": 2860
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f45.zip?v=41129116c9d2",
+          "path": "downloads/floats/f45.zip",
+          "sha256": "41129116c9d243fe2ea8597422ae460ed10a4c479fbad97e351cadeda7a41891",
+          "bytes": 165873
+        }
+      }
+    },
+    {
+      "id": "F46",
+      "name": "Parus Sensitive Short",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u041f\u0430\u0440\u0443\u0441 \u0427\u0443\u0442\u043a\u0438\u0439 \u043a\u043e\u0440\u043e\u0442\u043a\u0438\u0439 150\u043c\u043c 3\u0433\u0440",
+      "rating": "3",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 150.0,
+      "scaleBasis": "catalog-length",
+      "dimensionNote": "Source overall length; all radial dimensions and part proportions are approximated from the illustration.",
+      "triangles": 724,
+      "dimensionsMeters": [
+        0.0219651,
+        0.15,
+        0.0219651
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f46/f46.glb?v=5d3547609d54",
+          "path": "assets/floats/f46/f46.glb",
+          "sha256": "5d3547609d54b5f6ca1237048f010f7873e837d67c219c384fe94128a1b56bc6",
+          "bytes": 20800
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f46/f46.fbx?v=a39757bb001f",
+          "path": "assets/floats/f46/f46.fbx",
+          "sha256": "a39757bb001fefe973d841c2d95c27d1cab47d578a91a715c435fd7028e9d10d",
+          "bytes": 57548
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f46/basecolor.webp?v=aefbaff151ed",
+          "path": "assets/floats/f46/basecolor.webp",
+          "sha256": "aefbaff151ed9b2188d9c38d69b41f30db0c33ae1e91ebb6648ad5eef675b0b3",
+          "bytes": 1050
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f46.webp?v=600522f592e3",
+          "path": "thumbnails/floats/f46.webp",
+          "sha256": "600522f592e35a312ceb0578d70e12b6cadd8999fc9bc4f95eef923eb694b0b1",
+          "bytes": 3348
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f46.zip?v=3ccde5629176",
+          "path": "downloads/floats/f46.zip",
+          "sha256": "3ccde56291765c015f217456f8c6695f48c69b8d7787015c472a2ac5ecd60436",
+          "bytes": 164755
+        }
+      }
+    },
+    {
+      "id": "F47",
+      "name": "Parus Tube 190-200 mm",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a-\u0442\u0440\u0443\u0431\u043a\u0430 \u041f\u0430\u0440\u0443\u0441 190-200\u043c\u043c 1\u0433\u0440",
+      "rating": "1",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 195.0,
+      "scaleBasis": "catalog-range-midpoint",
+      "dimensionNote": "195 mm midpoint of the source 190-200 mm range; all radial dimensions are approximate.",
+      "triangles": 292,
+      "dimensionsMeters": [
+        0.0066503,
+        0.195,
+        0.0066503
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f47/f47.glb?v=7d927584f079",
+          "path": "assets/floats/f47/f47.glb",
+          "sha256": "7d927584f079ac67f63ae96abaf2c406f0dcddbf1d8aafd0429f78c2723fca25",
+          "bytes": 10592
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f47/f47.fbx?v=9405b8df7908",
+          "path": "assets/floats/f47/f47.fbx",
+          "sha256": "9405b8df79084da17367c45a74956209a068b064efe337826409cc52eb9b1634",
+          "bytes": 34604
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f47/basecolor.webp?v=baf4d511f4cb",
+          "path": "assets/floats/f47/basecolor.webp",
+          "sha256": "baf4d511f4cb0dba72d6b2f53d69b2dc44126ef38e7cefa8e31638881677f261",
+          "bytes": 844
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f47.webp?v=4753138fc71c",
+          "path": "thumbnails/floats/f47.webp",
+          "sha256": "4753138fc71c2389220f6fa35c0e7ad35a1841cdea4e1072ff4813e17310f03a",
+          "bytes": 1968
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f47.zip?v=15bf508dfb43",
+          "path": "downloads/floats/f47.zip",
+          "sha256": "15bf508dfb43ba10a1de63ca959a0ba9acb4a6614ebe28e7305150a385013317",
+          "bytes": 127728
+        }
+      }
+    },
+    {
+      "id": "F48",
+      "name": "G.C. 0047",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a G.C. \u21160047 2\u0433\u0440",
+      "rating": "2",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 200,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 724,
+      "dimensionsMeters": [
+        0.0213047,
+        0.2,
+        0.0213047
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f48/f48.glb?v=4dff3ddd07ae",
+          "path": "assets/floats/f48/f48.glb",
+          "sha256": "4dff3ddd07aec1d3084fed3ef698908af1cc8a2972fb739ef1b10c1a4001c5da",
+          "bytes": 21044
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f48/f48.fbx?v=9d2cd8b11e2b",
+          "path": "assets/floats/f48/f48.fbx",
+          "sha256": "9d2cd8b11e2bb2a6a552ef37f4f69f69c1c4ef6ffe132d5838f96b324d469bc7",
+          "bytes": 57532
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f48/basecolor.webp?v=910b285dbe8f",
+          "path": "assets/floats/f48/basecolor.webp",
+          "sha256": "910b285dbe8feb228bc4b810cf14b20a8ca4e75e0998ea6ee94611bba469fe91",
+          "bytes": 1056
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f48.webp?v=6e18fdf792de",
+          "path": "thumbnails/floats/f48.webp",
+          "sha256": "6e18fdf792de8ba69fae3800720a3c49f0f3deb2715b2f9ce073bb0fe9a6d3fb",
+          "bytes": 2528
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f48.zip?v=cf164544c725",
+          "path": "downloads/floats/f48.zip",
+          "sha256": "cf164544c7252bc1cb2e3b6c061ac0aa5934ec4e3218006c0e6f13cb8a0d6d32",
+          "bytes": 164697
+        }
+      }
+    },
+    {
+      "id": "F49",
+      "name": "Wormix 109",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 109 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 5\u0433\u0440",
+      "rating": "5",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 200,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 700,
+      "dimensionsMeters": [
+        0.0212984,
+        0.2,
+        0.0212984
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f49/f49.glb?v=078ea8b58c8f",
+          "path": "assets/floats/f49/f49.glb",
+          "sha256": "078ea8b58c8f79c47c2870d4610a6a6d5aad7c230a2ef5b52d2dba52fa6b2bab",
+          "bytes": 20216
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f49/f49.fbx?v=61fa9f44c7f7",
+          "path": "assets/floats/f49/f49.fbx",
+          "sha256": "61fa9f44c7f7d5308a5cde28a7477c72a0fdce1ffb3e9f6bac1a9941e29c9434",
+          "bytes": 56300
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f49/basecolor.webp?v=4d38e730de31",
+          "path": "assets/floats/f49/basecolor.webp",
+          "sha256": "4d38e730de31db230fbeba6f216546ef783d5f5d485adde0b8f85da871577f09",
+          "bytes": 978
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f49.webp?v=b206e5473b05",
+          "path": "thumbnails/floats/f49.webp",
+          "sha256": "b206e5473b05948b4a379991d16c0a471044ed3f5a4e73a3158dd2e0d2645ba4",
+          "bytes": 2652
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f49.zip?v=830bd3f3a4a7",
+          "path": "downloads/floats/f49.zip",
+          "sha256": "830bd3f3a4a7301e12b785609123ffe17347beb801b16d7059285902b9a0dc52",
+          "bytes": 162143
+        }
+      }
+    },
+    {
+      "id": "F50",
+      "name": "Unbranded 100 mm",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a 100\u043c\u043c 1\u0433\u0440",
+      "rating": "1",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 100.0,
+      "scaleBasis": "catalog-length",
+      "dimensionNote": "Source overall length; all radial dimensions and part proportions are approximated from the illustration.",
+      "triangles": 556,
+      "dimensionsMeters": [
+        0.0151502,
+        0.1,
+        0.0151502
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f50/f50.glb?v=16f0cee6869f",
+          "path": "assets/floats/f50/f50.glb",
+          "sha256": "16f0cee6869fb2a21394cb35bf9ce6c94465bb1d8ad6870236ba3c0ad922de7c",
+          "bytes": 17176
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f50/f50.fbx?v=3d1f35892bc9",
+          "path": "assets/floats/f50/f50.fbx",
+          "sha256": "3d1f35892bc93d4e4f2a303418892475dbe58ac2afbd11712576d3f566260a9c",
+          "bytes": 48732
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f50/basecolor.webp?v=f8512cc18455",
+          "path": "assets/floats/f50/basecolor.webp",
+          "sha256": "f8512cc18455e6185ef39b2529fe65beb03cfd4519d7d17a47cbba63b34a681e",
+          "bytes": 1132
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f50.webp?v=76b475abd237",
+          "path": "thumbnails/floats/f50.webp",
+          "sha256": "76b475abd237dd58a98b2d94424f53af67f7d38d850184cf86c40870a66917f3",
+          "bytes": 3102
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f50.zip?v=1b0e0f9ed72c",
+          "path": "downloads/floats/f50.zip",
+          "sha256": "1b0e0f9ed72c95d2c5e4aae89fcd3ba9eee264d2801a94a3bca4a6f87abc5d2b",
+          "bytes": 151888
+        }
+      }
+    },
+    {
+      "id": "F51",
+      "name": "Wormix 107",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 107 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 5\u0433\u0440",
+      "rating": "5",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 190,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 604,
+      "dimensionsMeters": [
+        0.0180583,
+        0.19,
+        0.0180583
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f51/f51.glb?v=3cfeee0fddb3",
+          "path": "assets/floats/f51/f51.glb",
+          "sha256": "3cfeee0fddb31d5f9b71d15be25152bfb1f70ac06c553a5dba601ffd1fcfd609",
+          "bytes": 17984
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f51/f51.fbx?v=da90a8c93c94",
+          "path": "assets/floats/f51/f51.fbx",
+          "sha256": "da90a8c93c946a586fdda4e30902cffdb58bfe86a09a1aa0717a00cbbec91fc3",
+          "bytes": 51228
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f51/basecolor.webp?v=500106b88cc2",
+          "path": "assets/floats/f51/basecolor.webp",
+          "sha256": "500106b88cc250919f0f9bfc654499e51a75d7a7d86ecbf0b8e3393d292b556d",
+          "bytes": 992
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f51.webp?v=137a7bab6cb5",
+          "path": "thumbnails/floats/f51.webp",
+          "sha256": "137a7bab6cb5dad8573c8cdf94e8a100de04fbc65dc714d855ecfb3470076823",
+          "bytes": 2600
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f51.zip?v=c733e0e52850",
+          "path": "downloads/floats/f51.zip",
+          "sha256": "c733e0e5285023fe328e10bf3b2abb274364761919aed425d0c0f057c7436594",
+          "bytes": 155503
+        }
+      }
+    },
+    {
+      "id": "F52",
+      "name": "Wormix 510 Working",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 510 \u0420\u0430\u0431\u043e\u0447\u0438\u0439 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 3\u0433\u0440",
+      "rating": "3",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 210,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 532,
+      "dimensionsMeters": [
+        0.0236558,
+        0.21,
+        0.0236558
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f52/f52.glb?v=024134370ae7",
+          "path": "assets/floats/f52/f52.glb",
+          "sha256": "024134370ae7661e8e4eac4694151f55f4a424af134ee1979cef264f90553186",
+          "bytes": 16376
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f52/f52.fbx?v=15062c2f1cf7",
+          "path": "assets/floats/f52/f52.fbx",
+          "sha256": "15062c2f1cf7193c0566908255db1177208cba5385aa79b3d9c68890861cd48d",
+          "bytes": 47276
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f52/basecolor.webp?v=3db6cebf6543",
+          "path": "assets/floats/f52/basecolor.webp",
+          "sha256": "3db6cebf654388af2319936e6990fb337719590bf32b6b7ac4a0a8aba216a4d3",
+          "bytes": 916
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f52.webp?v=b15204c87388",
+          "path": "thumbnails/floats/f52.webp",
+          "sha256": "b15204c873881c99f82700af14d51e0478bb2a6a4aa33e0fe86164d6f8187b93",
+          "bytes": 2420
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f52.zip?v=054fcfaeec43",
+          "path": "downloads/floats/f52.zip",
+          "sha256": "054fcfaeec4359ac6ff41c3a27f7b7c352cf1f1592415500a0c104b8371e4e49",
+          "bytes": 148922
+        }
+      }
+    },
+    {
+      "id": "F54",
+      "name": "Parus Needle",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u041f\u0430\u0440\u0443\u0441 \u0418\u0433\u043b\u0430 230\u043c\u043c",
+      "rating": null,
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 230.0,
+      "scaleBasis": "catalog-length",
+      "dimensionNote": "Source overall length; all radial dimensions and part proportions are approximated from the illustration.",
+      "triangles": 340,
+      "dimensionsMeters": [
+        0.0101837,
+        0.23,
+        0.0101837
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f54/f54.glb?v=8e6c4504a77f",
+          "path": "assets/floats/f54/f54.glb",
+          "sha256": "8e6c4504a77f4ef6a9415f0e438acdc54ac84076ebd28c7067d58db92e76de99",
+          "bytes": 11712
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f54/f54.fbx?v=05ce24872a1e",
+          "path": "assets/floats/f54/f54.fbx",
+          "sha256": "05ce24872a1eaac2f1aa8a4016f2be12d1aabafcc26c4951e5c4f6f8ce5d916e",
+          "bytes": 37196
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f54/basecolor.webp?v=6e1dce89569c",
+          "path": "assets/floats/f54/basecolor.webp",
+          "sha256": "6e1dce89569c2ec218b4b093767b1555fa413e59a1cabf73cd9fd91443b94f78",
+          "bytes": 710
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f54.webp?v=bbe3bb5311e9",
+          "path": "thumbnails/floats/f54.webp",
+          "sha256": "bbe3bb5311e99fe5759ef9263994032d71282ce69649c80b5056222d7fbe19fb",
+          "bytes": 2080
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f54.zip?v=edeba68928d7",
+          "path": "downloads/floats/f54.zip",
+          "sha256": "edeba68928d7ef107133713b2d6ab17b6c01f5be8746d8ccf09a07d939d50845",
+          "bytes": 131543
+        }
+      }
+    },
+    {
+      "id": "F55",
+      "name": "Wormix 104",
+      "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a Wormix 104 \u043f\u043e\u043b\u0438\u0443\u0440\u0435\u0442\u0430\u043d\u043e\u0432\u044b\u0439 5\u0433\u0440",
+      "rating": "5",
+      "ratingMeaning": "Catalog loading marking, not object mass",
+      "lengthMm": 180,
+      "scaleBasis": "estimated",
+      "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+      "triangles": 628,
+      "dimensionsMeters": [
+        0.0267583,
+        0.18,
+        0.0267583
+      ],
+      "files": {
+        "glb": {
+          "url": "http://144.31.28.132/assets/floats/f55/f55.glb?v=f9b8039fd497",
+          "path": "assets/floats/f55/f55.glb",
+          "sha256": "f9b8039fd4974456c096a00b5b680e6d6c840afd68b8e974c2a0f012303546e9",
+          "bytes": 18580
+        },
+        "fbx": {
+          "url": "http://144.31.28.132/assets/floats/f55/f55.fbx?v=962c6d5644cc",
+          "path": "assets/floats/f55/f55.fbx",
+          "sha256": "962c6d5644cc91593b7cc16c4b39a47ef6e8af8ecb6f90c5c528c5ac964e6e04",
+          "bytes": 52428
+        },
+        "texture": {
+          "url": "http://144.31.28.132/assets/floats/f55/basecolor.webp?v=a2107bf927ba",
+          "path": "assets/floats/f55/basecolor.webp",
+          "sha256": "a2107bf927ba17204517cf77b00f676befb9ba4fc1a2fe10b6155c2cc5ced7ec",
+          "bytes": 868
+        },
+        "thumbnail": {
+          "url": "http://144.31.28.132/thumbnails/floats/f55.webp?v=f9068adbd4ce",
+          "path": "thumbnails/floats/f55.webp",
+          "sha256": "f9068adbd4ce62fee979d879c9232abc1eed4e84008391252de2d1262c0cf560",
+          "bytes": 2852
+        },
+        "package": {
+          "url": "http://144.31.28.132/downloads/floats/f55.zip?v=a2b1c27423e5",
+          "path": "downloads/floats/f55.zip",
+          "sha256": "a2b1c27423e58c0bec8d66780d7e8d840ab568b071590f607411bff47a7f7146",
+          "bytes": 156598
+        }
+      }
+    }
+  ],
+  "downloadAll": {
+    "url": "http://144.31.28.132/downloads/floats/float-models-all.zip?v=834e28631d0a",
+    "path": "downloads/floats/float-models-all.zip",
+    "sha256": "834e28631d0a0d99415c84379120251d9501ebffbf01e63161c357c30ac3a600",
+    "bytes": 11138579
+  },
+  "missing": [
+    {
+      "id": "F53",
+      "reason": "No usable float reference image"
+    }
+  ]
+}

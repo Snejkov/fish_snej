@@ -1,0 +1,54 @@
+{
+  "id": "F07",
+  "title": "Parus Ellipse with bulb",
+  "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a \u041f\u0430\u0440\u0443\u0441 \u042d\u043b\u0438\u043f\u0441 \u0441 \u0431\u0443\u043b\u044c\u043a\u043e\u0439 160\u043c\u043c 2,5\u0433\u0440",
+  "familyId": "F07",
+  "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_parus/1819478/",
+  "rating": "2.5",
+  "lengthMm": 160.0,
+  "scaleBasis": "catalog-length",
+  "dimensionNote": "Source overall length; all radial dimensions and part proportions are approximated from the illustration.",
+  "radialSegments": 12,
+  "texture": "basecolor.webp",
+  "textureSize": [
+    256,
+    1024
+  ],
+  "textureQuality": 90,
+  "reference": "assets/floats/f07.png",
+  "blender": "5.2.3 LTS",
+  "vertices": 388,
+  "triangles": 772,
+  "meshes": 1,
+  "materials": 1,
+  "uvLayers": 1,
+  "dimensionsMm": [
+    14.4018,
+    14.4018,
+    160.0
+  ],
+  "units": "meters",
+  "blenderUpAxis": "Z",
+  "exportUpAxis": "Y",
+  "origin": "Bottom center of assembled float",
+  "fbxEmbeddedTexture": true,
+  "files": {
+    "fbx": "f07.fbx",
+    "glb": "f07.glb",
+    "blend": "f07.blend",
+    "texture": "basecolor.webp"
+  },
+  "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+  "validation": {
+    "fbxReimport": "passed",
+    "scaleToleranceMm": 0.001,
+    "reimportedDimensionsMm": [
+      14.4018,
+      14.4018,
+      160.0
+    ],
+    "embeddedTextureLoaded": true,
+    "embeddedBytesMatch": true,
+    "triangles": 772
+  }
+}

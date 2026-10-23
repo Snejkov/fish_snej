@@ -1,0 +1,6 @@
+__pycache__/
+*.blend1
+*.blend2
+tools/blender-api.json
+tools/profile-qa-*.jpg
+publication/

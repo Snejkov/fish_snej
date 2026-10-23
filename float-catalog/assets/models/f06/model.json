@@ -1,0 +1,54 @@
+{
+  "id": "F06",
+  "title": "Goose quill with small foam body",
+  "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043a\u0438 \u0413\u0443\u0441\u0438\u043d\u043e\u0435 \u043f\u0435\u0440\u043e \u0441 \u043c\u0430\u043b\u043e\u0439 \u043f\u0435\u043d\u043e\u043f\u043b\u0430\u0441\u0442\u043e\u0432\u043e\u0439 \u0431\u043e\u0431\u044b\u0448\u043a\u043e\u0439 (3\u0448\u0442)",
+  "familyId": "F06",
+  "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/prochie_poplavki/1818983/",
+  "rating": "1.6",
+  "lengthMm": 220,
+  "scaleBasis": "estimated",
+  "dimensionNote": "Working overall length chosen for modeling; no overall length is confirmed by the source. Radial dimensions and component proportions are approximate.",
+  "radialSegments": 12,
+  "texture": "basecolor.webp",
+  "textureSize": [
+    256,
+    1024
+  ],
+  "textureQuality": 90,
+  "reference": "assets/floats/f06.png",
+  "blender": "5.2.3 LTS",
+  "vertices": 256,
+  "triangles": 508,
+  "meshes": 1,
+  "materials": 1,
+  "uvLayers": 1,
+  "dimensionsMm": [
+    21.3934,
+    21.3934,
+    220.0
+  ],
+  "units": "meters",
+  "blenderUpAxis": "Z",
+  "exportUpAxis": "Y",
+  "origin": "Bottom center of assembled float",
+  "fbxEmbeddedTexture": true,
+  "files": {
+    "fbx": "f06.fbx",
+    "glb": "f06.glb",
+    "blend": "f06.blend",
+    "texture": "basecolor.webp"
+  },
+  "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+  "validation": {
+    "fbxReimport": "passed",
+    "scaleToleranceMm": 0.001,
+    "reimportedDimensionsMm": [
+      21.3934,
+      21.3934,
+      220.0
+    ],
+    "embeddedTextureLoaded": true,
+    "embeddedBytesMatch": true,
+    "triangles": 508
+  }
+}

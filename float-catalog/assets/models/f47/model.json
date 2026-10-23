@@ -1,0 +1,54 @@
+{
+  "id": "F47",
+  "title": "Parus Tube 190-200 mm",
+  "sourceName": "\u041f\u043e\u043f\u043b\u0430\u0432\u043e\u043a-\u0442\u0440\u0443\u0431\u043a\u0430 \u041f\u0430\u0440\u0443\u0441 190-200\u043c\u043c 1\u0433\u0440",
+  "familyId": "F47",
+  "sourceUrl": "https://ooo-badis.ru/catalog/osnastka_i_furnitura/poplavki/poplavki_parus/1837364/",
+  "rating": "1",
+  "lengthMm": 195.0,
+  "scaleBasis": "catalog-range-midpoint",
+  "dimensionNote": "195 mm midpoint of the source 190-200 mm range; all radial dimensions are approximate.",
+  "radialSegments": 12,
+  "texture": "basecolor.webp",
+  "textureSize": [
+    256,
+    1024
+  ],
+  "textureQuality": 90,
+  "reference": "assets/floats/f47.png",
+  "blender": "5.2.3 LTS",
+  "vertices": 148,
+  "triangles": 292,
+  "meshes": 1,
+  "materials": 1,
+  "uvLayers": 1,
+  "dimensionsMm": [
+    6.6503,
+    6.6503,
+    195.0
+  ],
+  "units": "meters",
+  "blenderUpAxis": "Z",
+  "exportUpAxis": "Y",
+  "origin": "Bottom center of assembled float",
+  "fbxEmbeddedTexture": true,
+  "files": {
+    "fbx": "f47.fbx",
+    "glb": "f47.glb",
+    "blend": "f47.blend",
+    "texture": "basecolor.webp"
+  },
+  "geometryNote": "Rotational approximation of the adapted front illustration; no rear or measured radial reference is available.",
+  "validation": {
+    "fbxReimport": "passed",
+    "scaleToleranceMm": 0.001,
+    "reimportedDimensionsMm": [
+      6.6503,
+      6.6503,
+      195.0
+    ],
+    "embeddedTextureLoaded": true,
+    "embeddedBytesMatch": true,
+    "triangles": 292
+  }
+}
